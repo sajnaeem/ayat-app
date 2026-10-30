@@ -39,6 +39,8 @@ type Ctx = {
   sessionAyat: number;
   /** Merges progress from elsewhere (the account backup) into what's on the phone. */
   merge: (p: Partial<Progress>) => void;
+  /** Clears progress on this phone (after signing out). */
+  reset: () => void;
 };
 
 const C = createContext<Ctx | null>(null);
@@ -89,7 +91,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<Ctx>(
-    () => ({ progress, level: levelFor(progress.readings), markRead, markMemorised, sessionAyat, merge: (b: Partial<Progress>) => setProgress((p) => mergeProgress(p, b)) }),
+    () => ({ progress, level: levelFor(progress.readings), markRead, markMemorised, sessionAyat, merge: (b: Partial<Progress>) => setProgress((p) => mergeProgress(p, b)), reset: () => setProgress(EMPTY) }),
     [progress, markRead, markMemorised, sessionAyat],
   );
   return <C.Provider value={value}>{children}</C.Provider>;

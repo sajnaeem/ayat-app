@@ -20,24 +20,28 @@ Built with React Native and Expo (SDK 58), so one codebase runs on iPhone and An
 - You screen: level, ayat read this week, surahs completed, memorised, Juz' ʿAmma progress, saved ayat, language and reciter
 - Memorise mode: loop the recitation, hide words and recite from memory
 - Time check after 20 minutes of scrolling, with "Read in full" or "Take a break"
-- Accounts, like counts, reflections with reporting, and backup of saves and progress (once Supabase is connected)
+- Required accounts (Apple, Google, phone or email) with a display name; like counts, reflections with reporting, backup of saves and progress, sign out and delete account
 
 ## Connecting the database (Supabase)
 
-1. In Supabase, open **SQL Editor → New query**, paste everything in `supabase/schema.sql`, and press **Run**.
-2. In **Authentication → Sign In / Providers**, turn on **Allow anonymous sign-ins**. Everyone gets a private account automatically, with no email or password; a display name is asked for only when they first post a reflection.
-3. Put the project URL and publishable key in a file called `.env` in this folder:
+An account is required to use Ayat. People sign in with Apple (iPhone), Google, their phone number or email, then choose a display name.
 
-   ```
-   EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-   EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
-   ```
+1. **SQL Editor → New query**: run `supabase/schema.sql`, then run `supabase/002_accounts.sql`.
+2. **Authentication → Sign In / Providers**:
+   - **Allow anonymous sign-ins**: off.
+   - **Email**: on. For the beta, turn **Confirm email** off (Supabase's built-in email sender only allows a few emails an hour). Turn it back on once a custom email sender is set up.
+   - **Apple**: on. In **Client IDs** enter `host.exp.Exponent,com.ayat.app` (the first is Expo Go, the second is the real app).
+   - **Google**: on, with the Client ID and secret from a Google Cloud "Web application" OAuth client whose redirect URI is `https://<project>.supabase.co/auth/v1/callback`.
+   - **Phone**: needs an SMS provider such as Twilio (paid per text).
+3. **Authentication → URL Configuration → Redirect URLs**: add `ayat://**` and `exp://**`.
+4. `.env` in this folder holds the project URL and publishable key.
 
 Reported reflections: three reports from different people hides a reflection. Review them in **Table Editor → reflections** (filter `hidden = true`) and either delete the row or set `hidden` back to false.
 
+People can sign out and permanently delete their account from the You screen.
+
 ## Coming next
 
-- Sign in with Apple and Google, so an account follows you to a new phone
 - Quran Foundation API for text and audio, with word-by-word highlighting
 - Beta through TestFlight and Google Play closed testing
 

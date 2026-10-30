@@ -7,9 +7,11 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ChooseName, SignIn } from '@/components/SignIn';
 import { ToastProvider } from '@/components/Toast';
-import { AccountProvider } from '@/lib/account';
+import { AccountProvider, useAccount } from '@/lib/account';
 import { ProgressProvider } from '@/lib/progress';
 import { PrefsProvider, usePrefs } from '@/lib/store';
 import { usePalette } from '@/lib/theme';
@@ -19,6 +21,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 function Root() {
   const pal = usePalette();
   const { ready } = usePrefs();
+  const acct = useAccount();
   const [fontsLoaded, fontError] = useFonts({
     NotoNaskhArabic_400Regular,
     Literata_400Regular,
@@ -27,7 +30,7 @@ function Root() {
     BricolageGrotesque_600SemiBold,
     BricolageGrotesque_700Bold,
   });
-  const loaded = (fontsLoaded || !!fontError) && ready;
+  const loaded = (fontsLoaded || !!fontError) && ready && acct.status !== 'loading';
 
   useEffect(() => {
     // Recitation should still play when the phone's silent switch is on.
@@ -39,6 +42,24 @@ function Root() {
   }, [loaded]);
 
   if (!loaded) return null;
+
+  // An account is required: sign in first, then choose a display name, then the app.
+  let gate: React.ReactNode = null;
+  if (acct.status === 'signedOut') gate = <SignIn />;
+  else if (acct.status === 'signedIn' && !acct.profileLoaded)
+    gate = (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: pal.bg }}>
+        <ActivityIndicator color={pal.accent} />
+      </View>
+    );
+  else if (acct.status === 'signedIn' && !acct.handle) gate = <ChooseName />;
+  if (gate)
+    return (
+      <>
+        <StatusBar style={pal.dark ? 'light' : 'dark'} />
+        {gate}
+      </>
+    );
 
   return (
     <>

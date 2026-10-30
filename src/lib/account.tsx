@@ -1,3 +1,6 @@
+import * as AppleAuthentication from 'expo-apple-authentication';
+import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Progress, useProgress } from './progress';
 import { usePrefs } from './store';
@@ -6,12 +9,25 @@ import { supabase } from './supabase';
 export type Reflection = { id: string; user_id: string; body: string; created_at: string; handle: string };
 export type CardStats = Record<string, { likes: number; reflections: number }>;
 
+export type AuthStatus = 'loading' | 'signedOut' | 'signedIn' | 'offline';
+
 type Ctx = {
   /** True once the database is set up for this build. */
   online: boolean;
+  status: AuthStatus;
   userId: string | null;
   handle: string | null;
+  /** True once we know whether this account has a display name yet. */
+  profileLoaded: boolean;
   setHandle: (h: string) => Promise<void>;
+  signInWithApple: () => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  sendPhoneCode: (phone: string) => Promise<void>;
+  verifyPhoneCode: (phone: string, code: string) => Promise<void>;
+  signUpWithEmail: (email: string, password: string) => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   stats: CardStats;
   /** Fetches like and reflection counts for these cards. */
   loadStats: (keys: string[]) => void;
@@ -25,41 +41,67 @@ type Ctx = {
 
 const C = createContext<Ctx | null>(null);
 
+/** Turns a sign-in error into something a person can act on. */
+export function authMessage(e: unknown): string {
+  const m = String((e as { message?: string })?.message ?? e ?? '');
+  if (/canceled|cancelled|dismiss/i.test(m)) return '';
+  if (/provider is not enabled|Unsupported provider/i.test(m)) return "That sign-in option isn't switched on yet. Try another way for now.";
+  if (/Invalid login credentials/i.test(m)) return 'That email and password don\'t match. Check them and try again.';
+  if (/already registered|already been registered/i.test(m)) return 'There is already an account with that email. Log in instead.';
+  if (/Password should be at least/i.test(m)) return 'Use a password of at least 8 characters.';
+  if (/Token has expired|invalid.*otp|Invalid token/i.test(m)) return "That code didn't work. Check it, or send a new one.";
+  if (/Email not confirmed/i.test(m)) return 'Check your inbox and confirm your email first.';
+  if (/rate limit/i.test(m)) return 'Too many tries. Wait a few minutes and try again.';
+  if (/network|fetch/i.test(m)) return "Couldn't reach Ayat. Check your connection and try again.";
+  return m || 'Something went wrong. Please try again.';
+}
+
 /**
- * The person's account. Everyone gets a private account automatically on first launch (no email, no password),
- * so likes, saves and progress are backed up from the start. A display name is only asked for when they first post a reflection.
+ * The person's account. An account is required: people sign in with Apple, Google, their phone number or email,
+ * then choose a display name. Likes, saves and progress are backed up to the account.
  */
 export function AccountProvider({ children }: { children: ReactNode }) {
   const prefs = usePrefs();
   const prog = useProgress();
+  const [status, setStatus] = useState<AuthStatus>(supabase ? 'loading' : 'offline');
   const [userId, setUserId] = useState<string | null>(null);
   const [handle, setHandleState] = useState<string | null>(null);
+  const [profileLoaded, setProfileLoaded] = useState(false);
   const [stats, setStats] = useState<CardStats>({});
   const [myServerLikes, setMyServerLikes] = useState<Set<string>>(new Set());
   const synced = useRef(false);
   const serverLikes = useRef<Set<string>>(new Set());
 
-  // Sign in (creating a private account the first time), then pull what's stored and merge it with what's on the phone.
+  // Follow the session: restored on launch, then updated on sign-in and sign-out.
   useEffect(() => {
-    if (!supabase || !prefs.ready) return;
+    if (!supabase) return;
+    supabase.auth.getSession().then(({ data }) => {
+      setUserId(data.session?.user.id ?? null);
+      setStatus(data.session ? 'signedIn' : 'signedOut');
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUserId(session?.user.id ?? null);
+      setStatus(session ? 'signedIn' : 'signedOut');
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  // When someone signs in, pull what's stored on their account and merge it with what's on the phone.
+  useEffect(() => {
+    if (!supabase || !prefs.ready || !userId) return;
     let cancelled = false;
+    synced.current = false;
+    setProfileLoaded(false);
     (async () => {
-      let { data } = await supabase.auth.getSession();
-      if (!data.session) {
-        const res = await supabase.auth.signInAnonymously();
-        if (res.error || !res.data.session) return;
-        data = { session: res.data.session };
-      }
-      const uid = data.session!.user.id;
-      if (cancelled) return;
-      setUserId(uid);
+      const uid = userId;
       const [profile, state, likes] = await Promise.all([
         supabase.from('profiles').select('handle').eq('id', uid).maybeSingle(),
         supabase.from('user_state').select('saves, progress').eq('user_id', uid).maybeSingle(),
         supabase.from('likes').select('verse_key').eq('user_id', uid),
       ]);
       if (cancelled) return;
-      if (profile.data?.handle) setHandleState(profile.data.handle);
+      setHandleState(profile.data?.handle ?? null);
+      setProfileLoaded(!profile.error);
       if (state.data) {
         prefs.set({ saves: { ...(state.data.saves as Record<string, number>), ...prefs.saves } });
         prog.merge(state.data.progress as Partial<Progress>);
@@ -71,12 +113,85 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       mine.forEach((k) => (merged[k] = merged[k] ?? Date.now()));
       prefs.set({ likes: merged });
       synced.current = true;
-    })().catch(() => {});
+    })().catch(() => setProfileLoaded(true));
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prefs.ready]);
+  }, [prefs.ready, userId]);
+
+  /* ---------- sign-in methods ---------- */
+  const signInWithApple = useCallback(async () => {
+    if (!supabase) return;
+    const cred = await AppleAuthentication.signInAsync({
+      requestedScopes: [AppleAuthentication.AppleAuthenticationScope.FULL_NAME, AppleAuthentication.AppleAuthenticationScope.EMAIL],
+    });
+    if (!cred.identityToken) throw new Error('Apple did not return a sign-in token');
+    const { error } = await supabase.auth.signInWithIdToken({ provider: 'apple', token: cred.identityToken });
+    if (error) throw error;
+  }, []);
+
+  const signInWithGoogle = useCallback(async () => {
+    if (!supabase) return;
+    const redirectTo = Linking.createURL('auth-callback');
+    const { data, error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo, skipBrowserRedirect: true } });
+    if (error) throw error;
+    const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+    if (res.type !== 'success') throw new Error('cancelled');
+    const { queryParams } = Linking.parse(res.url);
+    const code = typeof queryParams?.code === 'string' ? queryParams.code : null;
+    const err = typeof queryParams?.error_description === 'string' ? queryParams.error_description : null;
+    if (!code) throw new Error(err ?? 'Google sign-in did not finish');
+    const ex = await supabase.auth.exchangeCodeForSession(code);
+    if (ex.error) throw ex.error;
+  }, []);
+
+  const sendPhoneCode = useCallback(async (phone: string) => {
+    if (!supabase) return;
+    const { error } = await supabase.auth.signInWithOtp({ phone });
+    if (error) throw error;
+  }, []);
+  const verifyPhoneCode = useCallback(async (phone: string, code: string) => {
+    if (!supabase) return;
+    const { error } = await supabase.auth.verifyOtp({ phone, token: code.trim(), type: 'sms' });
+    if (error) throw error;
+  }, []);
+
+  const signUpWithEmail = useCallback(async (email: string, password: string) => {
+    if (!supabase) return;
+    const { data, error } = await supabase.auth.signUp({ email: email.trim(), password });
+    if (error) throw error;
+    if (!data.session) throw new Error('Email not confirmed');
+  }, []);
+  const signInWithEmail = useCallback(async (email: string, password: string) => {
+    if (!supabase) return;
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    if (error) throw error;
+  }, []);
+
+  const clearLocal = useCallback(() => {
+    prefs.set({ likes: {}, saves: {} });
+    prog.reset();
+    serverLikes.current = new Set();
+    setMyServerLikes(new Set());
+    setHandleState(null);
+    setStats({});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefs.set, prog.reset]);
+
+  const signOut = useCallback(async () => {
+    if (!supabase) return;
+    await supabase.auth.signOut();
+    clearLocal();
+  }, [clearLocal]);
+
+  const deleteAccount = useCallback(async () => {
+    if (!supabase) return;
+    const { error } = await supabase.rpc('delete_my_account');
+    if (error) throw error;
+    await supabase.auth.signOut();
+    clearLocal();
+  }, [clearLocal]);
 
   // Likes: send additions and removals as they happen.
   useEffect(() => {
@@ -172,8 +287,12 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<Ctx>(
-    () => ({ online: !!supabase, userId, handle, setHandle, stats, loadStats, myServerLikes, listReflections, postReflection, deleteReflection, reportReflection }),
-    [userId, handle, setHandle, stats, loadStats, myServerLikes, listReflections, postReflection, deleteReflection, reportReflection],
+    () => ({
+      online: !!supabase, status, userId, handle, profileLoaded, setHandle,
+      signInWithApple, signInWithGoogle, sendPhoneCode, verifyPhoneCode, signUpWithEmail, signInWithEmail, signOut, deleteAccount,
+      stats, loadStats, myServerLikes, listReflections, postReflection, deleteReflection, reportReflection,
+    }),
+    [status, userId, handle, profileLoaded, setHandle, signInWithApple, signInWithGoogle, sendPhoneCode, verifyPhoneCode, signUpWithEmail, signInWithEmail, signOut, deleteAccount, stats, loadStats, myServerLikes, listReflections, postReflection, deleteReflection, reportReflection],
   );
   return <C.Provider value={value}>{children}</C.Provider>;
 }

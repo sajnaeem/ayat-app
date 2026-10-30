@@ -24,6 +24,7 @@ export default function You() {
   const acct = useAccount();
   const toast = useToast();
   const [name, setName] = useState(acct.handle ?? '');
+  const [confirmDelete, setConfirmDelete] = useState(false);
   useEffect(() => setName(acct.handle ?? ''), [acct.handle]);
   const saveName = async () => {
     if (name.trim().length < 2) return toast('Choose a display name of at least 2 letters');
@@ -145,7 +146,7 @@ export default function You() {
               </Pressable>
             </View>
             <Text style={[styles.small, { color: pal.muted }]}>
-              {acct.userId ? 'Your likes, saves and progress are backed up to your account automatically.' : 'Connecting your account…'}
+              Your likes, saves and progress are backed up to your account automatically.
             </Text>
           </>
         )}
@@ -163,6 +164,43 @@ export default function You() {
             <Option key={r.id} pal={pal} on={prefs.reciter === r.id} title={r.name} sub={r.note} onPress={() => prefs.set({ reciter: r.id })} />
           ))}
         </View>
+        {acct.online && (
+          <>
+            <Text style={[styles.h3, { color: pal.muted }]}>ACCOUNT</Text>
+            <Pressable onPress={() => acct.signOut()} style={[styles.saved, { borderColor: pal.line }]} accessibilityRole="button">
+              <Text style={[styles.savedText, { color: pal.text, fontFamily: fonts.uiSemi }]}>Sign out</Text>
+            </Pressable>
+            {!confirmDelete ? (
+              <Pressable onPress={() => setConfirmDelete(true)} style={styles.dangerLink} accessibilityRole="button">
+                <Text style={[styles.small, { color: pal.muted, textDecorationLine: 'underline' }]}>Delete my account</Text>
+              </Pressable>
+            ) : (
+              <View style={[styles.danger, { borderColor: '#B4432F' }]}>
+                <Text style={[styles.small, { color: pal.text }]}>
+                  This permanently deletes your account, progress, saved ayat, likes and reflections. It can't be undone.
+                </Text>
+                <View style={styles.nameRow}>
+                  <Pressable onPress={() => setConfirmDelete(false)} style={[styles.save, { backgroundColor: pal.surface, borderWidth: 1, borderColor: pal.line, flex: 1, paddingVertical: 12 }]} accessibilityRole="button">
+                    <Text style={[styles.saveText, { color: pal.text, textAlign: 'center' }]}>Keep it</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={async () => {
+                      try {
+                        await acct.deleteAccount();
+                      } catch {
+                        toast("Couldn't delete — check your connection and try again");
+                      }
+                    }}
+                    style={[styles.save, { backgroundColor: '#B4432F', flex: 1, paddingVertical: 12 }]}
+                    accessibilityRole="button"
+                  >
+                    <Text style={[styles.saveText, { color: '#FFFFFF', textAlign: 'center' }]}>Delete forever</Text>
+                  </Pressable>
+                </View>
+              </View>
+            )}
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -218,6 +256,8 @@ const styles = StyleSheet.create({
   savedText: { fontFamily: fonts.read, fontSize: 15, flex: 1 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   nameRow: { flexDirection: 'row', gap: 8 },
+  dangerLink: { alignSelf: 'flex-start', paddingVertical: 6 },
+  danger: { borderWidth: 1, borderRadius: 10, padding: 12, gap: 10 },
   input: { flex: 1, fontFamily: fonts.ui, fontSize: 15, borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11 },
   save: { borderRadius: 10, paddingHorizontal: 18, justifyContent: 'center' },
   saveText: { fontFamily: fonts.uiBold, fontSize: 15 },

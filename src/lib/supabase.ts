@@ -9,7 +9,7 @@ const key = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 export const supabase: SupabaseClient | null =
   url && key
     ? createClient(url, key, {
-        auth: { storage: localStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false },
+        auth: { storage: localStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false, flowType: 'pkce' },
       })
     : null;
 
