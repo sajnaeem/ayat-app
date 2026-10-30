@@ -12,6 +12,10 @@ type Prefs = {
   sound: boolean;
   likes: Record<string, number>;
   saves: Record<string, number>;
+  /** Daily check-in: off until the person says yes. Time is local. */
+  reminders: { on: boolean; hour: number; minute: number; friday: boolean };
+  /** Whether we've already offered reminders (so we ask once). */
+  remindersOffered: boolean;
 };
 
 const DEFAULTS: Prefs = {
@@ -23,6 +27,8 @@ const DEFAULTS: Prefs = {
   sound: true,
   likes: {},
   saves: {},
+  reminders: { on: false, hour: 19, minute: 0, friday: true },
+  remindersOffered: false,
 };
 
 const KEY = 'ayat.prefs.v1';

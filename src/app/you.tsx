@@ -9,6 +9,7 @@ import { useAccount } from '@/lib/account';
 import { RECITERS } from '@/lib/audio';
 import { dayKey, surahDone, useProgress } from '@/lib/progress';
 import { LANGS, LEVELS, SURAHS, VERSES } from '@/lib/quran';
+import { askPermission, REMINDER_TIMES } from '@/lib/reminders';
 import { usePrefs } from '@/lib/store';
 import { fonts, Palette, usePalette } from '@/lib/theme';
 
@@ -153,6 +154,45 @@ export default function You() {
           </>
         )}
 
+        <Text style={[styles.h3, { color: pal.muted }]}>DAILY REMINDER</Text>
+        <View style={styles.grid}>
+          <Option
+            pal={pal}
+            on={!prefs.reminders.on}
+            title="Off"
+            sub="No reminders"
+            onPress={() => prefs.set({ remindersOffered: true, reminders: { ...prefs.reminders, on: false } })}
+          />
+          {REMINDER_TIMES.map((t) => (
+            <Option
+              key={t.label}
+              pal={pal}
+              on={prefs.reminders.on && prefs.reminders.hour === t.hour && prefs.reminders.minute === t.minute}
+              title={t.label}
+              sub={t.sub}
+              onPress={async () => {
+                const ok = await askPermission();
+                if (!ok) return toast('Notifications are off for Munib. You can allow them in iPhone Settings.');
+                prefs.set({ remindersOffered: true, reminders: { ...prefs.reminders, on: true, hour: t.hour, minute: t.minute } });
+                toast(`Daily reminder set for ${t.sub}`);
+              }}
+            />
+          ))}
+        </View>
+        {prefs.reminders.on && (
+          <Pressable
+            onPress={() => prefs.set({ reminders: { ...prefs.reminders, friday: !prefs.reminders.friday } })}
+            style={[styles.saved, { borderColor: pal.line }]}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: prefs.reminders.friday }}
+          >
+            <Text style={[styles.savedText, { color: pal.text, fontFamily: fonts.ui }]}>On Fridays, remind me to read Surah al-Kahf</Text>
+            <View style={[styles.check, { borderColor: prefs.reminders.friday ? pal.accent : pal.line, backgroundColor: prefs.reminders.friday ? pal.accent : 'transparent' }]}>
+              {prefs.reminders.friday && <Text style={{ color: pal.onAccent, fontFamily: fonts.uiBold, fontSize: 13 }}>✓</Text>}
+            </View>
+          </Pressable>
+        )}
+
         <Text style={[styles.h3, { color: pal.muted }]}>TRANSLATION</Text>
         <View style={styles.grid}>
           {LANGS.map((l) => (
@@ -258,6 +298,7 @@ const styles = StyleSheet.create({
   savedText: { fontFamily: fonts.read, fontSize: 15, flex: 1 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   nameRow: { flexDirection: 'row', gap: 8 },
+  check: { width: 24, height: 24, borderRadius: 6, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   dangerLink: { alignSelf: 'flex-start', paddingVertical: 6 },
   danger: { borderWidth: 1, borderRadius: 10, padding: 12, gap: 10 },
   input: { flex: 1, fontFamily: fonts.ui, fontSize: 15, borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11 },

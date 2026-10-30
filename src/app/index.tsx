@@ -1,8 +1,9 @@
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
+import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Modal, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { AppState, FlatList, Modal, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
 import { ReflectionsSheet } from '@/components/Reflections';
@@ -13,6 +14,7 @@ import { ayahAudioUrl } from '@/lib/audio';
 import { ayahKeys, feedRound, interleave, ladderCards, LEVELS, MOODS, MoodId, SURAHS, translationFor, Verse } from '@/lib/quran';
 import { useAccount } from '@/lib/account';
 import { dayKey, useProgress } from '@/lib/progress';
+import { askPermission, REMINDER_TIMES, ReminderData, scheduleReminders } from '@/lib/reminders';
 import { usePrefs } from '@/lib/store';
 import { fonts, mix, Palette, usePalette } from '@/lib/theme';
 
@@ -108,7 +110,8 @@ export default function Feed() {
   const toast = useToast();
   const [height, setHeight] = useState(0);
   const [active, setActive] = useState(0);
-  const [sheet, setSheet] = useState<null | 'mood' | 'context'>(prefs.onboarded ? null : 'mood');
+  const [sheet, setSheet] = useState<null | 'mood' | 'context' | 'remind'>(prefs.onboarded ? null : 'mood');
+  const [remindAt, setRemindAt] = useState(2);
   const [contextVerse, setContextVerse] = useState<Verse | null>(null);
   const [resting, setResting] = useState(false);
   const [repeat, setRepeat] = useState<Record<string, number>>({});
@@ -248,6 +251,45 @@ export default function Feed() {
     stop();
     router.push({ pathname: '/surah/[id]', params: { id: String(s), from: String(from), to: String(to || from) } });
   };
+
+  /* ---------- daily check-in ---------- */
+  // Re-plan the next week of reminders whenever the app opens or the settings change.
+  const progRef = useRef(prog.progress);
+  progRef.current = prog.progress;
+  useEffect(() => {
+    const plan = () => scheduleReminders({ ...prefs.reminders, lang: prefs.lang, progress: progRef.current }).catch(() => {});
+    plan();
+    const sub = AppState.addEventListener('change', (st) => st === 'active' && plan());
+    return () => sub.remove();
+  }, [prefs.reminders, prefs.lang]);
+
+  // Offer reminders once, after someone has read a few cards and is having a good moment.
+  useEffect(() => {
+    if (!prefs.remindersOffered && !prefs.reminders.on && prog.progress.readings >= 5 && sheet === null && !resting) setSheet('remind');
+  }, [prog.progress.readings, prefs.remindersOffered, prefs.reminders.on, sheet, resting]);
+
+  const acceptReminders = async () => {
+    const t = REMINDER_TIMES[remindAt];
+    const ok = await askPermission();
+    prefs.set({ remindersOffered: true, reminders: { ...prefs.reminders, on: ok, hour: t.hour, minute: t.minute } });
+    setSheet(null);
+    toast(ok ? `Daily reminder set for ${t.sub}` : 'Notifications are off for Munib. You can allow them in iPhone Settings.');
+  };
+
+  // Tapping a reminder opens the mood check-in, or the surah it mentioned.
+  const lastResponse = Notifications.useLastNotificationResponse();
+  const handled = useRef<string | null>(null);
+  useEffect(() => {
+    if (!lastResponse || lastResponse.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return;
+    const id = lastResponse.notification.request.identifier;
+    if (handled.current === id) return;
+    handled.current = id;
+    const data = lastResponse.notification.request.content.data as unknown as ReminderData | undefined;
+    if (data?.to === 'surah') openSurah(data.s, data.a ?? 1);
+    else setSheet('mood');
+    Notifications.clearLastNotificationResponseAsync().catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastResponse]);
   const setRepeatFor = (item: VerseItem, n: number) => {
     setRepeat((r) => ({ ...r, [item.key]: n }));
     if (n > 1) startCard(item, n);
@@ -369,6 +411,29 @@ export default function Feed() {
         </View>
         <Pressable onPress={() => { prefs.set({ mood: null, onboarded: true }); setSheet(null); }} style={styles.skip} accessibilityRole="button">
           <Text style={[styles.skipText, { color: pal.muted }]}>Just let me scroll</Text>
+        </Pressable>
+      </Sheet>
+
+      <Sheet visible={sheet === 'remind'} onClose={() => { prefs.set({ remindersOffered: true }); setSheet(null); }} title="A gentle daily reminder?" pal={pal}>
+        <Text style={[styles.lead, { color: pal.muted }]}>
+          Once a day, a short check-in: how your heart is, or an ayah to carry with you. Never more than one a day, and you can change or stop it any time.
+        </Text>
+        <View style={styles.grid}>
+          {REMINDER_TIMES.map((t, i) => {
+            const on = remindAt === i;
+            return (
+              <Pressable key={t.label} onPress={() => setRemindAt(i)} style={[styles.opt, { borderColor: on ? pal.accent : pal.line, borderWidth: on ? 2 : 1 }]} accessibilityRole="button" accessibilityState={{ selected: on }}>
+                <Text style={[styles.optTitle, { color: pal.text }]}>{t.label}</Text>
+                <Text style={[styles.optSub, { color: pal.muted }]}>{t.sub}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        <Pressable onPress={acceptReminders} style={[styles.primary, { backgroundColor: pal.text, marginTop: 8 }]} accessibilityRole="button">
+          <Text style={[styles.primaryText, { color: pal.bg }]}>Yes, remind me</Text>
+        </Pressable>
+        <Pressable onPress={() => { prefs.set({ remindersOffered: true }); setSheet(null); }} style={styles.skip} accessibilityRole="button">
+          <Text style={[styles.skipText, { color: pal.muted }]}>Not now</Text>
         </Pressable>
       </Sheet>
 
