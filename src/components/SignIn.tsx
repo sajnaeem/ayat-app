@@ -4,6 +4,7 @@ import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollVie
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { authMessage, useAccount } from '@/lib/account';
 import { fonts, usePalette } from '@/lib/theme';
+import { NameMeaning } from './NameMeaning';
 import { useToast } from './Toast';
 
 type Mode = 'choose' | 'phone' | 'email';
@@ -220,6 +221,7 @@ export function ChooseName() {
           style={[styles.input, { color: pal.text, borderColor: pal.line, backgroundColor: pal.surface, marginTop: 8 }]}
           accessibilityLabel="Display name"
         />
+        <NameMeaning name={name} pal={pal} />
         <Pressable onPress={save} disabled={!ok || busy} style={[styles.btn, { backgroundColor: pal.text, opacity: ok && !busy ? 1 : 0.4 }]} accessibilityRole="button">
           <Text style={[styles.btnText, { color: pal.bg }]}>{busy ? 'Saving…' : 'Continue'}</Text>
         </Pressable>

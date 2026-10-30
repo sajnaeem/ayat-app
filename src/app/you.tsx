@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
+import { NameMeaning } from '@/components/NameMeaning';
 import { useToast } from '@/components/Toast';
 import { useAccount } from '@/lib/account';
 import { RECITERS } from '@/lib/audio';
@@ -145,6 +146,7 @@ export default function You() {
                 <Text style={[styles.saveText, { color: pal.bg }]}>Save</Text>
               </Pressable>
             </View>
+            {!!acct.handle && <NameMeaning name={acct.handle} pal={pal} onOpenAyah={(s, a) => router.push({ pathname: '/surah/[id]', params: { id: String(s), from: String(a), to: String(a) } })} />}
             <Text style={[styles.small, { color: pal.muted }]}>
               Your likes, saves and progress are backed up to your account automatically.
             </Text>
