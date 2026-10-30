@@ -52,7 +52,7 @@ export function authMessage(e: unknown): string {
   if (/Token has expired|invalid.*otp|Invalid token/i.test(m)) return "That code didn't work. Check it, or send a new one.";
   if (/Email not confirmed/i.test(m)) return 'Check your inbox and confirm your email first.';
   if (/rate limit/i.test(m)) return 'Too many tries. Wait a few minutes and try again.';
-  if (/network|fetch/i.test(m)) return "Couldn't reach Ayat. Check your connection and try again.";
+  if (/network|fetch/i.test(m)) return "Couldn't reach Munib. Check your connection and try again.";
   return m || 'Something went wrong. Please try again.';
 }
 

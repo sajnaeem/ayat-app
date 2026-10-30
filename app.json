@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "Ayat",
-    "slug": "ayat-app",
+    "name": "Munib",
+    "slug": "munib",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.ayat.app",
+      "bundleIdentifier": "app.munib",
       "usesAppleSignIn": true
     },
     "android": {
@@ -19,7 +19,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.ayat.app"
+      "package": "app.munib"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -34,7 +34,7 @@
       "expo-web-browser",
       "expo-apple-authentication"
     ],
-    "scheme": "ayat",
+    "scheme": "munib",
     "experiments": {
       "typedRoutes": true
     }

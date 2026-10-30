@@ -242,7 +242,7 @@ export default function Feed() {
   };
   const share = (v: Verse) => {
     const tr = translationFor(v, prefs.lang) ?? [];
-    Share.share({ message: `${v.ar.map(([t]) => t).join(' ')}\n\n${tr.join(' ')}\n— Quran ${v.k}\n\nShared from Ayat` }).catch(() => {});
+    Share.share({ message: `${v.ar.map(([t]) => t).join(' ')}\n\n${tr.join(' ')}\n— Quran ${v.k}\n\nShared from Munib` }).catch(() => {});
   };
   const openSurah = (s: number, from = 1, to = 0) => {
     stop();
@@ -425,7 +425,7 @@ function TopBar(p: { pal: Palette; top: number; moodLabel: string; showTl: boole
   return (
     <View style={[styles.top, { paddingTop: p.top + 10 }]} pointerEvents="box-none">
       <Text style={[styles.brand, { color: pal.text }]}>
-        ayat<Text style={{ color: pal.accent }}>.</Text>
+        munib<Text style={{ color: pal.accent }}>.</Text>
       </Text>
       <View style={styles.topRight}>
         <Pressable onPress={p.onMood} style={[pill, { maxWidth: 124 }]} accessibilityRole="button" accessibilityLabel="Change what's on your heart">

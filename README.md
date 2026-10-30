@@ -1,4 +1,6 @@
-# Ayat
+# Munib · مُنِيب
+
+*One who turns back to Allah* (Quran 50:33).
 
 A short-form Quran app for people whose attention has been shaped by TikTok, Instagram and YouTube. It looks and scrolls like a social feed, but every card is an ayah, and the app slowly stretches attention from single ayat to whole surahs.
 
@@ -24,16 +26,16 @@ Built with React Native and Expo (SDK 58), so one codebase runs on iPhone and An
 
 ## Connecting the database (Supabase)
 
-An account is required to use Ayat. People sign in with Apple (iPhone), Google, their phone number or email, then choose a display name.
+An account is required to use Munib. People sign in with Apple (iPhone), Google, their phone number or email, then choose a display name.
 
 1. **SQL Editor → New query**: run `supabase/schema.sql`, then run `supabase/002_accounts.sql`.
 2. **Authentication → Sign In / Providers**:
    - **Allow anonymous sign-ins**: off.
    - **Email**: on. For the beta, turn **Confirm email** off (Supabase's built-in email sender only allows a few emails an hour). Turn it back on once a custom email sender is set up.
-   - **Apple**: on. In **Client IDs** enter `host.exp.Exponent,com.ayat.app` (the first is Expo Go, the second is the real app).
+   - **Apple**: on. In **Client IDs** enter `host.exp.Exponent,app.munib` (the first is Expo Go, the second is the real app).
    - **Google**: on, with the Client ID and secret from a Google Cloud "Web application" OAuth client whose redirect URI is `https://<project>.supabase.co/auth/v1/callback`.
    - **Phone**: needs an SMS provider such as Twilio (paid per text).
-3. **Authentication → URL Configuration → Redirect URLs**: add `ayat://**` and `exp://**`.
+3. **Authentication → URL Configuration → Redirect URLs**: add `munib://**` and `exp://**`.
 4. `.env` in this folder holds the project URL and publishable key.
 
 Reported reflections: three reports from different people hides a reflection. Review them in **Table Editor → reflections** (filter `hidden = true`) and either delete the row or set `hidden` back to false.

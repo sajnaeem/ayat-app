@@ -61,7 +61,10 @@ export function SignIn() {
         <View style={styles.hero}>
           <Text style={[styles.bism, { color: pal.accent }]}>بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ</Text>
           <Text style={[styles.brand, { color: pal.text }]}>
-            ayat<Text style={{ color: pal.accent }}>.</Text>
+            munib<Text style={{ color: pal.accent }}>.</Text>
+          </Text>
+          <Text style={[styles.meaning, { color: pal.muted }]}>
+            <Text style={{ fontFamily: 'NotoNaskhArabic_400Regular', color: pal.accent }}>مُنِيب</Text>  ·  one who turns back to Allah (50:33)
           </Text>
           <Text style={[styles.tag, { color: pal.muted }]}>Scroll the Quran. A little further every day.</Text>
         </View>
@@ -176,7 +179,7 @@ export function SignIn() {
         {busy && <ActivityIndicator color={pal.accent} style={{ marginTop: 12 }} />}
 
         <Text style={[styles.fine, { color: pal.muted, textAlign: 'center', marginTop: 'auto' }]}>
-          Ayat is free. Your account keeps your progress, saved ayat and reflections safe across phones.
+          Munib is free. Your account keeps your progress, saved ayat and reflections safe across phones.
         </Text>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -238,6 +241,7 @@ const styles = StyleSheet.create({
   hero: { alignItems: 'center', gap: 6, marginBottom: 28 },
   bism: { fontFamily: 'NotoNaskhArabic_400Regular', fontSize: 24, lineHeight: 48, textAlign: 'center' },
   brand: { fontFamily: fonts.uiBold, fontSize: 52, letterSpacing: -1.5 },
+  meaning: { fontFamily: fonts.ui, fontSize: 14, textAlign: 'center', marginBottom: 4 },
   tag: { fontFamily: fonts.read, fontSize: 16, lineHeight: 23, textAlign: 'center' },
   title: { fontFamily: fonts.uiBold, fontSize: 30, letterSpacing: -0.6, lineHeight: 35 },
   stack: { gap: 10 },
