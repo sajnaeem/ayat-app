@@ -1,7 +1,10 @@
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
+import { useToast } from '@/components/Toast';
+import { useAccount } from '@/lib/account';
 import { RECITERS } from '@/lib/audio';
 import { dayKey, surahDone, useProgress } from '@/lib/progress';
 import { LANGS, LEVELS, SURAHS, VERSES } from '@/lib/quran';
@@ -18,6 +21,19 @@ export default function You() {
   const router = useRouter();
   const prefs = usePrefs();
   const { progress, level } = useProgress();
+  const acct = useAccount();
+  const toast = useToast();
+  const [name, setName] = useState(acct.handle ?? '');
+  useEffect(() => setName(acct.handle ?? ''), [acct.handle]);
+  const saveName = async () => {
+    if (name.trim().length < 2) return toast('Choose a display name of at least 2 letters');
+    try {
+      await acct.setHandle(name);
+      toast('Name saved');
+    } catch {
+      toast("Couldn't save — check your connection and try again");
+    }
+  };
 
   const cur = LEVELS[level - 1];
   const next = LEVELS[level];
@@ -111,6 +127,29 @@ export default function You() {
           </View>
         )}
 
+        {acct.online && (
+          <>
+            <Text style={[styles.h3, { color: pal.muted }]}>DISPLAY NAME</Text>
+            <View style={styles.nameRow}>
+              <TextInput
+                value={name}
+                onChangeText={setName}
+                placeholder="Shown on your reflections"
+                placeholderTextColor={pal.muted}
+                maxLength={32}
+                style={[styles.input, { color: pal.text, borderColor: pal.line, backgroundColor: pal.surface }]}
+                accessibilityLabel="Display name"
+              />
+              <Pressable onPress={saveName} style={[styles.save, { backgroundColor: pal.text }]} accessibilityRole="button">
+                <Text style={[styles.saveText, { color: pal.bg }]}>Save</Text>
+              </Pressable>
+            </View>
+            <Text style={[styles.small, { color: pal.muted }]}>
+              {acct.userId ? 'Your likes, saves and progress are backed up to your account automatically.' : 'Connecting your account…'}
+            </Text>
+          </>
+        )}
+
         <Text style={[styles.h3, { color: pal.muted }]}>TRANSLATION</Text>
         <View style={styles.grid}>
           {LANGS.map((l) => (
@@ -178,6 +217,10 @@ const styles = StyleSheet.create({
   savedKey: { fontFamily: fonts.uiBold, fontSize: 13, fontVariant: ['tabular-nums'] },
   savedText: { fontFamily: fonts.read, fontSize: 15, flex: 1 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  nameRow: { flexDirection: 'row', gap: 8 },
+  input: { flex: 1, fontFamily: fonts.ui, fontSize: 15, borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11 },
+  save: { borderRadius: 10, paddingHorizontal: 18, justifyContent: 'center' },
+  saveText: { fontFamily: fonts.uiBold, fontSize: 15 },
   opt: { flexBasis: '47%', flexGrow: 1, borderRadius: 10, padding: 12, gap: 3 },
   optTitle: { fontFamily: fonts.uiSemi, fontSize: 15 },
 });

@@ -33,6 +33,10 @@ type Props = {
   repeatLabel: string | null;
   onRepeat: (n: number) => void;
   onMemorised: () => void;
+  likeCount: number | null;
+  reflectionCount: number | null;
+  /** Null when reflections aren't available (no database yet). */
+  onReflections: (() => void) | null;
 };
 
 const EASE = Easing.bezier(0.2, 0.7, 0.2, 1);
@@ -292,9 +296,14 @@ export const VerseCard = memo(function VerseCard(props: Props) {
       </ScrollView>
 
       <View style={[styles.rail, { bottom: bottomInset + 28 }]}>
-        <RailButton p={p} i={0} label="Like" onPress={props.onLike} color={liked ? tone.accent : text}>
+        <RailButton p={p} i={0} label={props.likeCount != null ? String(props.likeCount) : 'Like'} a11y="Like" onPress={props.onLike} color={liked ? tone.accent : text}>
           <Icon name="heart" size={27} color={liked ? tone.accent : text} fill={liked} />
         </RailButton>
+        {props.onReflections && (
+          <RailButton p={p} i={1} label={props.reflectionCount ? String(props.reflectionCount) : 'Reflect'} a11y="Reflections" onPress={props.onReflections} color={text}>
+            <Icon name="chat" size={27} color={text} />
+          </RailButton>
+        )}
         <RailButton p={p} i={1} label={saved ? 'Saved' : 'Save'} onPress={props.onSave} color={saved ? tone.accent : text}>
           <Icon name="save" size={27} color={saved ? tone.accent : text} fill={saved} />
         </RailButton>
@@ -313,10 +322,10 @@ export const VerseCard = memo(function VerseCard(props: Props) {
   );
 });
 
-function RailButton({ p, i, label, onPress, color, children }: { p: SharedValue<number>; i: number; label: string; onPress: () => void; color: string; children: ReactNode }) {
+function RailButton({ p, i, label, a11y, onPress, color, children }: { p: SharedValue<number>; i: number; label: string; a11y?: string; onPress: () => void; color: string; children: ReactNode }) {
   return (
     <Reveal p={p} start={i * 50} dur={450} dx={10} dy={0}>
-      <Pressable onPress={onPress} style={styles.railBtn} accessibilityRole="button" accessibilityLabel={label} hitSlop={6}>
+      <Pressable onPress={onPress} style={styles.railBtn} accessibilityRole="button" accessibilityLabel={a11y ? `${a11y}, ${label}` : label} hitSlop={6}>
         {children}
         <Text style={[styles.railLabel, { color }]}>{label}</Text>
       </Pressable>
@@ -343,7 +352,7 @@ const styles = StyleSheet.create({
   tools: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tool: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, minHeight: 40 },
   toolText: { fontFamily: fonts.uiSemi, fontSize: 13 },
-  rail: { position: 'absolute', right: 10, alignItems: 'center', gap: 16 },
+  rail: { position: 'absolute', right: 10, alignItems: 'center', gap: 12 },
   railBtn: { alignItems: 'center', gap: 3, minWidth: 52, minHeight: 44 },
   railLabel: { fontFamily: fonts.uiSemi, fontSize: 11 },
   playSquare: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },

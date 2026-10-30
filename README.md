@@ -4,7 +4,7 @@ A short-form Quran app for people whose attention has been shaped by TikTok, Ins
 
 Built with React Native and Expo (SDK 58), so one codebase runs on iPhone and Android.
 
-## What works today (week 1)
+## What works today
 
 - Endless vertical feed of ayat in the Quiet Modern style, with five alternating colour tones
 - Entrance animation as each card lands: the Arabic appears word by word, right to left
@@ -16,12 +16,30 @@ Built with React Native and Expo (SDK 58), so one codebase runs on iPhone and An
 - Keep reading: opens the whole surah at the ayah you were on
 - Context notes on curated ayat
 - Light and dark mode
+- Attention ladder: passages, short surahs and longer readings join the feed as you read more
+- You screen: level, ayat read this week, surahs completed, memorised, Juz' ʿAmma progress, saved ayat, language and reciter
+- Memorise mode: loop the recitation, hide words and recite from memory
+- Time check after 20 minutes of scrolling, with "Read in full" or "Take a break"
+- Accounts, like counts, reflections with reporting, and backup of saves and progress (once Supabase is connected)
+
+## Connecting the database (Supabase)
+
+1. In Supabase, open **SQL Editor → New query**, paste everything in `supabase/schema.sql`, and press **Run**.
+2. In **Authentication → Sign In / Providers**, turn on **Allow anonymous sign-ins**. Everyone gets a private account automatically, with no email or password; a display name is asked for only when they first post a reflection.
+3. Put the project URL and publishable key in a file called `.env` in this folder:
+
+   ```
+   EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+   EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+   ```
+
+Reported reflections: three reports from different people hides a reflection. Review them in **Table Editor → reflections** (filter `hidden = true`) and either delete the row or set `hidden` back to false.
 
 ## Coming next
 
-- Week 2: accounts (Sign in with Apple and Google), reflections (comments), likes and saves synced to your account
-- Week 3: attention ladder, progress screen, memorise mode, time-check off-ramp
-- Week 4: polish, then beta through TestFlight and Google Play closed testing
+- Sign in with Apple and Google, so an account follows you to a new phone
+- Quran Foundation API for text and audio, with word-by-word highlighting
+- Beta through TestFlight and Google Play closed testing
 
 ## Try it on your phone
 

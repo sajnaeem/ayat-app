@@ -5,11 +5,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, Modal, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
+import { ReflectionsSheet } from '@/components/Reflections';
 import { Sheet } from '@/components/Sheet';
 import { useToast } from '@/components/Toast';
 import { VerseCard } from '@/components/VerseCard';
 import { ayahAudioUrl } from '@/lib/audio';
 import { ayahKeys, feedRound, interleave, ladderCards, LEVELS, MOODS, MoodId, SURAHS, translationFor, Verse } from '@/lib/quran';
+import { useAccount } from '@/lib/account';
 import { dayKey, useProgress } from '@/lib/progress';
 import { usePrefs } from '@/lib/store';
 import { fonts, mix, Palette, usePalette } from '@/lib/theme';
@@ -111,6 +113,8 @@ export default function Feed() {
   const [resting, setResting] = useState(false);
   const [repeat, setRepeat] = useState<Record<string, number>>({});
   const listRef = useRef<FlatList<Item>>(null);
+  const acct = useAccount();
+  const [reflectFor, setReflectFor] = useState<Verse | null>(null);
 
   const { items, setItems, reset, more, refreshAhead } = useEndlessFeed(prefs.mood);
 
@@ -222,6 +226,14 @@ export default function Feed() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, items.length, sheet === 'mood', resting]);
 
+  // Like and reflection counts for the cards around the one on screen.
+  useEffect(() => {
+    if (!acct.online) return;
+    const keys = items.slice(Math.max(0, active - 1), active + 4).flatMap((x) => (x.kind === 'verse' ? [x.v.k] : []));
+    acct.loadStats(keys);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, items.length, acct.online]);
+
   /* ---------- actions ---------- */
   const like = (k: string, viaDoubleTap = false) => {
     if (viaDoubleTap && prefs.likes[k]) return;
@@ -302,6 +314,9 @@ export default function Feed() {
                 repeat={reps}
                 repeatLabel={isPlaying && playing!.passes > 1 ? `${playing!.pass} of ${playing!.passes}` : null}
                 onRepeat={(n) => setRepeatFor(item, n)}
+                likeCount={acct.stats[item.v.k]?.likes ?? null}
+                reflectionCount={acct.stats[item.v.k]?.reflections ?? null}
+                onReflections={acct.online ? () => setReflectFor(item.v) : null}
                 onMemorised={() => {
                   prog.markMemorised(ayahKeys(item.v));
                   toast(`${item.v.k} marked as memorised`);
@@ -361,6 +376,8 @@ export default function Feed() {
         <Text style={[styles.note, { color: pal.text }]}>{contextVerse?.note}</Text>
         <Text style={[styles.optSub, { color: pal.muted }]}>Summary drawn from classical tafsir. The launch version will show a licensed tafsir with full citations.</Text>
       </Sheet>
+
+      <ReflectionsSheet verseKey={reflectFor?.k ?? null} title={reflectFor ? `${reflectFor.name} ${reflectFor.k.replace('-', '–')}` : ''} pal={pal} onClose={() => setReflectFor(null)} />
 
       <Modal visible={resting} animationType="fade" onRequestClose={() => setResting(false)}>
         <View style={[styles.rest, { backgroundColor: pal.bg, paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}>

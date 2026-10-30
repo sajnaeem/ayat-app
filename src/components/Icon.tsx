@@ -12,6 +12,8 @@ const PATHS = {
   sliders: 'M3 5h12M3 12h8M3 19h12M18 3v4M18 10v4M18 17v4M15 5h6M11 12h10M15 19h6',
   close: 'M6 6l12 12M18 6L6 18',
   info: 'M12 8h.01M11 12h1v5h1 M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z',
+  chat: 'M4 5h16v11H9l-5 4z',
+  flag: 'M5 21V4h11l-1.5 4L16 12H5',
   user: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M4 20c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5',
 } as const;
 

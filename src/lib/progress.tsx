@@ -15,6 +15,13 @@ const KEY = 'ayat.progress.v1';
 
 export const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
+/** Combines two records of progress without losing anything from either. */
+export function mergeProgress(a: Progress, b: Partial<Progress>): Progress {
+  const days = { ...a.days };
+  for (const [d, n] of Object.entries(b.days ?? {})) days[d] = Math.max(days[d] ?? 0, n);
+  return { readings: Math.max(a.readings, b.readings ?? 0), ayat: { ...a.ayat, ...(b.ayat ?? {}) }, days, mem: { ...a.mem, ...(b.mem ?? {}) } };
+}
+
 export function surahDone(p: Progress, s: number) {
   const n = SURAHS[s - 1][3];
   for (let i = 1; i <= n; i++) if (!p.ayat[`${s}:${i}`]) return false;
@@ -30,7 +37,8 @@ type Ctx = {
   markMemorised: (keys: string[]) => void;
   /** Ayat read since the app opened. */
   sessionAyat: number;
-  replace: (p: Progress) => void;
+  /** Merges progress from elsewhere (the account backup) into what's on the phone. */
+  merge: (p: Partial<Progress>) => void;
 };
 
 const C = createContext<Ctx | null>(null);
@@ -44,7 +52,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     AsyncStorage.getItem(KEY)
-      .then((raw) => raw && setProgress({ ...EMPTY, ...JSON.parse(raw) }))
+      .then((raw) => raw && setProgress((p) => mergeProgress(p, JSON.parse(raw))))
       .catch(() => {})
       .finally(() => (loaded.current = true));
   }, []);
@@ -81,7 +89,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<Ctx>(
-    () => ({ progress, level: levelFor(progress.readings), markRead, markMemorised, sessionAyat, replace: setProgress }),
+    () => ({ progress, level: levelFor(progress.readings), markRead, markMemorised, sessionAyat, merge: (b: Partial<Progress>) => setProgress((p) => mergeProgress(p, b)) }),
     [progress, markRead, markMemorised, sessionAyat],
   );
   return <C.Provider value={value}>{children}</C.Provider>;

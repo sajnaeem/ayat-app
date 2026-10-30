@@ -9,6 +9,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ToastProvider } from '@/components/Toast';
+import { AccountProvider } from '@/lib/account';
 import { ProgressProvider } from '@/lib/progress';
 import { PrefsProvider, usePrefs } from '@/lib/store';
 import { usePalette } from '@/lib/theme';
@@ -56,9 +57,11 @@ export default function Layout() {
     <SafeAreaProvider>
       <PrefsProvider>
         <ProgressProvider>
-          <ToastProvider>
-            <Root />
-          </ToastProvider>
+          <AccountProvider>
+            <ToastProvider>
+              <Root />
+            </ToastProvider>
+          </AccountProvider>
         </ProgressProvider>
       </PrefsProvider>
     </SafeAreaProvider>
