@@ -1,0 +1,183 @@
+import { useRouter } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Icon } from '@/components/Icon';
+import { RECITERS } from '@/lib/audio';
+import { dayKey, surahDone, useProgress } from '@/lib/progress';
+import { LANGS, LEVELS, SURAHS, VERSES } from '@/lib/quran';
+import { usePrefs } from '@/lib/store';
+import { fonts, Palette, usePalette } from '@/lib/theme';
+
+/** Juz' ʿAmma: surahs 78–114, 564 ayat. */
+const JUZ_AMMA_FIRST = 78;
+const JUZ_AMMA_AYAT = 564;
+
+export default function You() {
+  const pal = usePalette();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const prefs = usePrefs();
+  const { progress, level } = useProgress();
+
+  const cur = LEVELS[level - 1];
+  const next = LEVELS[level];
+  const toNext = next ? Math.max(0, Math.ceil(next.at - progress.readings)) : 0;
+  const levelPct = next ? Math.min(1, (progress.readings - cur.at) / (next.at - cur.at)) : 1;
+
+  let week = 0;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    week += progress.days[dayKey(d)] ?? 0;
+  }
+  const total = Object.keys(progress.ayat).length;
+  const done = SURAHS.map((_, i) => i + 1).filter((s) => surahDone(progress, s));
+  const juz = Object.keys(progress.ayat).filter((k) => Number(k.split(':')[0]) >= JUZ_AMMA_FIRST).length;
+  const saves = Object.entries(prefs.saves).sort((a, b) => b[1] - a[1]);
+
+  const openKey = (k: string) => {
+    const [s, ab] = k.split(':');
+    const [a, b] = ab.split('-');
+    router.push({ pathname: '/surah/[id]', params: { id: s, from: a, to: b ?? a } });
+  };
+
+  return (
+    <View style={[styles.root, { backgroundColor: pal.bg }]}>
+      <View style={[styles.head, { paddingTop: insets.top + 12, borderBottomColor: pal.line }]}>
+        <Text style={[styles.title, { color: pal.text }]}>You</Text>
+        <Pressable onPress={() => router.back()} style={[styles.x, { borderColor: pal.line }]} accessibilityRole="button" accessibilityLabel="Back to the feed" hitSlop={8}>
+          <Icon name="close" size={16} color={pal.text} />
+        </Pressable>
+      </View>
+
+      <ScrollView contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + 40 }]}>
+        <View style={styles.block}>
+          <View style={styles.rowBetween}>
+            <Text style={[styles.strong, { color: pal.text }]}>
+              Level {level} · {cur.name}
+            </Text>
+          </View>
+          <Bar pal={pal} pct={levelPct} />
+          <Text style={[styles.small, { color: pal.muted }]}>
+            {next ? `${toNext} more readings to unlock ${next.name.toLowerCase()}` : 'All levels unlocked. Your feed now includes longer readings.'}
+          </Text>
+        </View>
+
+        <View style={styles.stats}>
+          <Stat pal={pal} n={week} label="This week" />
+          <Stat pal={pal} n={total} label="Ayat read" />
+          <Stat pal={pal} n={done.length} label="Surahs done" />
+          <Stat pal={pal} n={Object.keys(progress.mem).length} label="Memorised" />
+        </View>
+
+        <View style={styles.block}>
+          <View style={styles.rowBetween}>
+            <Text style={[styles.strong, { color: pal.text }]}>Juz' ʿAmma</Text>
+            <Text style={[styles.small, { color: pal.muted }]}>
+              {juz} of {JUZ_AMMA_AYAT} ayat
+            </Text>
+          </View>
+          <Bar pal={pal} pct={juz / JUZ_AMMA_AYAT} />
+        </View>
+
+        {done.length > 0 && (
+          <View style={styles.chips}>
+            {done.map((s) => (
+              <Pressable key={s} onPress={() => openKey(`${s}:1`)} style={[styles.chip, { backgroundColor: pal.surface, borderColor: pal.line }]} accessibilityRole="button">
+                <Text style={[styles.chipText, { color: pal.text }]}>{SURAHS[s - 1][0]}</Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+
+        <Text style={[styles.h3, { color: pal.muted }]}>SAVED AYAT</Text>
+        {saves.length === 0 ? (
+          <Text style={[styles.small, { color: pal.muted }]}>Tap the bookmark on any ayah to keep it here.</Text>
+        ) : (
+          <View style={{ gap: 8 }}>
+            {saves.map(([k]) => {
+              const v = VERSES.find((x) => x.k === k);
+              const [s] = k.split(':');
+              const preview = v ? (v.tr[prefs.lang] ?? v.tr.en ?? []).join(' ') : `${SURAHS[Number(s) - 1][0]}`;
+              return (
+                <Pressable key={k} onPress={() => openKey(k)} style={[styles.saved, { borderColor: pal.line }]} accessibilityRole="button">
+                  <Text style={[styles.savedKey, { color: pal.accent }]}>{k.replace('-', '–')}</Text>
+                  <Text style={[styles.savedText, { color: pal.text }]} numberOfLines={1}>
+                    {preview}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
+
+        <Text style={[styles.h3, { color: pal.muted }]}>TRANSLATION</Text>
+        <View style={styles.grid}>
+          {LANGS.map((l) => (
+            <Option key={l.id} pal={pal} on={prefs.lang === l.id} title={l.native ? `${l.name}  ${l.native}` : l.name} sub={l.by} onPress={() => prefs.set({ lang: l.id })} />
+          ))}
+        </View>
+
+        <Text style={[styles.h3, { color: pal.muted }]}>RECITER</Text>
+        <View style={styles.grid}>
+          {RECITERS.map((r) => (
+            <Option key={r.id} pal={pal} on={prefs.reciter === r.id} title={r.name} sub={r.note} onPress={() => prefs.set({ reciter: r.id })} />
+          ))}
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+function Bar({ pal, pct }: { pal: Palette; pct: number }) {
+  return (
+    <View style={[styles.bar, { backgroundColor: pal.line }]}>
+      <View style={{ width: `${Math.round(Math.max(0, Math.min(1, pct)) * 100)}%`, height: '100%', backgroundColor: pal.accent, borderRadius: 3 }} />
+    </View>
+  );
+}
+
+function Stat({ pal, n, label }: { pal: Palette; n: number; label: string }) {
+  return (
+    <View style={[styles.stat, { borderColor: pal.line }]}>
+      <Text style={[styles.statN, { color: pal.text }]}>{n}</Text>
+      <Text style={[styles.statL, { color: pal.muted }]}>{label}</Text>
+    </View>
+  );
+}
+
+function Option({ pal, on, title, sub, onPress }: { pal: Palette; on: boolean; title: string; sub: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} style={[styles.opt, { borderColor: on ? pal.accent : pal.line, borderWidth: on ? 2 : 1 }]} accessibilityRole="button" accessibilityState={{ selected: on }}>
+      <Text style={[styles.optTitle, { color: pal.text }]}>{title}</Text>
+      <Text style={[styles.small, { color: pal.muted }]}>{sub}</Text>
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingBottom: 12, borderBottomWidth: StyleSheet.hairlineWidth },
+  title: { fontFamily: fonts.uiBold, fontSize: 26, letterSpacing: -0.5 },
+  x: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  body: { padding: 18, gap: 18 },
+  block: { gap: 8 },
+  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 10 },
+  strong: { fontFamily: fonts.uiBold, fontSize: 16 },
+  small: { fontFamily: fonts.ui, fontSize: 13, lineHeight: 18 },
+  bar: { height: 6, borderRadius: 3, overflow: 'hidden' },
+  stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  stat: { flexBasis: '22%', flexGrow: 1, minWidth: 72, borderWidth: 1, borderRadius: 10, padding: 10, gap: 2 },
+  statN: { fontFamily: fonts.uiBold, fontSize: 24, letterSpacing: -0.5, fontVariant: ['tabular-nums'] },
+  statL: { fontFamily: fonts.uiSemi, fontSize: 11 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  chip: { borderWidth: 1, borderRadius: 7, paddingHorizontal: 10, paddingVertical: 6 },
+  chipText: { fontFamily: fonts.uiSemi, fontSize: 13 },
+  h3: { fontFamily: fonts.uiBold, fontSize: 11, letterSpacing: 1.2, marginTop: 6 },
+  saved: { flexDirection: 'row', gap: 12, alignItems: 'center', borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12 },
+  savedKey: { fontFamily: fonts.uiBold, fontSize: 13, fontVariant: ['tabular-nums'] },
+  savedText: { fontFamily: fonts.read, fontSize: 15, flex: 1 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  opt: { flexBasis: '47%', flexGrow: 1, borderRadius: 10, padding: 12, gap: 3 },
+  optTitle: { fontFamily: fonts.uiSemi, fontSize: 15 },
+});

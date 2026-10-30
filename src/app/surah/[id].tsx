@@ -3,7 +3,9 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
-import { arabicNumber, ChapterAyah, LANGS, loadChapter, SURAHS } from '@/lib/quran';
+import { useToast } from '@/components/Toast';
+import { useProgress } from '@/lib/progress';
+import { arabicNumber, ChapterAyah, LANGS, LEVELS, loadChapter, SURAHS } from '@/lib/quran';
 import { usePrefs } from '@/lib/store';
 import { fonts, mix, usePalette } from '@/lib/theme';
 
@@ -21,6 +23,30 @@ export default function SurahReader() {
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const list = useRef<FlatList<ChapterAyah>>(null);
+  const { markRead } = useProgress();
+  const toast = useToast();
+
+  // An ayah counts as read once it has been on screen for a moment. Each ayah is worth a third of a feed card.
+  const timers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
+  const seen = useRef(new Set<number>());
+  const onViewable = useRef(({ viewableItems }: { viewableItems: { item?: ChapterAyah; isViewable?: boolean }[] }) => {
+    const now = new Set(viewableItems.filter((x) => x.isViewable && x.item).map((x) => x.item!.n));
+    for (const [n, t] of timers.current) if (!now.has(n)) (clearTimeout(t), timers.current.delete(n));
+    for (const n of now) {
+      if (seen.current.has(n) || timers.current.has(n)) continue;
+      timers.current.set(
+        n,
+        setTimeout(() => {
+          timers.current.delete(n);
+          seen.current.add(n);
+          const ev = markRead([`${s}:${n}`], 1 / 3);
+          if (ev.surahsCompleted.length) toast(`MashaAllah, you've read all of ${SURAHS[s - 1][0]}`);
+          else if (ev.levelUp) toast(`Unlocked: ${LEVELS[ev.levelUp - 1].name.toLowerCase()} are now in your feed`);
+        }, 1200),
+      );
+    }
+  }).current;
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
   const [name, arName, meaning, count] = SURAHS[s - 1];
   const rtl = lang === 'ur';
   const hl = mix(pal.bg, pal.accent, 0.1);
@@ -76,6 +102,8 @@ export default function SurahReader() {
           ref={list}
           data={ayat}
           keyExtractor={(x) => String(x.n)}
+          onViewableItemsChanged={onViewable}
+          viewabilityConfig={{ itemVisiblePercentThreshold: 60 }}
           onScrollToIndexFailed={(e) => setTimeout(() => list.current?.scrollToIndex({ index: e.index, animated: false }), 120)}
           contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
           renderItem={({ item }) => {

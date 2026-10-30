@@ -8,6 +8,8 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ToastProvider } from '@/components/Toast';
+import { ProgressProvider } from '@/lib/progress';
 import { PrefsProvider, usePrefs } from '@/lib/store';
 import { usePalette } from '@/lib/theme';
 
@@ -43,6 +45,7 @@ function Root() {
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: pal.bg } }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="surah/[id]" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="you" options={{ presentation: 'modal' }} />
       </Stack>
     </>
   );
@@ -52,7 +55,11 @@ export default function Layout() {
   return (
     <SafeAreaProvider>
       <PrefsProvider>
-        <Root />
+        <ProgressProvider>
+          <ToastProvider>
+            <Root />
+          </ToastProvider>
+        </ProgressProvider>
       </PrefsProvider>
     </SafeAreaProvider>
   );

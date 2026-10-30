@@ -1,7 +1,7 @@
-import { memo, ReactNode, useEffect, useRef } from 'react';
+import { memo, ReactNode, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { Easing, SharedValue, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
-import { arabicNumber, LANGS, LangId, MOODS, MoodId, Verse } from '@/lib/quran';
+import { arabicNumber, LANGS, LangId, loadChapter, MOODS, MoodId, translationFor, Verse } from '@/lib/quran';
 import { fonts, mix, Palette, Tone } from '@/lib/theme';
 import { Icon } from './Icon';
 
@@ -28,6 +28,11 @@ type Props = {
   onShare: () => void;
   onKeepReading: () => void;
   onContext: () => void;
+  /** Memorise: how many times to loop the recitation, and where the loop is ("2 of 5"). */
+  repeat: number;
+  repeatLabel: string | null;
+  onRepeat: (n: number) => void;
+  onMemorised: () => void;
 };
 
 const EASE = Easing.bezier(0.2, 0.7, 0.2, 1);
@@ -45,14 +50,35 @@ function Reveal({ p, start, dur = 550, dx = 0, dy = 14, children, style }: { p: 
 }
 
 /** One Arabic word, appearing right to left. */
-const Word = memo(function Word({ p, i, text, color, size }: { p: SharedValue<number>; i: number; text: string; color: string; size: number }) {
+const Word = memo(function Word({ p, i, text, color, size, hidden, tint, onPeek }: { p: SharedValue<number>; i: number; text: string; color: string; size: number; hidden?: boolean; tint?: string; onPeek?: () => void }) {
   const start = 140 + Math.min(i, 26) * 45;
   const a = useAnimatedStyle(() => {
     const t = Math.min(1, Math.max(0, (p.value * TOTAL - start) / 600));
     return { opacity: t, transform: [{ translateY: 5 * (1 - t) }] };
   });
-  return <Animated.Text style={[{ fontFamily: fonts.arabic, fontSize: size, lineHeight: size * 1.9, color }, a]}>{text}</Animated.Text>;
+  const t = (
+    <Animated.Text style={[{ fontFamily: fonts.arabic, fontSize: size, lineHeight: size * 1.9, color: hidden ? 'transparent' : color }, a]}>{text}</Animated.Text>
+  );
+  if (!hidden) return t;
+  // A hidden word in "Test me": a soft block you can tap to peek at.
+  return (
+    <Pressable onPress={onPeek} accessibilityRole="button" accessibilityLabel="Hidden word, tap to show">
+      <View style={{ backgroundColor: tint, borderRadius: 6, marginHorizontal: 1, marginVertical: 3 }}>{t}</View>
+    </Pressable>
+  );
 });
+
+/** A fixed shuffle per card, so "hide more" always hides the same words first. */
+function hideOrder(n: number, seed: string) {
+  let x = [...seed].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 2147483647, 7);
+  const r = () => (x = (x * 1103515245 + 12345) % 2147483648) / 2147483648;
+  const a = [...Array(n).keys()];
+  for (let i = n - 1; i > 0; i--) {
+    const j = Math.floor(r() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 function Hairline({ p, color }: { p: SharedValue<number> ; color: string }) {
   const a = useAnimatedStyle(() => {
@@ -69,6 +95,10 @@ export const VerseCard = memo(function VerseCard(props: Props) {
   const reduce = useReducedMotion();
   const p = useSharedValue(0);
   const lastTap = useRef(0);
+  const [, rerender] = useReducer((n: number) => n + 1, 0);
+  const [memOpen, setMemOpen] = useState(false);
+  const [hideLevel, setHideLevel] = useState(0); // 0–4 quarters of the words hidden
+  const [peeked, setPeeked] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     if (!active) return;
@@ -85,23 +115,46 @@ export const VerseCard = memo(function VerseCard(props: Props) {
   const muted = mix(tone.bg, text, 0.62);
   const line = mix(tone.bg, text, 0.16);
   const arLen = v.ar.reduce((n, [t]) => n + t.length, 0);
-  const arSize = arLen > 520 ? 22 : arLen > 240 ? 26 : 32;
-  const trSize = arLen > 520 ? 15 : arLen > 240 ? 16.5 : 18.5;
+  // Long passages shrink step by step until the whole card fits on one screen, so a swipe always moves to the next card.
+  const [fit, setFit] = useState(1);
+  const viewport = useRef(0);
+  const content = useRef(0);
+  const checkFit = () => {
+    if (!memOpen && viewport.current && content.current > viewport.current + 2 && fit > 0.55) setFit((f) => Math.max(0.55, f * 0.88));
+  };
+  useEffect(() => setFit(1), [v.k, lang, showTl]);
+  const arSize = (arLen > 520 ? 24 : arLen > 240 ? 27 : 32) * fit;
+  const trSize = (arLen > 520 ? 16 : arLen > 240 ? 17 : 18.5) * Math.max(0.82, fit);
   const L = LANGS.find((l) => l.id === lang)!;
-  const tr = v.tr[lang] ?? v.tr.en;
+  const tr = translationFor(v, lang);
+  // Ladder passages read their translation from the loaded surah; fetch it if it isn't here yet.
+  useEffect(() => {
+    if (!tr) loadChapter(v.s, lang).then(rerender, () => {});
+  }, [tr, v.s, lang]);
+
+  const wordCount = useMemo(() => v.ar.reduce((n, [t]) => n + t.split(' ').filter(Boolean).length, 0), [v]);
+  const hidden = useMemo(() => {
+    const order = hideOrder(wordCount, v.k);
+    return new Set(order.slice(0, Math.ceil((wordCount * hideLevel) / 4)));
+  }, [wordCount, v.k, hideLevel]);
+  const testing = hideLevel > 0;
+  const tint = mix(tone.bg, tone.accent, 0.2);
   const rtlTr = lang === 'ur';
   const moodHit = mood && v.tags.includes(mood) ? MOODS.find((m) => m.id === mood) : null;
 
   // Every word (and each ayah-end marker) is its own element in one right-to-left wrapping row,
   // so the words can appear one by one and lines wrap naturally.
   let wordIndex = 0;
+  let textWord = 0;
   const arabic = v.ar.flatMap(([t, n]) => {
     const dim = playing && playingAyah !== null && playingAyah !== n;
     const col = dim ? soft : text;
     const words = t.split(' ').filter(Boolean);
     const els = words.map((w) => {
       const i = wordIndex++;
-      return <Word key={i} p={p} i={i} text={w + ' '} color={col} size={arSize} />;
+      const tw = textWord++;
+      const hide = testing && hidden.has(tw) && !peeked.has(tw);
+      return <Word key={i} p={p} i={i} text={w + ' '} color={col} size={arSize} hidden={hide} tint={tint} onPeek={() => setPeeked((s) => new Set(s).add(tw))} />;
     });
     const i = wordIndex++;
     els.push(<Word key={i} p={p} i={i} text={`۝${arabicNumber(n)} `} color={tone.accent} size={arSize * 0.72} />);
@@ -118,7 +171,20 @@ export const VerseCard = memo(function VerseCard(props: Props) {
 
   return (
     <View style={[styles.card, { height, backgroundColor: tone.bg, paddingTop: topInset + 64, paddingBottom: bottomInset + 24 }]}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollInner} showsVerticalScrollIndicator={false} nestedScrollEnabled>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollInner}
+        showsVerticalScrollIndicator={false}
+        nestedScrollEnabled
+        onLayout={(e) => {
+          viewport.current = e.nativeEvent.layout.height;
+          checkFit();
+        }}
+        onContentSizeChange={(_, h) => {
+          content.current = h;
+          checkFit();
+        }}
+      >
         <Pressable onPress={onBodyPress} style={styles.stage} accessible={false}>
           <Reveal p={p} start={0} style={styles.ref}>
             <View style={[styles.keyChip, { backgroundColor: tone.accent }]}>
@@ -157,7 +223,7 @@ export const VerseCard = memo(function VerseCard(props: Props) {
 
           <Reveal p={p} start={700} dur={650}>
             <Text style={[styles.tr, { color: text, fontSize: trSize, lineHeight: trSize * (rtlTr ? 2.1 : 1.5), textAlign: rtlTr ? 'right' : 'left', writingDirection: rtlTr ? 'rtl' : 'ltr' }]}>
-              {tr.map((t, j) => (tr.length > 1 ? `(${v.a + j}) ${t}` : t)).join(' ')}
+              {tr ? tr.map((t, j) => (tr.length > 1 ? `(${v.a + j}) ${t}` : t)).join(' ') : 'Loading translation…'}
             </Text>
             <Text style={[styles.by, { color: muted }]}>{L.by}</Text>
           </Reveal>
@@ -167,12 +233,61 @@ export const VerseCard = memo(function VerseCard(props: Props) {
               <Icon name="book" size={16} color={tone.accent} />
               <Text style={[styles.toolText, { color: tone.accent }]}>Keep reading</Text>
             </Pressable>
+            <Pressable onPress={() => setMemOpen((o) => !o)} style={[styles.tool, { borderColor: memOpen ? tone.accent : line }]} accessibilityRole="button" accessibilityState={{ expanded: memOpen }}>
+              <Text style={[styles.toolText, { color: memOpen ? tone.accent : text }]}>Memorise</Text>
+            </Pressable>
             {!!v.note && (
               <Pressable onPress={props.onContext} style={[styles.tool, { borderColor: line }]} accessibilityRole="button">
                 <Text style={[styles.toolText, { color: text }]}>Context</Text>
               </Pressable>
             )}
           </Reveal>
+
+          {memOpen && (
+            <View style={[styles.mem, { borderColor: mix(tone.bg, tone.accent, 0.4), backgroundColor: mix(tone.bg, tone.accent, 0.06) }]}>
+              <View style={styles.memRow}>
+                <Text style={[styles.memLabel, { color: muted }]}>REPEAT</Text>
+                {[1, 3, 5, 10].map((n) => {
+                  const on = props.repeat === n;
+                  return (
+                    <Pressable key={n} onPress={() => props.onRepeat(n)} style={[styles.chip, { borderColor: on ? tone.accent : line, backgroundColor: on ? tone.accent : 'transparent' }]} accessibilityRole="button" accessibilityState={{ selected: on }}>
+                      <Text style={[styles.chipText, { color: on ? tone.bg : text }]}>{n}×</Text>
+                    </Pressable>
+                  );
+                })}
+                {!!props.repeatLabel && <Text style={[styles.chipText, { color: tone.accent }]}>{props.repeatLabel}</Text>}
+              </View>
+              <View style={styles.memRow}>
+                <Text style={[styles.memLabel, { color: muted }]}>TEST ME</Text>
+                <Pressable
+                  disabled={hideLevel >= 4}
+                  onPress={() => {
+                    setHideLevel((l) => Math.min(4, l + 1));
+                    setPeeked(new Set());
+                  }}
+                  style={[styles.chip, { borderColor: line, opacity: hideLevel >= 4 ? 0.45 : 1 }]}
+                  accessibilityRole="button"
+                >
+                  <Text style={[styles.chipText, { color: text }]}>{hideLevel === 0 ? 'Hide words' : hideLevel < 4 ? `Hide more (${hideLevel * 25}%)` : 'All hidden'}</Text>
+                </Pressable>
+                <Pressable
+                  disabled={hideLevel === 0}
+                  onPress={() => {
+                    if (hideLevel >= 4) props.onMemorised();
+                    setHideLevel(0);
+                    setPeeked(new Set());
+                  }}
+                  style={[styles.chip, { borderColor: line, opacity: hideLevel === 0 ? 0.45 : 1 }]}
+                  accessibilityRole="button"
+                >
+                  <Text style={[styles.chipText, { color: text }]}>Show all</Text>
+                </Pressable>
+              </View>
+              <Text style={[styles.memNote, { color: muted }]}>
+                {hideLevel >= 4 ? 'Recite the whole ayah from memory, then tap Show all to check.' : 'Loop the recitation, then hide words and recite from memory. Tap a hidden word to peek.'}
+              </Text>
+            </View>
+          )}
         </Pressable>
       </ScrollView>
 
@@ -232,5 +347,11 @@ const styles = StyleSheet.create({
   railBtn: { alignItems: 'center', gap: 3, minWidth: 52, minHeight: 44 },
   railLabel: { fontFamily: fonts.uiSemi, fontSize: 11 },
   playSquare: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  mem: { borderWidth: 1, borderRadius: 10, padding: 12, gap: 10 },
+  memRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
+  memLabel: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 1, minWidth: 58 },
+  chip: { borderWidth: 1, borderRadius: 7, paddingHorizontal: 10, paddingVertical: 6, minHeight: 34, justifyContent: 'center' },
+  chipText: { fontFamily: fonts.uiBold, fontSize: 13, fontVariant: ['tabular-nums'] },
+  memNote: { fontFamily: fonts.ui, fontSize: 12, lineHeight: 17 },
   hint: { position: 'absolute', left: 0, right: 0, textAlign: 'center', fontFamily: fonts.ui, fontSize: 11, letterSpacing: 0.6 },
 });
