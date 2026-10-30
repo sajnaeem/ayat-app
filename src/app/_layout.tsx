@@ -68,6 +68,7 @@ function Root() {
         <Stack.Screen name="index" />
         <Stack.Screen name="surah/[id]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="you" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="feedback" options={{ presentation: 'modal' }} />
       </Stack>
     </>
   );

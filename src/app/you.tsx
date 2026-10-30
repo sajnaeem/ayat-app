@@ -209,6 +209,12 @@ export default function You() {
         {acct.online && (
           <>
             <Text style={[styles.h3, { color: pal.muted }]}>ACCOUNT</Text>
+            <Pressable onPress={() => router.push('/feedback')} style={[styles.saved, { borderColor: pal.line }]} accessibilityRole="button">
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={[styles.savedText, { color: pal.text, fontFamily: fonts.uiSemi }]}>Send feedback</Text>
+                <Text style={[styles.small, { color: pal.muted }]}>Report a problem or share an idea</Text>
+              </View>
+            </Pressable>
             <Pressable onPress={() => acct.signOut()} style={[styles.saved, { borderColor: pal.line }]} accessibilityRole="button">
               <Text style={[styles.savedText, { color: pal.text, fontFamily: fonts.uiSemi }]}>Sign out</Text>
             </Pressable>

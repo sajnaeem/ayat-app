@@ -22,13 +22,14 @@ Built with React Native and Expo (SDK 58), so one codebase runs on iPhone and An
 - You screen: level, ayat read this week, surahs completed, memorised, Juz' ʿAmma progress, saved ayat, language and reciter
 - Memorise mode: loop the recitation, hide words and recite from memory
 - Time check after 20 minutes of scrolling, with "Read in full" or "Take a break"
+- Daily check-in notifications (one a day at most, Friday al-Kahf) and in-app feedback with optional screenshot
 - Required accounts (Apple, Google, phone or email) with a display name; like counts, reflections with reporting, backup of saves and progress, sign out and delete account
 
 ## Connecting the database (Supabase)
 
 An account is required to use Munib. People sign in with Apple (iPhone), Google, their phone number or email, then choose a display name.
 
-1. **SQL Editor → New query**: run `supabase/schema.sql`, then run `supabase/002_accounts.sql`.
+1. **SQL Editor → New query**: run `supabase/schema.sql`, then `supabase/002_accounts.sql`, then `supabase/003_feedback.sql`.
 2. **Authentication → Sign In / Providers**:
    - **Allow anonymous sign-ins**: off.
    - **Email**: on. For the beta, turn **Confirm email** off (Supabase's built-in email sender only allows a few emails an hour). Turn it back on once a custom email sender is set up.

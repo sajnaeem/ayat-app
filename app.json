@@ -39,6 +39,14 @@
           "color": "#1F6E52",
           "enableRemoteNotifications": false
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Munib lets you attach a screenshot when you send feedback.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
       ]
     ],
     "scheme": "munib",
