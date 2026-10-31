@@ -2,7 +2,10 @@ import versesJson from '@/data/verses.json';
 import surahsJson from '@/data/surahs.json';
 
 export type LangId = 'en' | 'ur' | 'bn' | 'id' | 'tr' | 'fr' | 'es';
-export type MoodId = 'anxious' | 'grateful' | 'grieving' | 'forgiveness' | 'strength' | 'guidance';
+export type MoodId =
+  | 'anxious' | 'grateful' | 'grieving' | 'forgiveness' | 'strength' | 'guidance'
+  | 'lonely' | 'money' | 'angry' | 'temptation' | 'unwell'
+  | 'marriage' | 'divorce' | 'family' | 'conflict' | 'parenting';
 
 export type Verse = {
   k: string; // "94:5-6"
@@ -38,13 +41,35 @@ export const LANGS: { id: LangId; name: string; native: string; by: string }[] =
   { id: 'es', name: 'Spanish', native: 'Español', by: 'Muhammad Isa García' },
 ];
 
-export const MOODS: { id: MoodId; label: string; sub: string }[] = [
-  { id: 'anxious', label: 'Anxious or overwhelmed', sub: 'Calm and reassurance' },
-  { id: 'grateful', label: 'Grateful', sub: 'Blessings and shukr' },
-  { id: 'grieving', label: 'Grieving or low', sub: 'Comfort and hope' },
-  { id: 'forgiveness', label: 'Seeking forgiveness', sub: 'Mercy and tawbah' },
-  { id: 'strength', label: 'Need strength', sub: 'Patience and resolve' },
-  { id: 'guidance', label: 'Seeking guidance', sub: 'Direction and wisdom' },
+/**
+ * "What's on your heart today?" Feelings first, then life moments.
+ * `when` is the line shown on matching cards. `help` adds a gentle pointer to real-world support.
+ */
+export const MOODS: { id: MoodId; label: string; sub: string; when: string; group: 'feeling' | 'life'; help?: boolean }[] = [
+  { id: 'anxious', label: 'Anxious or overwhelmed', sub: 'Calm and reassurance', when: "For when you're anxious or overwhelmed", group: 'feeling' },
+  { id: 'grateful', label: 'Grateful', sub: 'Blessings and shukr', when: "For when you're grateful", group: 'feeling' },
+  { id: 'grieving', label: 'Grieving or low', sub: 'Comfort and hope', when: "For when you're grieving or low", group: 'feeling', help: true },
+  { id: 'lonely', label: 'Lonely', sub: 'He is near', when: 'For when you feel alone', group: 'feeling', help: true },
+  { id: 'money', label: 'Money worries', sub: 'Provision and trust', when: 'For when money is worrying you', group: 'feeling' },
+  { id: 'angry', label: 'Angry or frustrated', sub: 'Patience and pardon', when: "For when you're angry or frustrated", group: 'feeling' },
+  { id: 'temptation', label: 'Struggling with temptation', sub: 'Turning back', when: 'For when temptation is strong', group: 'feeling' },
+  { id: 'unwell', label: 'Unwell', sub: 'Healing and patience', when: "For when you're unwell", group: 'feeling' },
+  { id: 'forgiveness', label: 'Seeking forgiveness', sub: 'Mercy and tawbah', when: 'For when you seek forgiveness', group: 'feeling' },
+  { id: 'strength', label: 'Need strength', sub: 'Patience and resolve', when: 'For when you need strength', group: 'feeling' },
+  { id: 'guidance', label: 'Seeking guidance', sub: 'Direction and wisdom', when: 'For when you seek guidance', group: 'feeling' },
+  { id: 'marriage', label: 'Marriage', sub: 'Love, mercy, finding a spouse', when: 'For marriage', group: 'life' },
+  { id: 'divorce', label: 'Divorce or separation', sub: 'A way through', when: 'For divorce and separation', group: 'life', help: true },
+  { id: 'family', label: 'Family', sub: 'Parents and relatives', when: 'For family', group: 'life' },
+  { id: 'conflict', label: 'Conflict', sub: 'Making peace', when: 'For conflict with others', group: 'life', help: true },
+  { id: 'parenting', label: 'Parenting', sub: 'Raising children', when: 'For parents', group: 'life' },
+];
+
+/** UK support shown under the moods marked `help`. Checked October 2026. */
+export const SUPPORT = [
+  { name: 'Samaritans', detail: 'Anything at all, 24 hours a day', phone: '116 123' },
+  { name: 'Muslim Youth Helpline', detail: 'Faith-sensitive support, 4pm to 10pm daily', phone: '0808 808 2008' },
+  { name: "Muslim Women's Network Helpline", detail: 'Faith- and culturally-sensitive support for women', phone: '0800 999 5786' },
+  { name: 'National Domestic Abuse Helpline', detail: 'If you are not safe at home, 24 hours a day', phone: '0808 2000 247' },
 ];
 
 /** The opening order for a brand-new user with no mood picked. */
@@ -69,7 +94,8 @@ export function feedRound(round: number, mood: MoodId | null, liked: string[]): 
     let score = r() * 0.9;
     if (mood && v.tags.includes(mood)) score += 4;
     score += Math.min(2, v.tags.reduce((a, t) => a + (affinity[t] || 0), 0) * 0.35);
-    if (plain) score = -BASE.indexOf(v.k);
+    // A new user with no mood sees the opening sequence first, then everything else.
+    if (plain) score = BASE.includes(v.k) ? 1000 - BASE.indexOf(v.k) : score;
     return { v, score };
   })
     .sort((a, b) => b.score - a.score)

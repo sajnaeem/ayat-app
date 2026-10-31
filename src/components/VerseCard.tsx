@@ -43,6 +43,8 @@ type Props = {
   chromeOn: boolean;
   /** A single tap on the card (brings the controls back). */
   onTap: () => void;
+  /** Opens "Someone to talk to" (shown on cards for heavier feelings such as grief, divorce or conflict). */
+  onSupport: () => void;
 };
 
 const EASE = Easing.bezier(0.2, 0.7, 0.2, 1);
@@ -213,7 +215,14 @@ export const VerseCard = memo(function VerseCard(props: Props) {
           </Reveal>
           {moodHit && (
             <Reveal p={p} start={60}>
-              <Text style={[styles.because, { color: tone.accent }]}>For when you're {moodHit.label.toLowerCase().replace('need ', 'needing ')}</Text>
+              <Text style={[styles.because, { color: tone.accent }]}>
+                {moodHit.when}
+                {moodHit.help ? (
+                  <Text onPress={props.onSupport} style={{ color: muted, textDecorationLine: 'underline' }} accessibilityRole="link">
+                    {'  ·  Someone to talk to'}
+                  </Text>
+                ) : null}
+              </Text>
             </Reveal>
           )}
 

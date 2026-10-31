@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, AppState, FlatList, Modal, Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, AppState, FlatList, Linking, Modal, Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import Animated, { SharedValue, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
@@ -12,7 +12,7 @@ import { Sheet } from '@/components/Sheet';
 import { useToast } from '@/components/Toast';
 import { VerseCard } from '@/components/VerseCard';
 import { ayahAudioUrl } from '@/lib/audio';
-import { ayahKeys, feedRound, interleave, ladderCards, LEVELS, MOODS, MoodId, SURAHS, translationFor, Verse } from '@/lib/quran';
+import { ayahKeys, feedRound, interleave, ladderCards, LEVELS, MOODS, MoodId, SUPPORT, SURAHS, translationFor, Verse } from '@/lib/quran';
 import { useAccount } from '@/lib/account';
 import { dayKey, useProgress } from '@/lib/progress';
 import { askPermission, REMINDER_TIMES, ReminderData, scheduleReminders } from '@/lib/reminders';
@@ -111,7 +111,7 @@ export default function Feed() {
   const toast = useToast();
   const [height, setHeight] = useState(0);
   const [active, setActive] = useState(0);
-  const [sheet, setSheet] = useState<null | 'mood' | 'context' | 'remind'>(prefs.onboarded ? null : 'mood');
+  const [sheet, setSheet] = useState<null | 'mood' | 'context' | 'remind' | 'support'>(prefs.onboarded ? null : 'mood');
   const [remindAt, setRemindAt] = useState(2);
   const [contextVerse, setContextVerse] = useState<Verse | null>(null);
   const [resting, setResting] = useState(false);
@@ -398,6 +398,7 @@ export default function Feed() {
                 likeCount={acct.stats[item.v.k]?.likes ?? null}
                 reflectionCount={acct.stats[item.v.k]?.reflections ?? null}
                 onReflections={acct.online ? () => setReflectFor(item.v) : null}
+                onSupport={() => setSheet('support')}
                 chrome={chrome}
                 chromeOn={chromeOn}
                 onTap={() => showChrome()}
@@ -442,20 +443,40 @@ export default function Feed() {
 
       <Sheet visible={sheet === 'mood'} onClose={() => { prefs.set({ onboarded: true }); setSheet(null); }} title="What's on your heart today?" pal={pal}>
         <Text style={[styles.lead, { color: pal.muted }]}>Pick one and your feed starts with ayat that speak to it. You can change it any time.</Text>
-        <View style={styles.grid}>
-          {MOODS.map((m) => {
-            const on = prefs.mood === m.id;
-            return (
-              <Pressable key={m.id} onPress={() => { prefs.set({ mood: m.id, onboarded: true }); setSheet(null); }} style={[styles.opt, { borderColor: on ? pal.accent : pal.line, borderWidth: on ? 2 : 1 }]} accessibilityRole="button" accessibilityState={{ selected: on }}>
-                <Text style={[styles.optTitle, { color: pal.text }]}>{m.label}</Text>
-                <Text style={[styles.optSub, { color: pal.muted }]}>{m.sub}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
+        {(['feeling', 'life'] as const).map((group) => (
+          <View key={group} style={{ gap: 8, marginTop: group === 'life' ? 10 : 0 }}>
+            {group === 'life' && <Text style={[styles.h3, { color: pal.muted }]}>SOMETHING HAPPENING IN MY LIFE</Text>}
+            <View style={styles.grid}>
+              {MOODS.filter((m) => m.group === group).map((m) => {
+                const on = prefs.mood === m.id;
+                return (
+                  <Pressable key={m.id} onPress={() => { prefs.set({ mood: m.id, onboarded: true }); setSheet(null); }} style={[styles.opt, { borderColor: on ? pal.accent : pal.line, borderWidth: on ? 2 : 1 }]} accessibilityRole="button" accessibilityState={{ selected: on }}>
+                    <Text style={[styles.optTitle, { color: pal.text }]}>{m.label}</Text>
+                    <Text style={[styles.optSub, { color: pal.muted }]}>{m.sub}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        ))}
+        <Text style={[styles.optSub, { color: pal.muted, marginTop: 6 }]}>What you pick stays on your phone and is never shown to anyone.</Text>
         <Pressable onPress={() => { prefs.set({ mood: null, onboarded: true }); setSheet(null); }} style={styles.skip} accessibilityRole="button">
           <Text style={[styles.skipText, { color: pal.muted }]}>Just let me scroll</Text>
         </Pressable>
+      </Sheet>
+
+      <Sheet visible={sheet === 'support'} onClose={() => setSheet(null)} title="Someone to talk to" pal={pal}>
+        <Text style={[styles.lead, { color: pal.muted }]}>
+          The Quran is a comfort, and so are people. If things feel too heavy, or you're not safe, these UK services are free and confidential.
+        </Text>
+        {SUPPORT.map((x) => (
+          <Pressable key={x.phone} onPress={() => Linking.openURL(`tel:${x.phone.replace(/\s/g, '')}`).catch(() => {})} style={[styles.opt, { borderColor: pal.line, borderWidth: 1, flexBasis: 'auto' }]} accessibilityRole="button" accessibilityLabel={`Call ${x.name}, ${x.phone}`}>
+            <Text style={[styles.optTitle, { color: pal.text }]}>{x.name}</Text>
+            <Text style={[styles.optSub, { color: pal.muted }]}>{x.detail}</Text>
+            <Text style={[styles.optTitle, { color: pal.accent, fontVariant: ['tabular-nums'] }]}>{x.phone}</Text>
+          </Pressable>
+        ))}
+        <Text style={[styles.optSub, { color: pal.muted }]}>In an emergency, call 999.</Text>
       </Sheet>
 
       <Sheet visible={sheet === 'remind'} onClose={() => { prefs.set({ remindersOffered: true }); setSheet(null); }} title="A gentle daily reminder?" pal={pal}>
@@ -573,6 +594,7 @@ const styles = StyleSheet.create({
   skip: { alignSelf: 'center', padding: 12 },
   skipText: { fontFamily: fonts.ui, fontSize: 14, textDecorationLine: 'underline' },
   note: { fontFamily: fonts.read, fontSize: 16, lineHeight: 25 },
+  h3: { fontFamily: fonts.uiBold, fontSize: 11, letterSpacing: 1.2 },
   off: { width: '100%', justifyContent: 'center', paddingHorizontal: 24, gap: 16 },
   offEyebrow: { fontFamily: fonts.uiBold, fontSize: 12, letterSpacing: 1.4 },
   offTitle: { fontFamily: fonts.uiBold, fontSize: 32, lineHeight: 37, letterSpacing: -0.6 },

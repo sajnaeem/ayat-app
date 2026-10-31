@@ -28,7 +28,7 @@ A short-form, TikTok-style Quran app for Muslims whose attention has been shaped
 
 ## Features (all in the app today)
 
-Feed with mood picker ("What's on your heart today?"), auto recitation with the current ayah highlighted, transliteration toggle, 7 translations, 4 reciters, like / save / share, Keep reading (whole surah), context notes, attention ladder (levels at 25 / 75 / 150 readings), You screen (progress, Juz' ʿAmma, saved ayat, display name with its Arabic meaning, settings), memorise mode (repeat 1–10×, hide words), time-check card, reflections (comments) with reporting, daily check-in notifications (local, max 1/day, Friday al-Kahf, one "we've missed you" after 7 days), in-app feedback, sign out and delete account.
+Feed with mood picker ("What's on your heart today?": 11 feelings plus 5 life moments: marriage, divorce, family, conflict, parenting; heavier ones show a "Someone to talk to" link to UK helplines in `SUPPORT` in src/lib/quran.ts, checked Oct 2026; 70 curated ayat, new ones chosen to comfort rather than state rulings and need scholarly review), auto recitation with the current ayah highlighted, transliteration toggle, 7 translations, 4 reciters, like / save / share, Keep reading (whole surah), context notes, attention ladder (levels at 25 / 75 / 150 readings), You screen (progress, Juz' ʿAmma, saved ayat, display name with its Arabic meaning, settings), memorise mode (repeat 1–10×, hide words), time-check card, reflections (comments) with reporting, daily check-in notifications (local, max 1/day, Friday al-Kahf, one "we've missed you" after 7 days), in-app feedback, sign out and delete account.
 
 ## How it's built
 
