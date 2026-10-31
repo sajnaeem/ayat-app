@@ -366,12 +366,13 @@ export default function Feed() {
 
   const announce = useCallback(
     (ev: { surahsCompleted: number[]; levelUp: number | null }) => {
-      if (ev.levelUp) {
-        toast(`Unlocked: ${LEVELS[ev.levelUp - 1].name.toLowerCase()} are now in your feed`);
+      // Level-ups change the For you feed, so only mention them there.
+      if (ev.levelUp && prefs.feedMode === 'foryou') {
+        toast(`Unlocked: ${LEVELS[ev.levelUp - 1].name.toLowerCase()} are now in For you`);
         refreshAhead(active + 1);
       } else if (ev.surahsCompleted.length) toast(`MashaAllah, you've read all of ${SURAHS[ev.surahsCompleted[0] - 1][0]}`);
     },
-    [toast, refreshAhead, active],
+    [toast, refreshAhead, active, prefs.feedMode],
   );
 
   useEffect(() => {
@@ -513,7 +514,7 @@ export default function Feed() {
                   ayat={prog.sessionAyat}
                   minutes={Math.max(1, Math.round((Date.now() - sessionStart.current) / 60000))}
                   surahName={SURAHS[item.s - 1][0]}
-                  onRead={() => openSurah(item.s)}
+                  onRead={prefs.feedMode === 'order' ? null : () => openSurah(item.s)}
                   onRest={() => {
                     stop();
                     setResting(true);
@@ -749,7 +750,7 @@ function ContinueCard(p: { pal: Palette; tone: { bg: string; accent: string }; h
   );
 }
 
-function OffRamp(p: { pal: Palette; tone: { bg: string; accent: string }; height: number; ayat: number; minutes: number; surahName: string; onRead: () => void; onRest: () => void }) {
+function OffRamp(p: { pal: Palette; tone: { bg: string; accent: string }; height: number; ayat: number; minutes: number; surahName: string; onRead: (() => void) | null; onRest: () => void }) {
   const { pal, tone } = p;
   return (
     <View style={[styles.off, { height: p.height, backgroundColor: tone.bg }]}>
@@ -757,11 +758,13 @@ function OffRamp(p: { pal: Palette; tone: { bg: string; accent: string }; height
       <Text style={[styles.offTitle, { color: pal.text }]}>
         You've read {p.ayat} ayat in {p.minutes} minute{p.minutes === 1 ? '' : 's'}.
       </Text>
-      <Text style={[styles.offBody, { color: mix(tone.bg, pal.text, 0.75) }]}>That's real focus. Go deeper with the whole surah, or rest your eyes for a bit.</Text>
+      <Text style={[styles.offBody, { color: mix(tone.bg, pal.text, 0.75) }]}>{p.onRead ? "That's real focus. Go deeper with the whole surah, or rest your eyes for a bit." : "That's real focus. Rest your eyes for a bit, or keep going."}</Text>
       <View style={styles.offRow}>
-        <Pressable onPress={p.onRead} style={[styles.primary, { backgroundColor: pal.text, flex: 1 }]} accessibilityRole="button">
-          <Text style={[styles.primaryText, { color: tone.bg }]}>Read {p.surahName} in full</Text>
-        </Pressable>
+        {p.onRead && (
+          <Pressable onPress={p.onRead} style={[styles.primary, { backgroundColor: pal.text, flex: 1 }]} accessibilityRole="button">
+            <Text style={[styles.primaryText, { color: tone.bg }]}>Read {p.surahName} in full</Text>
+          </Pressable>
+        )}
         <Pressable onPress={p.onRest} style={[styles.ghost, { borderColor: mix(tone.bg, pal.text, 0.25), flex: 1 }]} accessibilityRole="button">
           <Text style={[styles.primaryText, { color: pal.text }]}>Take a break</Text>
         </Pressable>
