@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
 import { useToast } from '@/components/Toast';
 import { useProgress } from '@/lib/progress';
-import { arabicNumber, ChapterAyah, LANGS, LEVELS, loadChapter, SURAHS } from '@/lib/quran';
+import { arabicNumber, ChapterAyah, chapterTranslator, LEVELS, loadChapter, SURAHS } from '@/lib/quran';
 import { usePrefs } from '@/lib/store';
 import { fonts, mix, usePalette } from '@/lib/theme';
 
@@ -75,7 +75,7 @@ export default function SurahReader() {
             {name} <Text style={{ fontFamily: fonts.arabic, color: pal.muted, fontSize: 18 }}>{arName}</Text>
           </Text>
           <Text style={[styles.sub, { color: pal.muted }]}>
-            {meaning} · {count} ayat · {LANGS.find((l) => l.id === lang)?.by}
+            {meaning} · {count} ayat · {chapterTranslator(s, lang)}
           </Text>
         </View>
         <Pressable onPress={() => router.back()} style={[styles.x, { borderColor: pal.line }]} accessibilityRole="button" accessibilityLabel="Back to the feed" hitSlop={8}>

@@ -34,7 +34,7 @@ Feed with mood picker ("What's on your heart today?": 11 feelings plus 5 life mo
 
 - **Expo SDK 58**, React Native, TypeScript, **Expo Router** (`src/app/`).
 - **Supabase** (project `skuhimrzjddujzwdedot`, London) for auth, likes, reflections, reports, backups of saves/progress, feedback. The publishable key in `.env` is meant to ship in the app; **row-level security does the protecting**, so every new table needs RLS policies.
-- Content today: curated feed ayat in `src/data/verses.json` (with all 7 translations, notes, mood tags); full surahs fetched from the quran-json dataset on jsDelivr; audio from EveryAyah.com. **Planned:** switch both to the Quran Foundation API (keys requested) for licensed text, audio and word-by-word timings.
+- Content today: curated feed ayat in `src/data/verses.json` (with all 7 translations, notes, mood tags); full surahs from the **Quran Foundation API** through the Supabase Edge Function `qf` (`supabase/functions/qf/index.ts`, deployed by pasting into Dashboard → Edge Functions; secret `QF_CLIENT_SECRET` in Edge Function secrets; production client ID `833c983e-411c-47ae-8ebf-c46abc965f13`, prelive `08598c3c-…` unused). If the function fails, `loadChapter` falls back to the quran-json dataset on jsDelivr. QF terms: paid apps allowed, no ad profiling, cache content max 7 days. Bengali on QF is Taisirul Quran (161), as QF has no Muhiuddin Khan. Audio still from EveryAyah.com; **next:** QF audio with word-by-word timings.
 
 ```
 src/app/            screens: index (feed), surah/[id] (Keep reading), you, feedback, _layout (fonts, sign-in gate)
@@ -42,7 +42,7 @@ src/components/     VerseCard (card + animation + memorise), SignIn/ChooseName, 
 src/lib/            quran (data, feed order, ladder), audio, store (prefs on phone), progress, account (Supabase auth + sync),
                     reminders (notifications), supabase, theme
 src/data/           verses.json, surahs.json, names.ts (128 names with Arabic + meaning; needs review by someone with Arabic)
-supabase/           schema.sql, 002_accounts.sql, 003_feedback.sql — run in order in the Supabase SQL Editor
+supabase/           schema.sql, 002_accounts.sql, 003_feedback.sql — run in order in the Supabase SQL Editor; functions/qf (Quran Foundation proxy)
 ```
 
 ## Supabase settings (done by Saj in the dashboard)
@@ -61,9 +61,9 @@ supabase/           schema.sql, 002_accounts.sql, 003_feedback.sql — run in or
 
 ## Launch checklist (iOS)
 
-Saj: Apple Developer account (Individual or Organisation), getmunib.com, Quran Foundation API keys, Supabase Pro at public launch ($25/month, backups and no pausing), optional UK trademark.
+Saj: Apple Developer account (Individual or Organisation), getmunib.com, Supabase Pro at public launch ($25/month, backups and no pausing), optional UK trademark.
 
-Still to build: app icon and launch screen; community guidelines accepted at sign-up and **blocking users** (Apple rule for apps with user posts); getmunib.com with privacy policy and support pages; Quran Foundation API switch; a demo account for Apple's reviewer; App Store listing and screenshots; EAS build → TestFlight → App Store. Recommended: crash reporting (Sentry), a one-off human security review before launch.
+Still to build: app icon and launch screen; community guidelines accepted at sign-up and **blocking users** (Apple rule for apps with user posts); getmunib.com with privacy policy and support pages; QF audio switch; a demo account for Apple's reviewer; App Store listing and screenshots; EAS build → TestFlight → App Store. Recommended: crash reporting (Sentry), a one-off human security review before launch.
 
 ## Releasing an update (once on the App Store)
 

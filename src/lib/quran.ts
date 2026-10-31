@@ -1,5 +1,6 @@
 import versesJson from '@/data/verses.json';
 import surahsJson from '@/data/surahs.json';
+import { supabase } from './supabase';
 
 export type LangId = 'en' | 'ur' | 'bn' | 'id' | 'tr' | 'fr' | 'es';
 export type MoodId =
@@ -119,24 +120,48 @@ export function loadedChapter(s: number, lang: LangId): ChapterAyah[] | null {
   return chapterReady.get(`${lang}:${s}`) ?? null;
 }
 
+const chapterBy = new Map<string, string>();
+
+/** Who the translation in a loaded surah is by (it can differ slightly by source). */
+export function chapterTranslator(s: number, lang: LangId): string {
+  return chapterBy.get(`${lang}:${s}`) ?? LANGS.find((l) => l.id === lang)?.by ?? '';
+}
+
+/** Quran Foundation API, through our Supabase function "qf" (the secret stays on the server). */
+async function fromQuranFoundation(s: number, lang: LangId): Promise<{ by: string; list: ChapterAyah[] }> {
+  if (!supabase) throw new Error('offline');
+  const { data, error } = await supabase.functions.invoke('qf', { body: { s, lang } });
+  if (error) throw error;
+  const ayat = (data?.ayat ?? []) as ChapterAyah[];
+  // Only trust a complete surah.
+  if (ayat.length !== SURAHS[s - 1][3] || ayat.some((a) => !a.ar)) throw new Error('incomplete');
+  return { by: data.by, list: ayat.map((a) => ({ ...a, tl: cleanTransliteration(a.tl) })) };
+}
+
+/** Fallback: the open quran-json dataset on jsDelivr. */
+async function fromDataset(s: number, lang: LangId): Promise<{ by: string; list: ChapterAyah[] }> {
+  const r = await fetch(`https://cdn.jsdelivr.net/npm/quran-json@3.1.2/dist/chapters/${lang}/${s}.json`);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const d: { verses: { id: number; text: string; translation: string; transliteration: string }[] } = await r.json();
+  return {
+    by: LANGS.find((l) => l.id === lang)?.by ?? '',
+    list: d.verses.map((v) => ({ n: v.id, ar: v.text, tl: cleanTransliteration(v.transliteration), tr: v.translation })),
+  };
+}
+
 /**
  * Loads a whole surah (Arabic, transliteration, translation) in one language.
- * Source for now: the open quran-json dataset on jsDelivr. The production build swaps this for the Quran Foundation API.
+ * Quran Foundation API first (licensed text); if that isn't reachable, the open dataset, so reading never breaks.
  */
 export function loadChapter(s: number, lang: LangId): Promise<ChapterAyah[]> {
   const key = `${lang}:${s}`;
   let p = chapterCache.get(key);
   if (!p) {
-    p = fetch(`https://cdn.jsdelivr.net/npm/quran-json@3.1.2/dist/chapters/${lang}/${s}.json`)
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then((d: { verses: { id: number; text: string; translation: string; transliteration: string }[] }) =>
-        d.verses.map((v) => ({ n: v.id, ar: v.text, tl: cleanTransliteration(v.transliteration), tr: v.translation })),
-      )
-      .then((list) => {
+    p = fromQuranFoundation(s, lang)
+      .catch(() => fromDataset(s, lang))
+      .then(({ by, list }) => {
         chapterReady.set(key, list);
+        chapterBy.set(key, by);
         return list;
       });
     p.catch(() => chapterCache.delete(key));
