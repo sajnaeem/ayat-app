@@ -467,7 +467,8 @@ export default function Feed() {
     if (n > 1) startCard(item, n);
   };
 
-  const moodLabel = MOODS.find((m) => m.id === prefs.mood)?.label ?? 'For you';
+  // The feeling picked on "What's on your heart today?", or just "Mood" until one is chosen.
+  const moodLabel = MOODS.find((m) => m.id === prefs.mood)?.label ?? 'Mood';
   const today = prog.progress.days[dayKey()] ?? 0;
 
   return (
@@ -800,9 +801,12 @@ function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palett
       <View style={styles.topRight}>
         {p.mode === 'foryou' && (
           <Pressable onPress={p.onMood} style={[pill, { maxWidth: 88 }]} accessibilityRole="button" accessibilityLabel="Change what's on your heart">
-            <Text style={[styles.pillText, { color: pal.text }]} numberOfLines={1}>
-              {p.moodLabel}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Icon name="heart" size={13} color={pal.accent} strokeWidth={2} />
+              <Text style={[styles.pillText, { color: pal.text, flexShrink: 1 }]} numberOfLines={1}>
+                {p.moodLabel}
+              </Text>
+            </View>
           </Pressable>
         )}
         <Pressable onPress={p.onRead} style={pill} accessibilityRole="button" accessibilityLabel="All surahs">
