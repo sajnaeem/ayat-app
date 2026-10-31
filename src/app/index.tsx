@@ -179,16 +179,11 @@ export default function Feed() {
     const sub = AccessibilityInfo.addEventListener('screenReaderChanged', (on) => (screenReader.current = on));
     return () => sub.remove();
   }, []);
+  // Controls used to fade a few seconds after each card; Saj found that annoying, so they now always stay.
   const showChrome = useCallback(
-    (holdMs = 5000) => {
-      chrome.value = withTiming(1, { duration: 220 });
+    (_holdMs = 5000) => {
+      chrome.value = 1;
       setChromeOn(true);
-      if (chromeTimer.current) clearTimeout(chromeTimer.current);
-      chromeTimer.current = setTimeout(() => {
-        if (screenReader.current) return;
-        chrome.value = withTiming(0, { duration: 900 });
-        setChromeOn(false);
-      }, holdMs);
     },
     [chrome],
   );
