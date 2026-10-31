@@ -238,7 +238,7 @@ export const VerseCard = memo(function VerseCard(props: Props) {
             <Text style={[styles.refText, { color: mix(tone.bg, text, 0.78) }]} numberOfLines={1}>
               {v.name} · {v.meaning}
             </Text>
-            <Text style={[styles.refAr, { color: muted }]}>{v.ar_name}</Text>
+            <Text style={[styles.refAr, { color: muted }]} numberOfLines={1}>{v.ar_name}</Text>
           </Reveal>
           {moodHit && (
             <Reveal p={p} start={60}>
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
   keyChip: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
   keyText: { fontFamily: fonts.uiBold, fontSize: 13, fontVariant: ['tabular-nums'] },
   refText: { fontFamily: fonts.ui, fontSize: 14, flexShrink: 1 },
-  refAr: { fontFamily: fonts.arabic, fontSize: 16, marginLeft: 'auto' },
+  refAr: { fontFamily: fonts.arabic, fontSize: 16, marginLeft: 'auto', flexShrink: 0, paddingLeft: 8 },
   because: { fontFamily: fonts.uiSemi, fontSize: 13, marginTop: -10 },
   arabic: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center' },
   tl: { fontFamily: fonts.readItalic, lineHeight: 26, textAlign: 'right', marginTop: -8 },

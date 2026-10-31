@@ -18,7 +18,12 @@ export default function SurahReader() {
   const pal = usePalette();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { lang, showTl } = usePrefs();
+  const { lang, showTl, place, set: setPrefs } = usePrefs();
+  // Read inside timers, so keep the latest values in refs.
+  const placeRef = useRef(place);
+  placeRef.current = place;
+  const prefsSet = useRef(setPrefs);
+  prefsSet.current = setPrefs;
   const [ayat, setAyat] = useState<ChapterAyah[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -39,6 +44,8 @@ export default function SurahReader() {
         setTimeout(() => {
           timers.current.delete(n);
           seen.current.add(n);
+          const pl = placeRef.current;
+          if (!pl || pl.s !== s || n > pl.a) prefsSet.current({ place: { s, a: n } });
           const ev = markRead([`${s}:${n}`], 1 / 3);
           if (ev.surahsCompleted.length) toast(`MashaAllah, you've read all of ${SURAHS[s - 1][0]}`);
           else if (ev.levelUp) toast(`Unlocked: ${LEVELS[ev.levelUp - 1].name.toLowerCase()} are now in your feed`);

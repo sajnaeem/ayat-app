@@ -21,7 +21,10 @@ import { fonts, mix, Palette, usePalette } from '@/lib/theme';
 
 type VerseItem = { kind: 'verse'; key: string; v: Verse; i: number };
 type OffItem = { kind: 'off'; key: string; i: number; s: number };
-type Item = VerseItem | OffItem;
+/** "Continue the Quran": every so often, a card that picks up the full Quran where the reader last stopped. */
+type ContItem = { kind: 'cont'; key: string; i: number };
+type Item = VerseItem | OffItem | ContItem;
+const CONT_EVERY = 12;
 
 /** How long someone scrolls before the "time check" card appears. */
 const OFFRAMP_AFTER_MS = 20 * 60 * 1000;
@@ -49,7 +52,13 @@ function useEndlessFeed(mood: MoodId | null) {
     let l = [...list.filter((v) => !recent.has(v.k)), ...list.filter((v) => recent.has(v.k))];
     const last = base[base.length - 1];
     if (last?.kind === 'verse' && l[0]?.k === last.v.k) l.push(l.shift()!);
-    return [...base, ...l.map((v, j) => ({ kind: 'verse' as const, key: `${r}-${v.k}`, v, i: base.length + j }))];
+    const out: Item[] = [...base];
+    let verses = base.filter((x) => x.kind === 'verse').length;
+    for (const v of l) {
+      out.push({ kind: 'verse', key: `${r}-${v.k}`, v, i: out.length });
+      if (++verses % CONT_EVERY === 0) out.push({ kind: 'cont', key: `cont-${r}-${verses}`, i: out.length });
+    }
+    return out;
   };
 
   const nextRound = async () => {
@@ -415,6 +424,20 @@ export default function Feed() {
           keyExtractor={(x) => x.key}
           renderItem={({ item, index }) => {
             const tone = pal.tones[item.i % pal.tones.length];
+            if (item.kind === 'cont') {
+              const next = nextPlace(prefs.place);
+              return (
+                <ContinueCard
+                  pal={pal}
+                  tone={tone}
+                  height={height}
+                  next={next}
+                  started={!!prefs.place}
+                  read={Object.keys(prog.progress.ayat).length}
+                  onRead={() => openSurah(next.s, next.a)}
+                />
+              );
+            }
             if (item.kind === 'off') {
               return (
                 <OffRamp
@@ -607,6 +630,45 @@ export default function Feed() {
 }
 
 /** The time-check card: shown once after 20 minutes of scrolling. Swipe past it to keep going. */
+/** Where "Continue the Quran" picks up: the ayah after the last one read, or the very beginning. */
+function nextPlace(place: { s: number; a: number } | null) {
+  if (!place) return { s: 1, a: 1 };
+  if (place.a < SURAHS[place.s - 1][3]) return { s: place.s, a: place.a + 1 };
+  return { s: place.s === 114 ? 1 : place.s + 1, a: 1 };
+}
+
+function ContinueCard(p: { pal: Palette; tone: { bg: string; accent: string }; height: number; next: { s: number; a: number }; started: boolean; read: number; onRead: () => void }) {
+  const { pal, tone, next } = p;
+  const [name, arName, meaning, count] = SURAHS[next.s - 1];
+  const pct = Math.min(1, p.read / 6236);
+  return (
+    <View style={[styles.off, { height: p.height, backgroundColor: tone.bg }]}>
+      <Text style={[styles.offEyebrow, { color: tone.accent }]}>CONTINUE THE QURAN</Text>
+      <Text style={[styles.offTitle, { color: pal.text }]}>
+        {p.started ? (next.a === 1 ? `Next: ${name}` : `${name}, from ayah ${next.a}`) : 'Begin with Al-Fatihah'}
+      </Text>
+      <Text style={[styles.contAr, { color: pal.text }]}>{arName}</Text>
+      <Text style={[styles.offBody, { color: mix(tone.bg, pal.text, 0.75) }]}>
+        {p.started
+          ? `${meaning} · ${count} ayat. Pick up where you left off, a little at a time.`
+          : 'Read the whole Quran from the start, a little at a time. Munib keeps your place.'}
+      </Text>
+      <View style={{ gap: 6 }}>
+        <View style={[styles.contBar, { backgroundColor: mix(tone.bg, pal.text, 0.12) }]}>
+          <View style={{ width: `${Math.max(1.5, pct * 100)}%`, height: '100%', borderRadius: 3, backgroundColor: tone.accent }} />
+        </View>
+        <Text style={[styles.optSub, { color: mix(tone.bg, pal.text, 0.6) }]}>
+          {p.read.toLocaleString()} of 6,236 ayat read
+        </Text>
+      </View>
+      <Pressable onPress={p.onRead} style={[styles.primary, { backgroundColor: pal.text }]} accessibilityRole="button">
+        <Text style={[styles.primaryText, { color: tone.bg }]}>{p.started ? 'Continue reading' : 'Start reading'}</Text>
+      </Pressable>
+      <Text style={[styles.optSub, { color: mix(tone.bg, pal.text, 0.6) }]}>Or swipe up to keep going.</Text>
+    </View>
+  );
+}
+
 function OffRamp(p: { pal: Palette; tone: { bg: string; accent: string }; height: number; ayat: number; minutes: number; surahName: string; onRead: () => void; onRest: () => void }) {
   const { pal, tone } = p;
   return (
@@ -663,6 +725,8 @@ function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palett
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  contAr: { fontFamily: fonts.arabic, fontSize: 30, lineHeight: 56, textAlign: 'left' },
+  contBar: { height: 6, borderRadius: 3, overflow: 'hidden' },
   top: { position: 'absolute', left: 0, right: 0, top: 0, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   brand: { fontFamily: fonts.uiBold, fontSize: 24, letterSpacing: -0.5 },
   topRight: { flexDirection: 'row', gap: 6, alignItems: 'center' },
