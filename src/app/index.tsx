@@ -264,14 +264,16 @@ export default function Feed() {
     for (const it of items.slice(active, active + 3)) if (it.kind === 'verse') prefetchAudio(prefs.reciter, it.v.s);
   }, [items, active, prefs.reciter]);
 
-  // Each time a new card settles, recite it (if sound is on).
+  // Each time a new card settles, recite it (if sound is on). Keyed on the card itself, so it also starts
+  // when the feed first loads on opening the app, and after a mood change swaps the cards.
+  const activeKey = items[active]?.key;
   useEffect(() => {
     if (!items.length || sheet === 'mood' || resting) return;
     const it = items[active];
     if (prefs.sound) startCard(it, it?.kind === 'verse' ? (repeat[it.key] ?? 1) : 1);
     else stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, prefs.sound, prefs.reciter, sheet === 'mood', resting]);
+  }, [activeKey, prefs.sound, prefs.reciter, sheet === 'mood', resting]);
 
   // Each new card: controls visible while it arrives, then fade (after the translation and buttons have appeared).
   useEffect(() => {
