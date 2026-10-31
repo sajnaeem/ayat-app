@@ -506,6 +506,10 @@ export default function Feed() {
         sound={prefs.sound}
         onMood={() => setSheet('mood')}
         onTl={() => prefs.set({ showTl: !prefs.showTl })}
+        onRead={() => {
+          stop();
+          router.push('/read');
+        }}
         onSound={() => {
           // Turning sound on is a clear "play": release any pause.
           if (!prefs.sound) setHeld(false);
@@ -625,7 +629,7 @@ function OffRamp(p: { pal: Palette; tone: { bg: string; accent: string }; height
   );
 }
 
-function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palette; top: number; moodLabel: string; showTl: boolean; sound: boolean; onMood: () => void; onTl: () => void; onSound: () => void; onYou: () => void }) {
+function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palette; top: number; moodLabel: string; showTl: boolean; sound: boolean; onMood: () => void; onTl: () => void; onSound: () => void; onRead: () => void; onYou: () => void }) {
   const { pal } = p;
   const pill = [styles.pill, { borderColor: pal.line, backgroundColor: pal.surface }];
   const fade = useAnimatedStyle(() => ({ opacity: p.chrome.value }));
@@ -635,7 +639,7 @@ function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palett
         munib<Text style={{ color: pal.accent }}>.</Text>
       </Text>
       <View style={styles.topRight}>
-        <Pressable onPress={p.onMood} style={[pill, { maxWidth: 124 }]} accessibilityRole="button" accessibilityLabel="Change what's on your heart">
+        <Pressable onPress={p.onMood} style={[pill, { maxWidth: 100 }]} accessibilityRole="button" accessibilityLabel="Change what's on your heart">
           <Text style={[styles.pillText, { color: pal.text }]} numberOfLines={1}>
             {p.moodLabel}
           </Text>
@@ -645,6 +649,9 @@ function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palett
         </Pressable>
         <Pressable onPress={p.onSound} style={pill} accessibilityRole="switch" accessibilityState={{ checked: p.sound }} accessibilityLabel="Recitation">
           <Icon name={p.sound ? 'sound' : 'mute'} size={17} color={p.sound ? pal.text : pal.muted} />
+        </Pressable>
+        <Pressable onPress={p.onRead} style={pill} accessibilityRole="button" accessibilityLabel="All surahs">
+          <Icon name="book" size={17} color={pal.text} />
         </Pressable>
         <Pressable onPress={p.onYou} style={[pill, { backgroundColor: pal.text, borderColor: pal.text }]} accessibilityRole="button" accessibilityLabel="Your progress and settings">
           <Icon name="user" size={17} color={pal.bg} />
