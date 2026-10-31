@@ -9,7 +9,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ChooseName, SignIn } from '@/components/SignIn';
+import { ChooseName } from '@/components/SignIn';
 import { ToastProvider } from '@/components/Toast';
 import { AccountProvider, useAccount } from '@/lib/account';
 import { ProgressProvider } from '@/lib/progress';
@@ -43,10 +43,10 @@ function Root() {
 
   if (!loaded) return null;
 
-  // An account is required: sign in first, then choose a display name, then the app.
+  // Signed in: choose a display name first, then the app.
   let gate: React.ReactNode = null;
-  if (acct.status === 'signedOut') gate = <SignIn />;
-  else if (acct.status === 'signedIn' && !acct.profileLoaded)
+  // Signed out is fine: the Quran tab works without an account, and sign-in opens when it's needed.
+  if (acct.status === 'signedIn' && !acct.profileLoaded)
     gate = (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: pal.bg }}>
         <ActivityIndicator color={pal.accent} />
@@ -69,6 +69,7 @@ function Root() {
         <Stack.Screen name="read" options={{ presentation: 'modal' }} />
         <Stack.Screen name="you" options={{ presentation: 'modal' }} />
         <Stack.Screen name="feedback" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="signin" options={{ presentation: 'modal' }} />
       </Stack>
     </>
   );

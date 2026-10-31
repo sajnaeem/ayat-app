@@ -385,3 +385,57 @@ export function liveVerse(v: Verse, lang: LangId): Verse {
   if (ayat.some((x) => !x?.ar)) return v;
   return { ...v, ar: ayat.map((x) => [x.ar, x.n] as [string, number]), tl: ayat.map((x) => x.tl), tr: { ...v.tr, [lang]: ayat.map((x) => x.tr) } };
 }
+
+/* ---------- word by word, and tafsir (Quran Foundation, through the "qf" function) ---------- */
+
+/** For each ayah of a surah: its words as [Arabic, meaning, transliteration]. */
+export type SurahWords = Record<number, [string, string, string][]>;
+const wordsCache = new Map<string, Promise<SurahWords>>();
+
+export function loadWords(s: number, lang: LangId): Promise<SurahWords> {
+  const key = `${lang}:${s}`;
+  let p = wordsCache.get(key);
+  if (!p) {
+    p = (async () => {
+      if (!supabase) throw new Error('offline');
+      const { data, error } = await supabase.functions.invoke('qf', { body: { s, words: true, lang } });
+      if (error || !data?.words) throw error ?? new Error('no words');
+      return data.words as SurahWords;
+    })();
+    p.catch(() => wordsCache.delete(key));
+    wordsCache.set(key, p);
+  }
+  return p;
+}
+
+export type Tafsir = { by: string; keys: string[]; paragraphs: string[] };
+const tafsirCache = new Map<string, Promise<Tafsir>>();
+
+/** Tafsir HTML as plain paragraphs (headings kept as their own paragraph). */
+function htmlParagraphs(html: string): string[] {
+  const ent: Record<string, string> = { '&amp;': '&', '&quot;': '"', '&#39;': "'", '&apos;': "'", '&lt;': '<', '&gt;': '>', '&nbsp;': ' ' };
+  return html
+    .replace(/<\s*br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|h\d|div|li)>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&[a-z#0-9]+;/gi, (m) => ent[m] ?? m)
+    .split(/\n+/)
+    .map((x) => x.replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+}
+
+export function loadTafsir(key: string, lang: LangId): Promise<Tafsir> {
+  const id = `${lang}:${key}`;
+  let p = tafsirCache.get(id);
+  if (!p) {
+    p = (async () => {
+      if (!supabase) throw new Error('offline');
+      const { data, error } = await supabase.functions.invoke('qf', { body: { key, tafsir: true, lang } });
+      if (error || !data?.html) throw error ?? new Error('no tafsir');
+      return { by: data.by as string, keys: (data.keys ?? []) as string[], paragraphs: htmlParagraphs(data.html as string) };
+    })();
+    p.catch(() => tafsirCache.delete(id));
+    tafsirCache.set(id, p);
+  }
+  return p;
+}

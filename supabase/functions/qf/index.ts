@@ -8,6 +8,11 @@
 //   { "s": 2, "lang": "en" }        → { "by": "Saheeh International", "ayat": [{ "n": 1, "ar": "…", "tl": "…", "tr": "…" }, …] }
 //   { "reciters": true }            → the ayah-by-ayah recitations Quran Foundation offers
 //   { "s": 1, "audio": 7 }          → per-ayah audio for a surah, with word timings where available
+//   { "s": 1, "words": true, "lang": "en" } → word-by-word: { words: { "1": [[arabic, meaning, transliteration], …] } }
+//   { "key": "2:255", "tafsir": true, "lang": "en" } → { by, keys: ["2:255"], html } (Ibn Kathir)
+//
+// Deployed with JWT verification off, so people can read the Quran tab before signing in.
+// It only ever returns public Quran content.
 
 const CLIENT_ID = Deno.env.get('QF_CLIENT_ID') ?? '833c983e-411c-47ae-8ebf-c46abc965f13'; // production client (not secret)
 const SECRET = Deno.env.get('QF_CLIENT_SECRET') ?? '';
@@ -25,6 +30,15 @@ const TRANSLATIONS: Record<string, { id: number; by: string }> = {
   es: { id: 83, by: 'Muhammad Isa García' },
 };
 const TRANSLITERATION = 57;
+
+// Tafsir Ibn Kathir: English (abridged), Urdu and Bengali; other languages read the English.
+const TAFSIR: Record<string, { id: number; by: string }> = {
+  en: { id: 169, by: 'Tafsir Ibn Kathir (abridged)' },
+  ur: { id: 160, by: 'Tafsir Ibn Kathir' },
+  bn: { id: 164, by: 'Tafsir Ibn Kathir' },
+};
+// Word-by-word meanings exist in these languages; others use English.
+const WORD_LANGS = new Set(['en', 'ur', 'bn', 'id', 'tr']);
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -99,9 +113,34 @@ Deno.serve(async (req) => {
       const d = await qf('/resources/recitations?language=en');
       return json(d, 200, { 'Cache-Control': 'public, max-age=86400' });
     }
+    if (body.tafsir) {
+      const key = String(body.key ?? '');
+      if (!/^\d{1,3}:\d{1,3}$/.test(key)) return json({ error: 'bad key' }, 400);
+      const t = TAFSIR[String(body.lang ?? 'en')] ?? TAFSIR.en;
+      const d = await qf(`/tafsirs/${t.id}/by_ayah/${key}`);
+      const tf = d.tafsir ?? {};
+      const verses = tf.verses ?? {};
+      const html = tf.text ?? (Object.values(verses)[0] as any)?.text ?? '';
+      return json({ by: t.by, keys: Object.keys(verses), html }, 200, { 'Cache-Control': 'public, max-age=86400' });
+    }
     const s = Number(body.s);
     const lang = String(body.lang ?? 'en');
     if (!Number.isInteger(s) || s < 1 || s > 114) return json({ error: 'bad surah' }, 400);
+    if (body.words) {
+      const wl = WORD_LANGS.has(lang) ? lang : 'en';
+      const q = (page: number) =>
+        `/verses/by_chapter/${s}?words=true&language=${wl}&word_fields=text_uthmani&fields=verse_number&per_page=50&page=${page}`;
+      const first = await qf(q(1));
+      const pages = first.pagination?.total_pages ?? 1;
+      const rest = await Promise.all(Array.from({ length: pages - 1 }, (_, i) => qf(q(i + 2))));
+      const words: Record<string, [string, string, string][]> = {};
+      for (const v of [first, ...rest].flatMap((d) => d.verses ?? [])) {
+        words[v.verse_number] = (v.words ?? [])
+          .filter((w: any) => w.char_type_name === 'word')
+          .map((w: any) => [w.text_uthmani ?? w.text ?? '', w.translation?.text ?? '', w.transliteration?.text ?? '']);
+      }
+      return json({ lang: wl, words }, 200, { 'Cache-Control': 'public, max-age=86400' });
+    }
     if (body.audio) {
       const id = Number(body.audio);
       const q = (page: number) => `/recitations/${id}/by_chapter/${s}?fields=segments,duration&per_page=50&page=${page}`;

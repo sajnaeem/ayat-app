@@ -20,7 +20,15 @@ function toE164(raw: string) {
 }
 
 /** The first screen for anyone not signed in. */
-export function SignIn() {
+/** Google and phone sign-in are built but not switched on in Supabase for the iOS launch. */
+const SHOW_GOOGLE = false;
+const SHOW_PHONE = false;
+
+/**
+ * Sign in or create an account. Shown when someone wants something that needs an account
+ * (For you, reflections, their progress); the Quran tab works without one.
+ */
+export function SignIn({ onClose, reason }: { onClose?: () => void; reason?: string } = {}) {
   const pal = usePalette();
   const insets = useSafeAreaInsets();
   const acct = useAccount();
@@ -67,7 +75,7 @@ export function SignIn() {
           <Text style={[styles.meaning, { color: pal.muted }]}>
             <Text style={{ fontFamily: 'NotoNaskhArabic_400Regular', color: pal.accent }}>مُنِيب</Text>  ·  one who turns back to Allah (50:33)
           </Text>
-          <Text style={[styles.tag, { color: pal.muted }]}>Scroll the Quran. A little further every day.</Text>
+          <Text style={[styles.tag, { color: pal.muted }]}>{reason ?? 'Scroll the Quran. A little further every day.'}</Text>
         </View>
 
         {mode === 'choose' && (
@@ -81,15 +89,24 @@ export function SignIn() {
                 onPress={() => run(acct.signInWithApple)}
               />
             )}
-            <Pressable onPress={() => run(acct.signInWithGoogle)} style={outline} accessibilityRole="button">
-              <Text style={[styles.btnText, { color: pal.text }]}>Continue with Google</Text>
-            </Pressable>
-            <Pressable onPress={() => setMode('phone')} style={outline} accessibilityRole="button">
-              <Text style={[styles.btnText, { color: pal.text }]}>Continue with phone number</Text>
-            </Pressable>
+            {SHOW_GOOGLE && (
+              <Pressable onPress={() => run(acct.signInWithGoogle)} style={outline} accessibilityRole="button">
+                <Text style={[styles.btnText, { color: pal.text }]}>Continue with Google</Text>
+              </Pressable>
+            )}
+            {SHOW_PHONE && (
+              <Pressable onPress={() => setMode('phone')} style={outline} accessibilityRole="button">
+                <Text style={[styles.btnText, { color: pal.text }]}>Continue with phone number</Text>
+              </Pressable>
+            )}
             <Pressable onPress={() => setMode('email')} style={outline} accessibilityRole="button">
               <Text style={[styles.btnText, { color: pal.text }]}>Continue with email</Text>
             </Pressable>
+            {onClose && (
+              <Pressable onPress={onClose} style={styles.link} accessibilityRole="button">
+                <Text style={[styles.linkText, { color: pal.muted }]}>Not now, keep reading the Quran</Text>
+              </Pressable>
+            )}
           </View>
         )}
 

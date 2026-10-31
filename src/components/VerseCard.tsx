@@ -4,6 +4,7 @@ import Animated, { Easing, SharedValue, useAnimatedStyle, useReducedMotion, useS
 import { arabicNumber, chapterTranslator, LANGS, LangId, liveVerse, loadChapter, loadedChapter, MOODS, MoodId, translationFor, Verse } from '@/lib/quran';
 import { fonts, mix, Palette, Tone } from '@/lib/theme';
 import { Icon } from './Icon';
+import { TafsirSheet, WordPick, WordSheet } from './Study';
 import { Pattern } from './Pattern';
 
 type Props = {
@@ -71,14 +72,21 @@ function Reveal({ p, start, dur = 550, dx = 0, dy = 14, children, style }: { p: 
 }
 
 /** One Arabic word, appearing right to left. */
-const Word = memo(function Word({ p, i, text, color, size, hidden, tint, onPeek }: { p: SharedValue<number>; i: number; text: string; color: string; size: number; hidden?: boolean; tint?: string; onPeek?: () => void }) {
+const Word = memo(function Word({ p, i, text, color, size, hidden, tint, onPeek, onTap, onHold }: { p: SharedValue<number>; i: number; text: string; color: string; size: number; hidden?: boolean; tint?: string; onPeek?: () => void; onTap?: () => void; onHold?: () => void }) {
   const start = 140 + Math.min(i, 26) * 45;
   const a = useAnimatedStyle(() => {
     const t = Math.min(1, Math.max(0, (p.value * TOTAL - start) / 600));
     return { opacity: t, transform: [{ translateY: 5 * (1 - t) }] };
   });
   const t = (
-    <Animated.Text style={[{ fontFamily: fonts.arabic, fontSize: size, lineHeight: size * 1.9, color: hidden ? 'transparent' : color }, a]}>{text}</Animated.Text>
+    <Animated.Text
+      onPress={hidden ? undefined : onTap}
+      onLongPress={hidden ? undefined : onHold}
+      suppressHighlighting
+      style={[{ fontFamily: fonts.arabic, fontSize: size, lineHeight: size * 1.9, color: hidden ? 'transparent' : color }, a]}
+    >
+      {text}
+    </Animated.Text>
   );
   if (!hidden) return t;
   // A hidden word in "Test me": a soft block you can tap to peek at.
@@ -124,6 +132,8 @@ export const VerseCard = memo(function VerseCard(props: Props) {
   const p = useSharedValue(0);
   const lastTap = useRef(0);
   const [memOpen, setMemOpen] = useState(false);
+  const [wordPick, setWordPick] = useState<WordPick>(null);
+  const [tafsirOpen, setTafsirOpen] = useState(false);
   const [hideLevel, setHideLevel] = useState(0); // 0–4 quarters of the words hidden
   const [peeked, setPeeked] = useState<Set<number>>(new Set());
 
@@ -167,28 +177,6 @@ export const VerseCard = memo(function VerseCard(props: Props) {
   const rtlTr = lang === 'ur';
   const moodHit = mood && v.tags.includes(mood) ? MOODS.find((m) => m.id === mood) : null;
 
-  // Every word (and each ayah-end marker) is its own element in one right-to-left wrapping row,
-  // so the words can appear one by one and lines wrap naturally.
-  let wordIndex = 0;
-  let textWord = 0;
-  const arabic = v.ar.flatMap(([t, n]) => {
-    const dim = playing && playingAyah !== null && playingAyah !== n;
-    const col = dim ? soft : text;
-    const words = t.split(' ').filter(Boolean);
-    // Light up the word being recited, but only when the timings line up with this text word for word.
-    const pw = props.playingWord;
-    const said = playing && playingAyah === n && pw && pw.of === words.length ? pw.pos - 1 : -1;
-    const els = words.map((w, k) => {
-      const i = wordIndex++;
-      const tw = textWord++;
-      const hide = testing && hidden.has(tw) && !peeked.has(tw);
-      return <Word key={i} p={p} i={i} text={w + ' '} color={k === said ? tone.accent : col} size={arSize} hidden={hide} tint={tint} onPeek={() => setPeeked((s) => new Set(s).add(tw))} />;
-    });
-    const i = wordIndex++;
-    els.push(<Word key={i} p={p} i={i} text={`۝${arabicNumber(n)} `} color={tone.accent} size={arSize * 0.72} />);
-    return els;
-  });
-
   // One tap pauses or plays; two quick taps like. The single tap waits a moment so a double tap doesn't also pause.
   const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => void (tapTimer.current && clearTimeout(tapTimer.current)), []);
@@ -207,6 +195,43 @@ export const VerseCard = memo(function VerseCard(props: Props) {
       }, 280);
     }
   };
+
+  // Every word (and each ayah-end marker) is its own element in one right-to-left wrapping row,
+  // so the words can appear one by one and lines wrap naturally.
+  let wordIndex = 0;
+  let textWord = 0;
+  const arabic = v.ar.flatMap(([t, n]) => {
+    const dim = playing && playingAyah !== null && playingAyah !== n;
+    const col = dim ? soft : text;
+    const words = t.split(' ').filter(Boolean);
+    // Light up the word being recited, but only when the timings line up with this text word for word.
+    const pw = props.playingWord;
+    const said = playing && playingAyah === n && pw && pw.of === words.length ? pw.pos - 1 : -1;
+    const els = words.map((w, k) => {
+      const i = wordIndex++;
+      const tw = textWord++;
+      const hide = testing && hidden.has(tw) && !peeked.has(tw);
+      return (
+        <Word
+          key={i}
+          p={p}
+          i={i}
+          text={w + ' '}
+          color={k === said ? tone.accent : col}
+          size={arSize}
+          hidden={hide}
+          tint={tint}
+          onPeek={() => setPeeked((s) => new Set(s).add(tw))}
+          onTap={onBodyPress}
+          onHold={() => setWordPick({ s: v.s, n, k, count: words.length, text: w })}
+        />
+      );
+    });
+    const i = wordIndex++;
+    els.push(<Word key={i} p={p} i={i} text={`۝${arabicNumber(n)} `} color={tone.accent} size={arSize * 0.72} />);
+    return els;
+  });
+
 
   return (
     // Any touch on the card brings the faded controls back.
@@ -299,6 +324,9 @@ export const VerseCard = memo(function VerseCard(props: Props) {
                 <Text style={[styles.toolText, { color: text }]}>Context</Text>
               </Pressable>
             )}
+            <Pressable onPress={() => setTafsirOpen(true)} style={[styles.tool, { borderColor: line }]} accessibilityRole="button" accessibilityLabel="Tafsir, an explanation of this ayah">
+              <Text style={[styles.toolText, { color: text }]}>Tafsir</Text>
+            </Pressable>
            </Animated.View>
           </Reveal>
 
@@ -372,7 +400,9 @@ export const VerseCard = memo(function VerseCard(props: Props) {
         </RailButton>
       </Animated.View>
 
-      {first && <Text style={[styles.hint, { color: muted, bottom: bottomInset + 6 }]}>Swipe up for the next ayah · tap to pause · double-tap to like</Text>}
+      {first && <Text style={[styles.hint, { color: muted, bottom: bottomInset + 6 }]}>Swipe up · tap to pause · hold a word for its meaning</Text>}
+      <WordSheet pick={wordPick} lang={lang} pal={pal} onClose={() => setWordPick(null)} />
+      <TafsirSheet verseKey={tafsirOpen ? `${v.s}:${playingAyah && v.ar.some(([, n]) => n === playingAyah) ? playingAyah : v.a}` : null} lang={lang} pal={pal} onClose={() => setTafsirOpen(false)} />
     </View>
   );
 });

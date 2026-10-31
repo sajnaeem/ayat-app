@@ -8,6 +8,7 @@ import Animated, { SharedValue, useAnimatedStyle, useSharedValue, withTiming } f
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
 import { ReflectionsSheet } from '@/components/Reflections';
+import { ShareSheet } from '@/components/ShareCard';
 import { Sheet } from '@/components/Sheet';
 import { useToast } from '@/components/Toast';
 import { VerseCard } from '@/components/VerseCard';
@@ -160,7 +161,11 @@ export default function Feed() {
   const toast = useToast();
   const [height, setHeight] = useState(0);
   const [active, setActive] = useState(0);
-  const [sheet, setSheet] = useState<null | 'mood' | 'context' | 'remind' | 'support'>(prefs.onboarded ? null : 'mood');
+  const acctEarly = useAccount();
+  // Without an account, people can read the Quran tab; For you, reflections and You ask them to sign in.
+  const guest = acctEarly.status === 'signedOut';
+  const mode: 'foryou' | 'order' = guest ? 'order' : prefs.feedMode;
+  const [sheet, setSheet] = useState<null | 'mood' | 'context' | 'remind' | 'support'>(prefs.onboarded || guest ? null : 'mood');
   const [remindAt, setRemindAt] = useState(2);
   const [contextVerse, setContextVerse] = useState<Verse | null>(null);
   const [resting, setResting] = useState(false);
@@ -191,11 +196,15 @@ export default function Feed() {
   const acct = useAccount();
   const [reflectFor, setReflectFor] = useState<Verse | null>(null);
 
-  const { items, setItems, reset, more, refreshAhead, orderFailed } = useEndlessFeed(prefs.mood, prefs.feedMode, prefs.feedMode === 'order' ? prefs.jump : 0);
+  const { items, setItems, reset, more, refreshAhead, orderFailed } = useEndlessFeed(prefs.mood, mode, mode === 'order' ? prefs.jump : 0);
 
   /** For you (curated, by mood) or In order (the whole Quran, from where you left off). */
   const switchMode = (m: 'foryou' | 'order') => {
-    if (m === prefs.feedMode) return;
+    if (m === mode) return;
+    if (guest) {
+      router.push({ pathname: '/signin', params: { why: 'foryou' } });
+      return;
+    }
     if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {});
     prefs.set({ feedMode: m });
   };
@@ -367,12 +376,12 @@ export default function Feed() {
   const announce = useCallback(
     (ev: { surahsCompleted: number[]; levelUp: number | null }) => {
       // Level-ups change the For you feed, so only mention them there.
-      if (ev.levelUp && prefs.feedMode === 'foryou') {
+      if (ev.levelUp && mode === 'foryou') {
         toast(`Unlocked: ${LEVELS[ev.levelUp - 1].name.toLowerCase()} are now in For you`);
         refreshAhead(active + 1);
       } else if (ev.surahsCompleted.length) toast(`MashaAllah, you've read all of ${SURAHS[ev.surahsCompleted[0] - 1][0]}`);
     },
-    [toast, refreshAhead, active, prefs.feedMode],
+    [toast, refreshAhead, active, mode],
   );
 
   useEffect(() => {
@@ -409,10 +418,9 @@ export default function Feed() {
     const on = prefs.toggleLike(k);
     if (on) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
   };
-  const share = (v: Verse) => {
-    const tr = translationFor(v, prefs.lang) ?? [];
-    Share.share({ message: `${v.ar.map(([t]) => t).join(' ')}\n\n${tr.join(' ')}\n— Quran ${v.k}\n\nShared from Munib` }).catch(() => {});
-  };
+  // Share opens a preview of the ayah as an image (colours, an optional greeting), or as text.
+  const [shareVerse, setShareVerse] = useState<Verse | null>(null);
+  const share = (v: Verse) => setShareVerse(v);
   /** Every "read more" opens the Quran tab at that ayah: one reading experience, always swipeable. */
   const openSurah = (s: number, from = 1) => {
     stop();
@@ -514,7 +522,7 @@ export default function Feed() {
                   ayat={prog.sessionAyat}
                   minutes={Math.max(1, Math.round((Date.now() - sessionStart.current) / 60000))}
                   surahName={SURAHS[item.s - 1][0]}
-                  onRead={prefs.feedMode === 'order' ? null : () => openSurah(item.s)}
+                  onRead={mode === 'order' ? null : () => openSurah(item.s)}
                   onRest={() => {
                     stop();
                     setResting(true);
@@ -559,7 +567,7 @@ export default function Feed() {
                 onRepeat={(n) => setRepeatFor(item, n)}
                 likeCount={acct.stats[item.v.k]?.likes ?? null}
                 reflectionCount={acct.stats[item.v.k]?.reflections ?? null}
-                onReflections={acct.online ? () => setReflectFor(item.v) : null}
+                onReflections={acct.online ? () => (guest ? router.push({ pathname: '/signin', params: { why: 'reflect' } }) : setReflectFor(item.v)) : null}
                 onSupport={() => setSheet('support')}
                 chrome={chrome}
                 chromeOn={chromeOn}
@@ -592,7 +600,7 @@ export default function Feed() {
         pal={pal}
         top={insets.top}
         moodLabel={moodLabel}
-        mode={prefs.feedMode}
+        mode={mode}
         onMode={switchMode}
         showTl={prefs.showTl}
         onMood={() => setSheet('mood')}
@@ -603,7 +611,7 @@ export default function Feed() {
         }}
         onYou={() => {
           stop();
-          router.push('/you');
+          router.push(guest ? { pathname: '/signin', params: { why: 'you' } } : '/you');
         }}
       />
 
@@ -673,6 +681,7 @@ export default function Feed() {
         <Text style={[styles.optSub, { color: pal.muted }]}>Summary drawn from classical tafsir. The launch version will show a licensed tafsir with full citations.</Text>
       </Sheet>
 
+      <ShareSheet verse={shareVerse} lang={prefs.lang} pal={pal} onClose={() => setShareVerse(null)} />
       <ReflectionsSheet verseKey={reflectFor?.k ?? null} title={reflectFor ? `${reflectFor.name} ${reflectFor.k.replace('-', '–')}` : ''} pal={pal} onClose={() => setReflectFor(null)} />
 
       <Modal visible={resting} animationType="fade" onRequestClose={() => setResting(false)}>
