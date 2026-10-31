@@ -33,7 +33,7 @@ Feed with mood picker ("What's on your heart today?": 11 feelings plus 5 life mo
 ## How it's built
 
 - **Expo SDK 58**, React Native, TypeScript, **Expo Router** (`src/app/`).
-- **Supabase** (project `skuhimrzjddujzwdedot`, London) for auth, likes, reflections, reports, backups of saves/progress, feedback. The publishable key in `.env` is meant to ship in the app; **row-level security does the protecting**, so every new table needs RLS policies.
+- **Supabase** (project `skuhimrzjddujzwdedot`, named "ayat", region eu-central-1 Frankfurt; Saj connected the Supabase connector on 31 Oct 2026, so SQL, edge function deploys and logs can be done directly; ask Saj before anything destructive) for auth, likes, reflections, reports, backups of saves/progress, feedback. The publishable key in `.env` is meant to ship in the app; **row-level security does the protecting**, so every new table needs RLS policies.
 - Content today: curated feed ayat in `src/data/verses.json` (with all 7 translations, notes, mood tags); full surahs from the **Quran Foundation API** through the Supabase Edge Function `qf` (`supabase/functions/qf/index.ts`, deployed by pasting into Dashboard → Edge Functions; secret `QF_CLIENT_SECRET` in Edge Function secrets; production client ID `833c983e-411c-47ae-8ebf-c46abc965f13`, prelive `08598c3c-…` unused). If the function fails, `loadChapter` falls back to the quran-json dataset on jsDelivr. QF terms: paid apps allowed, no ad profiling, cache content max 7 days. Bengali on QF is Taisirul Quran (161), as QF has no Muhiuddin Khan. Audio: QF per-ayah recitations via `qf` (`{s, audio: id}`; ids Alafasy 7, Sudais 3, Husary 6, Minshawi Murattal 9; relative URLs live on https://verses.quran.com/) with word timings `[index, position, startMs, endMs]`; the feed lights up the word being recited when the timing word count matches the card's text. Falls back to EveryAyah.com (no timings) if QF doesn't answer within 1.5s. Other QF reciters available: AbdulBaset (1 Mujawwad, 2 Murattal), Shatri 4, Rifai 5, Husary Muallim 12, Minshawi Mujawwad 8, Shuraym 10, Tablawi 11.
 
 ```
@@ -47,7 +47,7 @@ supabase/           schema.sql, 002_accounts.sql, 003_feedback.sql, 004_safety.s
 
 ## Supabase settings (done by Saj in the dashboard)
 
-- SQL files run: `schema.sql`, `002_accounts.sql` (confirm `003_feedback.sql` and `004_safety.sql` have been run; without 004, blocking fails and agreeing to guidelines can't be saved).
+- SQL files run: `schema.sql`, `002_accounts.sql`, `003_feedback.sql`, `004_safety.sql` (verified 31 Oct 2026: all tables exist with RLS on).
 - Saj has committed (in the guidelines) to reviewing reports within 24 hours: Table Editor → reports / reflections.
 - Auth: anonymous **off**; Email on with **Confirm email off** for the beta (built-in email sender is rate-limited); Apple on with Client IDs `host.exp.Exponent,app.munib`; redirect URLs `munib://**`, `exp://**`.
 - Moderation: 3 reports from different people hide a reflection. Review in Table Editor → reflections (`hidden = true`). Feedback is in Table Editor → feedback; screenshots in Storage → feedback.
