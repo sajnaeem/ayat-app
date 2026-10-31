@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
@@ -47,6 +48,7 @@ type Ctx = {
 };
 
 const C = createContext<Ctx | null>(null);
+const ACCOUNT_KEY = 'munib.account.v1';
 
 /** Turns a sign-in error into something a person can act on. */
 export function authMessage(e: unknown): string {
@@ -80,6 +82,36 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   const synced = useRef(false);
   const serverLikes = useRef<Set<string>>(new Set());
 
+  // Fast start: remember who was signed in on this phone and their display name, so the feed can show
+  // straight away on launch while the session and profile are confirmed in the background.
+  const cachedUid = useRef<string | null>(null);
+  const handleRef = useRef(handle);
+  handleRef.current = handle;
+  const guidelinesRef = useRef(guidelinesAccepted);
+  guidelinesRef.current = guidelinesAccepted;
+  const remember = (uid: string, h: string | null, g: boolean) =>
+    AsyncStorage.setItem(ACCOUNT_KEY, JSON.stringify({ uid, handle: h, guidelines: g })).catch(() => {});
+
+  useEffect(() => {
+    if (!supabase) return;
+    AsyncStorage.getItem(ACCOUNT_KEY)
+      .then((raw) => {
+        const c = raw ? (JSON.parse(raw) as { uid: string; handle: string | null; guidelines: boolean }) : null;
+        if (!c?.uid || !c.handle) return;
+        cachedUid.current = c.uid;
+        // Only if the real session hasn't answered yet.
+        setStatus((st) => {
+          if (st !== 'loading') return st;
+          setUserId(c.uid);
+          setHandleState(c.handle);
+          setGuidelinesAccepted(!!c.guidelines);
+          setProfileLoaded(true);
+          return 'signedIn';
+        });
+      })
+      .catch(() => {});
+  }, []);
+
   // Follow the session: restored on launch, then updated on sign-in and sign-out.
   useEffect(() => {
     if (!supabase) return;
@@ -99,7 +131,8 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     if (!supabase || !prefs.ready || !userId) return;
     let cancelled = false;
     synced.current = false;
-    setProfileLoaded(false);
+    // Keep showing the app if we already know this person's name from last time.
+    if (cachedUid.current !== userId) setProfileLoaded(false);
     (async () => {
       const uid = userId;
       const [profile, state, likes] = await Promise.all([
@@ -108,9 +141,12 @@ export function AccountProvider({ children }: { children: ReactNode }) {
         supabase.from('likes').select('verse_key').eq('user_id', uid),
       ]);
       if (cancelled) return;
-      setHandleState(profile.data?.handle ?? null);
-      setGuidelinesAccepted(!!profile.data?.guidelines_at);
-      setProfileLoaded(!profile.error);
+      if (!profile.error) {
+        setHandleState(profile.data?.handle ?? null);
+        setGuidelinesAccepted(!!profile.data?.guidelines_at);
+        remember(uid, profile.data?.handle ?? null, !!profile.data?.guidelines_at);
+      }
+      setProfileLoaded(!profile.error || cachedUid.current === uid);
       if (state.data) {
         prefs.set({ saves: { ...(state.data.saves as Record<string, number>), ...prefs.saves } });
         prog.merge(state.data.progress as Partial<Progress>);
@@ -185,6 +221,8 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     setMyServerLikes(new Set());
     setHandleState(null);
     setGuidelinesAccepted(false);
+    cachedUid.current = null;
+    AsyncStorage.removeItem(ACCOUNT_KEY).catch(() => {});
     setStats({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefs.set, prog.reset]);
@@ -240,6 +278,8 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.from('profiles').upsert({ id: userId, handle: clean });
       if (error) throw error;
       setHandleState(clean);
+      handleRef.current = clean;
+      remember(userId, clean, guidelinesRef.current);
     },
     [userId],
   );
@@ -301,6 +341,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.from('profiles').update({ guidelines_at: new Date().toISOString() }).eq('id', userId);
     if (error) throw error;
     setGuidelinesAccepted(true);
+    remember(userId, handleRef.current, true);
   }, [userId]);
 
   const blockUser = useCallback(
