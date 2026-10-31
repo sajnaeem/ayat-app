@@ -21,6 +21,8 @@ type Props = {
   saved: boolean;
   playing: boolean;
   playingAyah: number | null;
+  /** The word being recited right now in the playing ayah (1-based), with how many words the timings cover. */
+  playingWord?: { pos: number; of: number } | null;
   first: boolean;
   onLike: () => void;
   onDoubleTap: () => void;
@@ -166,11 +168,14 @@ export const VerseCard = memo(function VerseCard(props: Props) {
     const dim = playing && playingAyah !== null && playingAyah !== n;
     const col = dim ? soft : text;
     const words = t.split(' ').filter(Boolean);
-    const els = words.map((w) => {
+    // Light up the word being recited, but only when the timings line up with this text word for word.
+    const pw = props.playingWord;
+    const said = playing && playingAyah === n && pw && pw.of === words.length ? pw.pos - 1 : -1;
+    const els = words.map((w, k) => {
       const i = wordIndex++;
       const tw = textWord++;
       const hide = testing && hidden.has(tw) && !peeked.has(tw);
-      return <Word key={i} p={p} i={i} text={w + ' '} color={col} size={arSize} hidden={hide} tint={tint} onPeek={() => setPeeked((s) => new Set(s).add(tw))} />;
+      return <Word key={i} p={p} i={i} text={w + ' '} color={k === said ? tone.accent : col} size={arSize} hidden={hide} tint={tint} onPeek={() => setPeeked((s) => new Set(s).add(tw))} />;
     });
     const i = wordIndex++;
     els.push(<Word key={i} p={p} i={i} text={`۝${arabicNumber(n)} `} color={tone.accent} size={arSize * 0.72} />);

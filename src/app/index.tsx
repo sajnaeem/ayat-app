@@ -1,4 +1,4 @@
-import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
+import { useAudioPlayer } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
@@ -11,7 +11,7 @@ import { ReflectionsSheet } from '@/components/Reflections';
 import { Sheet } from '@/components/Sheet';
 import { useToast } from '@/components/Toast';
 import { VerseCard } from '@/components/VerseCard';
-import { ayahAudioUrl } from '@/lib/audio';
+import { ayahAudio, wordAt } from '@/lib/audio';
 import { ayahKeys, feedRound, interleave, ladderCards, LEVELS, MOODS, MoodId, SUPPORT, SURAHS, translationFor, Verse } from '@/lib/quran';
 import { useAccount } from '@/lib/account';
 import { dayKey, useProgress } from '@/lib/progress';
@@ -166,14 +166,31 @@ export default function Feed() {
   }, [items]);
 
   /* ---------- recitation (with Memorise repeat) ---------- */
-  const player = useAudioPlayer(null);
-  const status = useAudioPlayerStatus(player);
+  const player = useAudioPlayer(null, { updateInterval: 100 });
   const queue = useRef<{ card: string; s: number; ayat: number[]; idx: number; pass: number; passes: number } | null>(null);
   const [playing, setPlaying] = useState<{ card: string; ayah: number; pass: number; passes: number } | null>(null);
+  // Word-by-word: timings for the ayah being recited, and the word being said right now.
+  const timings = useRef<[number, number, number][]>([]);
+  const [word, setWord] = useState<{ pos: number; of: number } | null>(null);
+  const [finished, setFinished] = useState(0);
+
+  useEffect(() => {
+    const sub = player.addListener('playbackStatusUpdate', (st) => {
+      if (st.didJustFinish) setFinished((n) => n + 1);
+      const t = timings.current;
+      if (!t.length) return;
+      const pos = wordAt(t, st.currentTime * 1000);
+      // Only re-render when the word actually changes.
+      setWord((w) => (pos === null ? null : w?.pos === pos ? w : { pos, of: t[t.length - 1][0] }));
+    });
+    return () => sub.remove();
+  }, [player]);
 
   const stop = useCallback(() => {
     player.pause();
     queue.current = null;
+    timings.current = [];
+    setWord(null);
     setPlaying(null);
   }, [player]);
 
@@ -181,9 +198,17 @@ export default function Feed() {
     const q = queue.current;
     if (!q) return;
     const n = q.ayat[q.idx];
-    player.replace(ayahAudioUrl(prefs.reciter, q.s, n));
-    player.play();
+    const at = { q, idx: q.idx, pass: q.pass };
+    timings.current = [];
+    setWord(null);
     setPlaying({ card: q.card, ayah: n, pass: q.pass, passes: q.passes });
+    ayahAudio(prefs.reciter, q.s, n).then((a) => {
+      // The reader may have moved on while the audio was being looked up.
+      if (queue.current !== at.q || at.q.idx !== at.idx || at.q.pass !== at.pass) return;
+      timings.current = a.words;
+      player.replace(a.url);
+      player.play();
+    });
   }, [player, prefs.reciter]);
 
   const startCard = useCallback(
@@ -199,7 +224,7 @@ export default function Feed() {
   );
 
   useEffect(() => {
-    if (!status.didJustFinish || !queue.current) return;
+    if (!finished || !queue.current) return;
     const q = queue.current;
     if (q.idx < q.ayat.length - 1) q.idx += 1;
     else if (q.pass < q.passes) {
@@ -207,7 +232,8 @@ export default function Feed() {
       q.idx = 0;
     } else return stop();
     playIdx();
-  }, [status.didJustFinish, playIdx, stop]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [finished]);
 
   // Each time a new card settles, recite it (if sound is on).
   useEffect(() => {
@@ -381,6 +407,7 @@ export default function Feed() {
                 saved={!!prefs.saves[item.v.k]}
                 playing={isPlaying}
                 playingAyah={isPlaying ? playing!.ayah : null}
+                playingWord={isPlaying ? word : null}
                 first={item.i === 0}
                 onLike={() => like(item.v.k)}
                 onDoubleTap={() => like(item.v.k, true)}
