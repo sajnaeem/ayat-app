@@ -4,8 +4,10 @@
 // and this function signs in to the Quran Foundation API with the secret stored in
 // Supabase (Edge Functions → Secrets → QF_CLIENT_SECRET) and returns a compact list.
 //
-// Request (POST JSON): { "s": 2, "lang": "en" }
-// Response: { "by": "Saheeh International", "ayat": [{ "n": 1, "ar": "…", "tl": "…", "tr": "…" }, …] }
+// Requests (POST JSON):
+//   { "s": 2, "lang": "en" }        → { "by": "Saheeh International", "ayat": [{ "n": 1, "ar": "…", "tl": "…", "tr": "…" }, …] }
+//   { "reciters": true }            → the ayah-by-ayah recitations Quran Foundation offers
+//   { "s": 1, "audio": 7 }          → per-ayah audio for a surah, with word timings where available
 
 const CLIENT_ID = Deno.env.get('QF_CLIENT_ID') ?? '833c983e-411c-47ae-8ebf-c46abc965f13'; // production client (not secret)
 const SECRET = Deno.env.get('QF_CLIENT_SECRET') ?? '';
@@ -93,9 +95,22 @@ Deno.serve(async (req) => {
   try {
     if (!SECRET) return json({ error: 'QF_CLIENT_SECRET is not set' }, 500);
     const body = req.method === 'POST' ? await req.json() : Object.fromEntries(new URL(req.url).searchParams);
+    if (body.reciters) {
+      const d = await qf('/resources/recitations?language=en');
+      return json(d, 200, { 'Cache-Control': 'public, max-age=86400' });
+    }
     const s = Number(body.s);
     const lang = String(body.lang ?? 'en');
     if (!Number.isInteger(s) || s < 1 || s > 114) return json({ error: 'bad surah' }, 400);
+    if (body.audio) {
+      const id = Number(body.audio);
+      const q = (page: number) => `/recitations/${id}/by_chapter/${s}?fields=segments,duration&per_page=50&page=${page}`;
+      const first = await qf(q(1));
+      const pages = first.pagination?.total_pages ?? 1;
+      const rest = await Promise.all(Array.from({ length: pages - 1 }, (_, i) => qf(q(i + 2))));
+      const files = [first, ...rest].flatMap((d) => d.audio_files ?? []);
+      return json({ files }, 200, { 'Cache-Control': 'public, max-age=86400' });
+    }
     const ayat = await chapter(s, lang);
     return json({ by: (TRANSLATIONS[lang] ?? TRANSLATIONS.en).by, ayat }, 200, { 'Cache-Control': 'public, max-age=86400' });
   } catch (e) {
