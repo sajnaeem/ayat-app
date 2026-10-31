@@ -18,6 +18,8 @@ type Prefs = {
   remindersOffered: boolean;
   /** The last ayah read in the full Quran reader, so "Continue the Quran" can pick up from there. */
   place: { s: number; a: number } | null;
+  /** The feed: curated ayat for you, or the whole Quran in order. */
+  feedMode: 'foryou' | 'order';
 };
 
 const DEFAULTS: Prefs = {
@@ -32,6 +34,7 @@ const DEFAULTS: Prefs = {
   reminders: { on: false, hour: 19, minute: 0, friday: true },
   remindersOffered: false,
   place: null,
+  feedMode: 'foryou',
 };
 
 const KEY = 'ayat.prefs.v1';

@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, AppState, FlatList, Linking, Modal, Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, ActivityIndicator, AppState, FlatList, Linking, Modal, Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import Animated, { SharedValue, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
@@ -12,18 +12,20 @@ import { Sheet } from '@/components/Sheet';
 import { useToast } from '@/components/Toast';
 import { VerseCard } from '@/components/VerseCard';
 import { ayahAudio, prefetchAudio, wordAt } from '@/lib/audio';
-import { ayahKeys, feedRound, interleave, ladderCards, LEVELS, MOODS, MoodId, SUPPORT, SURAHS, translationFor, Verse } from '@/lib/quran';
+import { ayahKeys, feedRound, interleave, ladderCards, LEVELS, orderCards, MOODS, MoodId, SUPPORT, SURAHS, translationFor, Verse } from '@/lib/quran';
 import { useAccount } from '@/lib/account';
 import { dayKey, useProgress } from '@/lib/progress';
 import { askPermission, REMINDER_TIMES, ReminderData, scheduleReminders } from '@/lib/reminders';
 import { usePrefs } from '@/lib/store';
 import { fonts, mix, Palette, usePalette } from '@/lib/theme';
 
-type VerseItem = { kind: 'verse'; key: string; v: Verse; i: number };
+type VerseItem = { kind: 'verse'; key: string; v: Verse; i: number; ord?: boolean };
 type OffItem = { kind: 'off'; key: string; i: number; s: number };
 /** "Continue the Quran": every so often, a card that picks up the full Quran where the reader last stopped. */
 type ContItem = { kind: 'cont'; key: string; i: number };
-type Item = VerseItem | OffItem | ContItem;
+/** In order: the opening of each surah. */
+type TitleItem = { kind: 'title'; key: string; i: number; s: number };
+type Item = VerseItem | OffItem | ContItem | TitleItem;
 const CONT_EVERY = 12;
 
 /** How long someone scrolls before the "time check" card appears. */
@@ -37,8 +39,19 @@ const withTimeout = <T,>(p: Promise<T>, ms: number, fallback: T) => Promise.race
  * The feed: rounds of curated ayat, forever, with the attention ladder's longer cards mixed in.
  * Never shows the same card twice in a row, and keeps recent cards from coming straight back.
  */
-function useEndlessFeed(mood: MoodId | null) {
+function useEndlessFeed(mood: MoodId | null, mode: 'foryou' | 'order') {
   const prefs = usePrefs();
+  // In order: which surah to load next, and where to start (read when the feed is rebuilt).
+  const placeRef = useRef(prefs.place);
+  placeRef.current = prefs.place;
+  const nextSurah = useRef(1);
+  const [orderFailed, setOrderFailed] = useState(false);
+  const orderChunk = (base: Item[], s: number, list: Verse[]): Item[] => {
+    const out = [...base];
+    if (list[0]?.a === 1) out.push({ kind: 'title', key: `t-${s}`, i: out.length, s });
+    for (const v of list) out.push({ kind: 'verse', key: `o-${v.k}`, v, i: out.length, ord: true });
+    return out;
+  };
   const { level, progress: readSoFar } = useProgress();
   const [items, setItems] = useState<Item[]>([]);
   const round = useRef(0);
@@ -72,18 +85,33 @@ function useEndlessFeed(mood: MoodId | null) {
   /** Replaces everything after `keep` with a fresh round (used after a level-up, or once ladder cards have loaded). */
   const refreshAhead = useCallback(
     async (keep: number) => {
+      if (mode === 'order') return;
       const g = gen.current;
       const { r, list } = await nextRound();
       if (g !== gen.current) return;
       setItems((prev) => compose(prev.slice(0, keep + 1), list, r));
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [mood],
+    [mood, mode],
   );
 
   const reset = useCallback(() => {
     const g = ++gen.current;
     round.current = 0;
+    if (mode === 'order') {
+      const start = nextPlace(placeRef.current);
+      setItems([]);
+      setOrderFailed(false);
+      orderCards(start.s, live.current.lang, start.a).then(
+        (list) => {
+          if (g !== gen.current) return;
+          nextSurah.current = start.s === 114 ? 1 : start.s + 1;
+          setItems(orderChunk([], start.s, list));
+        },
+        () => g === gen.current && setOrderFailed(true),
+      );
+      return;
+    }
     // Show curated ayat straight away; ladder cards join once their surahs have loaded.
     const r = round.current++;
     setItems(compose([], feedRound(r, mood, live.current.liked, live.current.fresh), r));
@@ -93,22 +121,32 @@ function useEndlessFeed(mood: MoodId | null) {
       }, 0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mood, refreshAhead]);
+  }, [mood, mode, refreshAhead]);
 
   const more = useCallback(async () => {
     if (busy.current) return;
     busy.current = true;
     const g = gen.current;
     try {
+      if (mode === 'order') {
+        const sNext = nextSurah.current;
+        const list = await orderCards(sNext, live.current.lang, 1);
+        if (g !== gen.current) return;
+        nextSurah.current = sNext === 114 ? 1 : sNext + 1;
+        setItems((prev) => orderChunk(prev, sNext, list));
+        return;
+      }
       const { r, list } = await nextRound();
       if (g === gen.current) setItems((prev) => compose(prev, list, r));
+    } catch {
+      // Couldn't load the next surah (offline?): onEndReached will try again.
     } finally {
       busy.current = false;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mood]);
+  }, [mood, mode]);
 
-  return { items, setItems, reset, more, refreshAhead };
+  return { items, setItems, reset, more, refreshAhead, orderFailed };
 }
 
 export default function Feed() {
@@ -156,7 +194,14 @@ export default function Feed() {
   const acct = useAccount();
   const [reflectFor, setReflectFor] = useState<Verse | null>(null);
 
-  const { items, setItems, reset, more, refreshAhead } = useEndlessFeed(prefs.mood);
+  const { items, setItems, reset, more, refreshAhead, orderFailed } = useEndlessFeed(prefs.mood, prefs.feedMode);
+
+  /** For you (curated, by mood) or In order (the whole Quran, from where you left off). */
+  const switchMode = (m: 'foryou' | 'order') => {
+    if (m === prefs.feedMode) return;
+    if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {});
+    prefs.set({ feedMode: m });
+  };
 
   // New mood → rebuild from the top, then jump back to the first card once the new cards are in.
   const pendingTop = useRef(false);
@@ -332,6 +377,7 @@ export default function Feed() {
       if (counted.current.has(it.key)) return;
       counted.current.add(it.key);
       announce(prog.markRead(ayahKeys(it.v), 1));
+      if (it.ord) prefs.set({ place: { s: it.v.s, a: it.v.b } });
     }, DWELL_MS);
 
     const now = Date.now();
@@ -417,6 +463,20 @@ export default function Feed() {
 
   return (
     <View style={[styles.root, { backgroundColor: pal.bg }]} onLayout={(e) => setHeight(e.nativeEvent.layout.height)}>
+      {items.length === 0 && (
+        <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center', gap: 14, padding: 32 }]}>
+          {orderFailed ? (
+            <>
+              <Text style={[styles.offBody, { color: pal.muted, textAlign: 'center' }]}>Couldn't load the Quran. Check your connection.</Text>
+              <Pressable onPress={reset} style={[styles.primary, { backgroundColor: pal.text, paddingHorizontal: 28 }]} accessibilityRole="button">
+                <Text style={[styles.primaryText, { color: pal.bg }]}>Try again</Text>
+              </Pressable>
+            </>
+          ) : (
+            <ActivityIndicator color={pal.accent} />
+          )}
+        </View>
+      )}
       {height > 0 && (
         <FlatList
           ref={listRef}
@@ -424,6 +484,7 @@ export default function Feed() {
           keyExtractor={(x) => x.key}
           renderItem={({ item, index }) => {
             const tone = pal.tones[item.i % pal.tones.length];
+            if (item.kind === 'title') return <SurahStart pal={pal} tone={tone} height={height} s={item.s} />;
             if (item.kind === 'cont') {
               const next = nextPlace(prefs.place);
               return (
@@ -434,7 +495,7 @@ export default function Feed() {
                   next={next}
                   started={!!prefs.place}
                   read={Object.keys(prog.progress.ayat).length}
-                  onRead={() => openSurah(next.s, next.a)}
+                  onRead={() => switchMode('order')}
                 />
               );
             }
@@ -525,6 +586,8 @@ export default function Feed() {
         pal={pal}
         top={insets.top}
         moodLabel={moodLabel}
+        mode={prefs.feedMode}
+        onMode={switchMode}
         showTl={prefs.showTl}
         sound={prefs.sound}
         onMood={() => setSheet('mood')}
@@ -630,6 +693,24 @@ export default function Feed() {
 }
 
 /** The time-check card: shown once after 20 minutes of scrolling. Swipe past it to keep going. */
+/** In order: the opening card of each surah, with the basmalah (except at-Tawbah, which has none). */
+function SurahStart(p: { pal: Palette; tone: { bg: string; accent: string }; height: number; s: number }) {
+  const { pal, tone, s } = p;
+  const [name, arName, meaning, count] = SURAHS[s - 1];
+  return (
+    <View style={[styles.off, { height: p.height, backgroundColor: tone.bg, alignItems: 'center' }]}>
+      <Text style={[styles.offEyebrow, { color: tone.accent }]}>SURAH {s}</Text>
+      <Text style={[styles.titleAr, { color: pal.text }]}>{arName}</Text>
+      <Text style={[styles.offTitle, { color: pal.text, textAlign: 'center' }]}>{name}</Text>
+      <Text style={[styles.offBody, { color: mix(tone.bg, pal.text, 0.75), textAlign: 'center' }]}>
+        {meaning} · {count} ayat
+      </Text>
+      {s !== 9 && s !== 1 && <Text style={[styles.basmalah, { color: pal.text }]}>بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</Text>}
+      <Text style={[styles.optSub, { color: mix(tone.bg, pal.text, 0.6) }]}>Swipe up to begin</Text>
+    </View>
+  );
+}
+
 /** Where "Continue the Quran" picks up: the ayah after the last one read, or the very beginning. */
 function nextPlace(place: { s: number; a: number } | null) {
   if (!place) return { s: 1, a: 1 };
@@ -691,29 +772,46 @@ function OffRamp(p: { pal: Palette; tone: { bg: string; accent: string }; height
   );
 }
 
-function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palette; top: number; moodLabel: string; showTl: boolean; sound: boolean; onMood: () => void; onTl: () => void; onSound: () => void; onRead: () => void; onYou: () => void }) {
+function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palette; top: number; moodLabel: string; mode: 'foryou' | 'order'; onMode: (m: 'foryou' | 'order') => void; showTl: boolean; sound: boolean; onMood: () => void; onTl: () => void; onSound: () => void; onRead: () => void; onYou: () => void }) {
   const { pal } = p;
   const pill = [styles.pill, { borderColor: pal.line, backgroundColor: pal.surface }];
   const fade = useAnimatedStyle(() => ({ opacity: p.chrome.value }));
   return (
     <Animated.View style={[styles.top, { paddingTop: p.top + 10 }, fade]} pointerEvents={p.chromeOn ? 'box-none' : 'none'}>
-      <Text style={[styles.brand, { color: pal.text }]}>
-        munib<Text style={{ color: pal.accent }}>.</Text>
-      </Text>
+      <View style={styles.tabs} accessibilityRole="tablist">
+        {(
+          [
+            ['foryou', 'For you'],
+            ['order', 'Quran'],
+          ] as const
+        ).map(([m, label]) => {
+          const on = p.mode === m;
+          return (
+            <Pressable key={m} onPress={() => p.onMode(m)} hitSlop={6} accessibilityRole="tab" accessibilityState={{ selected: on }} accessibilityLabel={m === 'order' ? 'The whole Quran, in order' : 'For you'}>
+              <Text style={[styles.tab, { color: on ? pal.text : pal.muted }]}>{label}</Text>
+              <View style={[styles.tabLine, { backgroundColor: on ? pal.accent : 'transparent' }]} />
+            </Pressable>
+          );
+        })}
+      </View>
       <View style={styles.topRight}>
-        <Pressable onPress={p.onMood} style={[pill, { maxWidth: 100 }]} accessibilityRole="button" accessibilityLabel="Change what's on your heart">
-          <Text style={[styles.pillText, { color: pal.text }]} numberOfLines={1}>
-            {p.moodLabel}
-          </Text>
-        </Pressable>
+        {p.mode === 'foryou' && (
+          <Pressable onPress={p.onMood} style={[pill, { maxWidth: 88 }]} accessibilityRole="button" accessibilityLabel="Change what's on your heart">
+            <Text style={[styles.pillText, { color: pal.text }]} numberOfLines={1}>
+              {p.moodLabel}
+            </Text>
+          </Pressable>
+        )}
+        {p.mode === 'order' && (
+          <Pressable onPress={p.onRead} style={pill} accessibilityRole="button" accessibilityLabel="All surahs">
+            <Icon name="book" size={17} color={pal.text} />
+          </Pressable>
+        )}
         <Pressable onPress={p.onTl} style={[pill, p.showTl && { borderColor: pal.accent }]} accessibilityRole="switch" accessibilityState={{ checked: p.showTl }} accessibilityLabel="Show transliteration">
           <Text style={[styles.aa, { color: p.showTl ? pal.accent : pal.text }]}>Aa</Text>
         </Pressable>
         <Pressable onPress={p.onSound} style={pill} accessibilityRole="switch" accessibilityState={{ checked: p.sound }} accessibilityLabel="Recitation">
           <Icon name={p.sound ? 'sound' : 'mute'} size={17} color={p.sound ? pal.text : pal.muted} />
-        </Pressable>
-        <Pressable onPress={p.onRead} style={pill} accessibilityRole="button" accessibilityLabel="All surahs">
-          <Icon name="book" size={17} color={pal.text} />
         </Pressable>
         <Pressable onPress={p.onYou} style={[pill, { backgroundColor: pal.text, borderColor: pal.text }]} accessibilityRole="button" accessibilityLabel="Your progress and settings">
           <Icon name="user" size={17} color={pal.bg} />
@@ -725,11 +823,16 @@ function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palett
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  titleAr: { fontFamily: fonts.arabic, fontSize: 44, lineHeight: 84 },
+  basmalah: { fontFamily: fonts.arabic, fontSize: 24, lineHeight: 48, marginTop: 8, textAlign: 'center' },
   contAr: { fontFamily: fonts.arabic, fontSize: 30, lineHeight: 56, textAlign: 'left' },
   contBar: { height: 6, borderRadius: 3, overflow: 'hidden' },
   top: { position: 'absolute', left: 0, right: 0, top: 0, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   brand: { fontFamily: fonts.uiBold, fontSize: 24, letterSpacing: -0.5 },
   topRight: { flexDirection: 'row', gap: 6, alignItems: 'center' },
+  tabs: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
+  tab: { fontFamily: fonts.uiBold, fontSize: 16, letterSpacing: -0.3 },
+  tabLine: { height: 2.5, borderRadius: 2, marginTop: 3, width: 18 },
   pill: { minHeight: 36, minWidth: 36, paddingHorizontal: 10, borderWidth: 1, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   pillText: { fontFamily: fonts.uiSemi, fontSize: 13 },
   aa: { fontFamily: fonts.readItalic, fontSize: 15 },

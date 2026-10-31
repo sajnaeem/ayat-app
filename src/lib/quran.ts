@@ -301,3 +301,28 @@ export function interleave(curated: Verse[], extras: Verse[], level: number): Ve
 }
 
 export const ayahKeys = (v: Verse) => v.ar.map(([, n]) => `${v.s}:${n}`);
+
+/* ---------- "In order": the whole Quran as a feed ---------- */
+
+/**
+ * One surah as bite-size cards, in order, starting at ayah `from`.
+ * Very short ayat are grouped (up to 4, about 10 words) so a card is never just two words; longer ayat stand alone.
+ */
+export async function orderCards(s: number, lang: LangId, from = 1): Promise<Verse[]> {
+  const c = await loadChapter(s, lang);
+  const out: Verse[] = [];
+  let a = Math.max(1, Math.min(from, c.length));
+  while (a <= c.length) {
+    let b = a;
+    let words = c[a - 1].ar.split(' ').filter(Boolean).length;
+    while (b < c.length && words < 10 && b - a < 3) {
+      const nw = c[b].ar.split(' ').filter(Boolean).length;
+      if (words + nw > 24) break;
+      words += nw;
+      b++;
+    }
+    out.push(makeVerse(s, a, b, [], c, lang));
+    a = b + 1;
+  }
+  return out;
+}
