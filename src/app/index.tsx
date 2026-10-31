@@ -175,6 +175,13 @@ export default function Feed() {
   const [finished, setFinished] = useState(0);
   const [paused, setPausedState] = useState(false);
   const pausedRef = useRef(false);
+  // Once someone pauses, the next cards stay quiet too until they choose to play again (this session).
+  const [held, setHeldState] = useState(false);
+  const heldRef = useRef(false);
+  const setHeld = useCallback((v: boolean) => {
+    heldRef.current = v;
+    setHeldState(v);
+  }, []);
   const setPaused = useCallback((v: boolean) => {
     pausedRef.current = v;
     setPausedState(v);
@@ -238,13 +245,18 @@ export default function Feed() {
         if (paused) {
           player.play();
           setPaused(false);
+          setHeld(false);
         } else {
           player.pause();
           setPaused(true);
+          setHeld(true);
         }
-      } else startCard(item, passes);
+      } else {
+        setHeld(false);
+        startCard(item, passes);
+      }
     },
-    [paused, player, startCard],
+    [paused, player, startCard, setPaused, setHeld],
   );
 
   useEffect(() => {
@@ -270,7 +282,7 @@ export default function Feed() {
   useEffect(() => {
     if (!items.length || sheet === 'mood' || resting) return;
     const it = items[active];
-    if (prefs.sound) startCard(it, it?.kind === 'verse' ? (repeat[it.key] ?? 1) : 1);
+    if (prefs.sound && !heldRef.current) startCard(it, it?.kind === 'verse' ? (repeat[it.key] ?? 1) : 1);
     else stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeKey, prefs.sound, prefs.reciter, sheet === 'mood', resting]);
@@ -443,7 +455,7 @@ export default function Feed() {
                 onLike={() => like(item.v.k)}
                 onDoubleTap={() => like(item.v.k, true)}
                 onSave={() => prefs.toggleSave(item.v.k)}
-                paused={isPlaying && paused}
+                paused={isPlaying ? paused : index === active && held}
                 onListen={() => togglePlay(item, reps)}
                 onSingleTap={() => togglePlay(item, reps)}
                 onShare={() => share(item.v)}
@@ -494,7 +506,11 @@ export default function Feed() {
         sound={prefs.sound}
         onMood={() => setSheet('mood')}
         onTl={() => prefs.set({ showTl: !prefs.showTl })}
-        onSound={() => prefs.set({ sound: !prefs.sound })}
+        onSound={() => {
+          // Turning sound on is a clear "play": release any pause.
+          if (!prefs.sound) setHeld(false);
+          prefs.set({ sound: !prefs.sound });
+        }}
         onYou={() => {
           stop();
           router.push('/you');
