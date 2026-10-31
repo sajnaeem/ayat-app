@@ -3,7 +3,8 @@ import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AppState, FlatList, Modal, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, AppState, FlatList, Modal, Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import Animated, { SharedValue, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
 import { ReflectionsSheet } from '@/components/Reflections';
@@ -116,6 +117,33 @@ export default function Feed() {
   const [resting, setResting] = useState(false);
   const [repeat, setRepeat] = useState<Record<string, number>>({});
   const listRef = useRef<FlatList<Item>>(null);
+
+  /* ---------- controls fade away while reading ---------- */
+  // A few seconds after a card settles, the top bar and buttons fade so the ayah has the whole screen.
+  // Any tap brings them back. Never hidden for VoiceOver users.
+  const chrome = useSharedValue(1);
+  const [chromeOn, setChromeOn] = useState(true);
+  const chromeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const screenReader = useRef(false);
+  useEffect(() => {
+    AccessibilityInfo.isScreenReaderEnabled().then((on) => (screenReader.current = on), () => {});
+    const sub = AccessibilityInfo.addEventListener('screenReaderChanged', (on) => (screenReader.current = on));
+    return () => sub.remove();
+  }, []);
+  const showChrome = useCallback(
+    (holdMs = 5000) => {
+      chrome.value = withTiming(1, { duration: 220 });
+      setChromeOn(true);
+      if (chromeTimer.current) clearTimeout(chromeTimer.current);
+      chromeTimer.current = setTimeout(() => {
+        if (screenReader.current) return;
+        chrome.value = withTiming(0, { duration: 900 });
+        setChromeOn(false);
+      }, holdMs);
+    },
+    [chrome],
+  );
+  useEffect(() => () => void (chromeTimer.current && clearTimeout(chromeTimer.current)), []);
   const acct = useAccount();
   const [reflectFor, setReflectFor] = useState<Verse | null>(null);
 
@@ -189,6 +217,15 @@ export default function Feed() {
     else stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, prefs.sound, prefs.reciter, sheet === 'mood', resting]);
+
+  // Each new card: controls visible while it arrives, then fade (after the translation and buttons have appeared).
+  useEffect(() => {
+    if (sheet) {
+      chrome.value = withTiming(1, { duration: 200 });
+      setChromeOn(true);
+      if (chromeTimer.current) clearTimeout(chromeTimer.current);
+    } else showChrome(6500);
+  }, [active, sheet, showChrome, chrome]);
 
   const onViewable = useRef(({ viewableItems }: { viewableItems: { index?: number | null }[] }) => {
     const first = viewableItems[0];
@@ -277,7 +314,9 @@ export default function Feed() {
   };
 
   // Tapping a reminder opens the mood check-in, or the surah it mentioned.
-  const lastResponse = Notifications.useLastNotificationResponse();
+  // Platform never changes while the app runs, so this conditional hook is safe. Notifications don't exist on web.
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const lastResponse = Platform.OS === 'web' ? null : Notifications.useLastNotificationResponse();
   const handled = useRef<string | null>(null);
   useEffect(() => {
     if (!lastResponse || lastResponse.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return;
@@ -359,6 +398,9 @@ export default function Feed() {
                 likeCount={acct.stats[item.v.k]?.likes ?? null}
                 reflectionCount={acct.stats[item.v.k]?.reflections ?? null}
                 onReflections={acct.online ? () => setReflectFor(item.v) : null}
+                chrome={chrome}
+                chromeOn={chromeOn}
+                onTap={() => showChrome()}
                 onMemorised={() => {
                   prog.markMemorised(ayahKeys(item.v));
                   toast(`${item.v.k} marked as memorised`);
@@ -382,6 +424,8 @@ export default function Feed() {
       )}
 
       <TopBar
+        chrome={chrome}
+        chromeOn={chromeOn}
         pal={pal}
         top={insets.top}
         moodLabel={moodLabel}
@@ -484,11 +528,12 @@ function OffRamp(p: { pal: Palette; tone: { bg: string; accent: string }; height
   );
 }
 
-function TopBar(p: { pal: Palette; top: number; moodLabel: string; showTl: boolean; sound: boolean; onMood: () => void; onTl: () => void; onSound: () => void; onYou: () => void }) {
+function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palette; top: number; moodLabel: string; showTl: boolean; sound: boolean; onMood: () => void; onTl: () => void; onSound: () => void; onYou: () => void }) {
   const { pal } = p;
   const pill = [styles.pill, { borderColor: pal.line, backgroundColor: pal.surface }];
+  const fade = useAnimatedStyle(() => ({ opacity: p.chrome.value }));
   return (
-    <View style={[styles.top, { paddingTop: p.top + 10 }]} pointerEvents="box-none">
+    <Animated.View style={[styles.top, { paddingTop: p.top + 10 }, fade]} pointerEvents={p.chromeOn ? 'box-none' : 'none'}>
       <Text style={[styles.brand, { color: pal.text }]}>
         munib<Text style={{ color: pal.accent }}>.</Text>
       </Text>
@@ -508,7 +553,7 @@ function TopBar(p: { pal: Palette; top: number; moodLabel: string; showTl: boole
           <Icon name="user" size={17} color={pal.bg} />
         </Pressable>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 

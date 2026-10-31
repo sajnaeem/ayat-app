@@ -23,7 +23,7 @@ A short-form, TikTok-style Quran app for Muslims whose attention has been shaped
 - **Never sell or share user data.** Religion is special-category data under UK GDPR. No ad networks.
 - **iOS first.** Android later from the same code.
 - **Accounts are required.** Sign in with Apple and email for the iOS launch. Google and phone (SMS, paid per text) are coded but not switched on.
-- **Design: "Quiet Modern".** Light, soft tinted grounds rotating through 5 tones per card; large right-set Arabic (Noto Naskh Arabic); Literata for reading; Bricolage Grotesque for UI. Avoid the Amiri look that competitors use. Subtle entrance animation: Arabic appears word by word, right to left.
+- **Design: "Quiet Modern".** Light, soft tinted grounds rotating through 5 tones per card; large right-set Arabic (Noto Naskh Arabic); Literata for reading; Bricolage Grotesque for UI. Avoid the Amiri look that competitors use. Subtle entrance animation: Arabic appears word by word, right to left, and arrives alone; the line, translation and buttons follow once it's complete. Controls (top bar, side buttons, card buttons) fade away about 6 seconds after a card settles and return on any touch (never hidden with VoiceOver; the web preview always reports a screen reader, so they never fade there). A faint eight-point star motif sits in two corners of each card. Icon: cream منيب on emerald (#1F6E52) with the same star; launch screen light #F1F3EF / dark #121A16.
 - **Infinite feed**, not a fixed daily set.
 
 ## Features (all in the app today)

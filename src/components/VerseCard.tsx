@@ -4,6 +4,7 @@ import Animated, { Easing, SharedValue, useAnimatedStyle, useReducedMotion, useS
 import { arabicNumber, LANGS, LangId, loadChapter, MOODS, MoodId, translationFor, Verse } from '@/lib/quran';
 import { fonts, mix, Palette, Tone } from '@/lib/theme';
 import { Icon } from './Icon';
+import { Pattern } from './Pattern';
 
 type Props = {
   verse: Verse;
@@ -37,11 +38,18 @@ type Props = {
   reflectionCount: number | null;
   /** Null when reflections aren't available (no database yet). */
   onReflections: (() => void) | null;
+  /** Shared by the whole feed: 1 = controls visible, 0 = faded away while reading. */
+  chrome: SharedValue<number>;
+  chromeOn: boolean;
+  /** A single tap on the card (brings the controls back). */
+  onTap: () => void;
 };
 
 const EASE = Easing.bezier(0.2, 0.7, 0.2, 1);
 /** Total length of the entrance, in ms of "progress" time. */
-const TOTAL = 2400;
+const TOTAL = 4000;
+/** When the last Arabic word has finished appearing. The translation waits for this, so the Arabic arrives alone. */
+const arabicDone = (words: number) => 140 + Math.min(words, 26) * 45 + 600;
 
 /** Fades and lifts a block in when progress passes `start` (ms). */
 function Reveal({ p, start, dur = 550, dx = 0, dy = 14, children, style }: { p: SharedValue<number>; start: number; dur?: number; dx?: number; dy?: number; children: ReactNode; style?: object }) {
@@ -84,9 +92,9 @@ function hideOrder(n: number, seed: string) {
   return a;
 }
 
-function Hairline({ p, color }: { p: SharedValue<number> ; color: string }) {
+function Hairline({ p, color, start }: { p: SharedValue<number>; color: string; start: number }) {
   const a = useAnimatedStyle(() => {
-    const t = Math.min(1, Math.max(0, (p.value * TOTAL - 450) / 800));
+    const t = Math.min(1, Math.max(0, (p.value * TOTAL - start) / 800));
     const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
     return { transform: [{ scaleX: e }] };
   });
@@ -142,6 +150,8 @@ export const VerseCard = memo(function VerseCard(props: Props) {
     return new Set(order.slice(0, Math.ceil((wordCount * hideLevel) / 4)));
   }, [wordCount, v.k, hideLevel]);
   const testing = hideLevel > 0;
+  const ae = arabicDone(wordCount + v.ar.length);
+  const chromeStyle = useAnimatedStyle(() => ({ opacity: props.chrome.value }));
   const tint = mix(tone.bg, tone.accent, 0.2);
   const rtlTr = lang === 'ur';
   const moodHit = mood && v.tags.includes(mood) ? MOODS.find((m) => m.id === mood) : null;
@@ -174,7 +184,9 @@ export const VerseCard = memo(function VerseCard(props: Props) {
   };
 
   return (
-    <View style={[styles.card, { height, backgroundColor: tone.bg, paddingTop: topInset + 64, paddingBottom: bottomInset + 24 }]}>
+    // Any touch on the card brings the faded controls back.
+    <View onTouchStart={props.onTap} style={[styles.card, { height, backgroundColor: tone.bg, paddingTop: topInset + 64, paddingBottom: bottomInset + 24 }]}>
+      <Pattern color={tone.accent} top={topInset} />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollInner}
@@ -210,7 +222,7 @@ export const VerseCard = memo(function VerseCard(props: Props) {
           </View>
 
           {showTl && (
-            <Reveal p={p} start={500}>
+            <Reveal p={p} start={ae}>
               <Text style={[styles.tl, { color: tone.accent, fontSize: trSize - 2 }]}>
                 {v.tl.map((t, j) => (
                   <Text key={j} style={{ opacity: playing && playingAyah !== null && playingAyah !== v.ar[j][1] ? 0.45 : 1 }}>
@@ -223,16 +235,17 @@ export const VerseCard = memo(function VerseCard(props: Props) {
             </Reveal>
           )}
 
-          <Hairline p={p} color={line} />
+          <Hairline p={p} color={line} start={ae - 150} />
 
-          <Reveal p={p} start={700} dur={650}>
+          <Reveal p={p} start={ae + 250} dur={700}>
             <Text style={[styles.tr, { color: text, fontSize: trSize, lineHeight: trSize * (rtlTr ? 2.1 : 1.5), textAlign: rtlTr ? 'right' : 'left', writingDirection: rtlTr ? 'rtl' : 'ltr' }]}>
               {tr ? tr.map((t, j) => (tr.length > 1 ? `(${v.a + j}) ${t}` : t)).join(' ') : 'Loading translation…'}
             </Text>
             <Text style={[styles.by, { color: muted }]}>{L.by}</Text>
           </Reveal>
 
-          <Reveal p={p} start={850} style={styles.tools}>
+          <Reveal p={p} start={ae + 700}>
+           <Animated.View style={[styles.tools, !memOpen && chromeStyle]} pointerEvents={props.chromeOn || memOpen ? 'box-none' : 'none'}>
             <Pressable onPress={props.onKeepReading} style={[styles.tool, { borderColor: tone.accent }]} accessibilityRole="button">
               <Icon name="book" size={16} color={tone.accent} />
               <Text style={[styles.toolText, { color: tone.accent }]}>Keep reading</Text>
@@ -245,6 +258,7 @@ export const VerseCard = memo(function VerseCard(props: Props) {
                 <Text style={[styles.toolText, { color: text }]}>Context</Text>
               </Pressable>
             )}
+           </Animated.View>
           </Reveal>
 
           {memOpen && (
@@ -295,7 +309,7 @@ export const VerseCard = memo(function VerseCard(props: Props) {
         </Pressable>
       </ScrollView>
 
-      <View style={[styles.rail, { bottom: bottomInset + 28 }]}>
+      <Animated.View style={[styles.rail, { bottom: bottomInset + 28 }, chromeStyle]} pointerEvents={props.chromeOn ? 'box-none' : 'none'}>
         <RailButton p={p} i={0} label={props.likeCount != null ? String(props.likeCount) : 'Like'} a11y="Like" onPress={props.onLike} color={liked ? tone.accent : text}>
           <Icon name="heart" size={27} color={liked ? tone.accent : text} fill={liked} />
         </RailButton>
@@ -315,7 +329,7 @@ export const VerseCard = memo(function VerseCard(props: Props) {
             <Icon name={playing ? 'pause' : 'play'} size={20} color={tone.bg} fill={!playing} strokeWidth={2.2} />
           </View>
         </RailButton>
-      </View>
+      </Animated.View>
 
       {first && <Text style={[styles.hint, { color: muted, bottom: bottomInset + 6 }]}>Swipe up for the next ayah · double-tap to like</Text>}
     </View>
