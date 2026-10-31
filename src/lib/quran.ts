@@ -1,5 +1,6 @@
 import versesJson from '@/data/verses.json';
 import surahsJson from '@/data/surahs.json';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from './supabase';
 
 export type LangId = 'en' | 'ur' | 'bn' | 'id' | 'tr' | 'fr' | 'es';
@@ -158,12 +159,58 @@ async function fromDataset(s: number, lang: LangId): Promise<{ by: string; list:
  * Loads a whole surah (Arabic, transliteration, translation) in one language.
  * Quran Foundation API first (licensed text); if that isn't reachable, the open dataset, so reading never breaks.
  */
+/* Offline: surahs that have loaded are kept on the phone for up to 7 days (the Quran Foundation's limit),
+   newest 16 only, so reading carries on without a connection. */
+const CACHE_MS = 7 * 24 * 3600 * 1000;
+const CACHE_MAX = 16;
+const CACHE_INDEX = 'munib.chapters';
+type Cached = { t: number; by: string; list: ChapterAyah[] };
+
+// Saves run one after another so the index never loses an entry.
+let saving: Promise<void> = Promise.resolve();
+function saveOffline(key: string, by: string, list: ChapterAyah[]) {
+  saving = saving.then(() => writeOffline(key, by, list));
+}
+async function writeOffline(key: string, by: string, list: ChapterAyah[]) {
+  try {
+    const now = Date.now();
+    const index: Record<string, number> = JSON.parse((await AsyncStorage.getItem(CACHE_INDEX)) ?? '{}');
+    index[key] = now;
+    const keep = Object.entries(index)
+      .filter(([, t]) => now - t < CACHE_MS)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, CACHE_MAX);
+    const drop = Object.keys(index).filter((k) => !keep.some(([kk]) => kk === k));
+    await AsyncStorage.setItem(`munib.ch.${key}`, JSON.stringify({ t: now, by, list } satisfies Cached));
+    if (drop.length) await AsyncStorage.multiRemove(drop.map((k) => `munib.ch.${k}`));
+    await AsyncStorage.setItem(CACHE_INDEX, JSON.stringify(Object.fromEntries(keep)));
+  } catch {
+    // Storage full or unavailable: reading still works online.
+  }
+}
+
+async function fromOffline(key: string): Promise<{ by: string; list: ChapterAyah[] }> {
+  const raw = await AsyncStorage.getItem(`munib.ch.${key}`);
+  const c = raw ? (JSON.parse(raw) as Cached) : null;
+  if (!c || Date.now() - c.t > CACHE_MS) throw new Error('not saved');
+  return { by: c.by, list: c.list };
+}
+
+/**
+ * Loads a whole surah (Arabic, transliteration, translation) in one language.
+ * Quran Foundation API first (licensed text); then the open dataset; then the copy saved on the phone.
+ */
 export function loadChapter(s: number, lang: LangId): Promise<ChapterAyah[]> {
   const key = `${lang}:${s}`;
   let p = chapterCache.get(key);
   if (!p) {
     p = fromQuranFoundation(s, lang)
       .catch(() => fromDataset(s, lang))
+      .then((r) => {
+        saveOffline(key, r.by, r.list);
+        return r;
+      })
+      .catch(() => fromOffline(key))
       .then(({ by, list }) => {
         chapterReady.set(key, list);
         chapterBy.set(key, by);
@@ -325,4 +372,16 @@ export async function orderCards(s: number, lang: LangId, from = 1): Promise<Ver
     a = b + 1;
   }
   return out;
+}
+
+/**
+ * A curated card shown with the Quran Foundation's text once its surah has loaded, so every card in the app
+ * uses one licensed source (and word timings line up). The bundled text is the fallback until then, or offline.
+ */
+export function liveVerse(v: Verse, lang: LangId): Verse {
+  const c = loadedChapter(v.s, lang);
+  if (!c) return v;
+  const ayat = v.ar.map(([, n]) => c[n - 1]);
+  if (ayat.some((x) => !x?.ar)) return v;
+  return { ...v, ar: ayat.map((x) => [x.ar, x.n] as [string, number]), tl: ayat.map((x) => x.tl), tr: { ...v.tr, [lang]: ayat.map((x) => x.tr) } };
 }

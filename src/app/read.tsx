@@ -4,6 +4,7 @@ import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
 import { surahDone, useProgress } from '@/lib/progress';
+import { usePrefs } from '@/lib/store';
 import { arabicNumber, SURAHS } from '@/lib/quran';
 import { fonts, mix, usePalette } from '@/lib/theme';
 
@@ -38,7 +39,11 @@ export default function Read() {
     return all.filter((x) => fold(x.name).includes(f) || fold(x.meaning).includes(f) || x.ar.includes(t));
   }, [q]);
 
-  const open = (s: number) => router.push({ pathname: '/surah/[id]', params: { id: String(s), from: '1', to: '1' } });
+  const prefs = usePrefs();
+  const open = (s: number) => {
+    prefs.readAt(s, 1);
+    router.dismissAll();
+  };
 
   return (
     <View style={[styles.root, { backgroundColor: pal.bg }]}>

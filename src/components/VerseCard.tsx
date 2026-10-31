@@ -1,7 +1,7 @@
 import { memo, ReactNode, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { Easing, SharedValue, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
-import { arabicNumber, LANGS, LangId, loadChapter, MOODS, MoodId, translationFor, Verse } from '@/lib/quran';
+import { arabicNumber, chapterTranslator, LANGS, LangId, liveVerse, loadChapter, loadedChapter, MOODS, MoodId, translationFor, Verse } from '@/lib/quran';
 import { fonts, mix, Palette, Tone } from '@/lib/theme';
 import { Icon } from './Icon';
 import { Pattern } from './Pattern';
@@ -33,7 +33,8 @@ type Props = {
   onSave: () => void;
   onListen: () => void;
   onShare: () => void;
-  onKeepReading: () => void;
+  /** Null on the Quran tab, where the reader is already reading in order. */
+  onKeepReading: (() => void) | null;
   onContext: () => void;
   /** Memorise: how many times to loop the recitation, and where the loop is ("2 of 5"). */
   repeat: number;
@@ -111,11 +112,17 @@ function Hairline({ p, color, start }: { p: SharedValue<number>; color: string; 
 }
 
 export const VerseCard = memo(function VerseCard(props: Props) {
-  const { verse: v, tone, pal, height, topInset, bottomInset, active, lang, showTl, mood, liked, saved, playing, playingAyah, first } = props;
+  const { verse: bundled, tone, pal, height, topInset, bottomInset, active, lang, showTl, mood, liked, saved, playing, playingAyah, first } = props;
   const reduce = useReducedMotion();
+  // Shown from the Quran Foundation once the surah has loaded (usually before the card is reached).
+  const [, rerender] = useReducer((n: number) => n + 1, 0);
+  const loaded = !!loadedChapter(bundled.s, lang);
+  const v = useMemo(() => liveVerse(bundled, lang), [bundled, lang, loaded]);
+  useEffect(() => {
+    if (!loaded) loadChapter(bundled.s, lang).then(rerender, () => {});
+  }, [loaded, bundled.s, lang]);
   const p = useSharedValue(0);
   const lastTap = useRef(0);
-  const [, rerender] = useReducer((n: number) => n + 1, 0);
   const [memOpen, setMemOpen] = useState(false);
   const [hideLevel, setHideLevel] = useState(0); // 0–4 quarters of the words hidden
   const [peeked, setPeeked] = useState<Set<number>>(new Set());
@@ -147,10 +154,6 @@ export const VerseCard = memo(function VerseCard(props: Props) {
   const trSize = (arLen > 520 ? 16 : arLen > 240 ? 17 : 18.5) * Math.max(0.82, fit);
   const L = LANGS.find((l) => l.id === lang)!;
   const tr = translationFor(v, lang);
-  // Ladder passages read their translation from the loaded surah; fetch it if it isn't here yet.
-  useEffect(() => {
-    if (!tr) loadChapter(v.s, lang).then(rerender, () => {});
-  }, [tr, v.s, lang]);
 
   const wordCount = useMemo(() => v.ar.reduce((n, [t]) => n + t.split(' ').filter(Boolean).length, 0), [v]);
   const hidden = useMemo(() => {
@@ -277,15 +280,17 @@ export const VerseCard = memo(function VerseCard(props: Props) {
             <Text style={[styles.tr, { color: text, fontSize: trSize, lineHeight: trSize * (rtlTr ? 2.1 : 1.5), textAlign: rtlTr ? 'right' : 'left', writingDirection: rtlTr ? 'rtl' : 'ltr' }]}>
               {tr ? tr.map((t, j) => (tr.length > 1 ? `(${v.a + j}) ${t}` : t)).join(' ') : 'Loading translation…'}
             </Text>
-            <Text style={[styles.by, { color: muted }]}>{L.by}</Text>
+            <Text style={[styles.by, { color: muted }]}>{loaded ? chapterTranslator(v.s, lang) : L.by}</Text>
           </Reveal>
 
           <Reveal p={p} start={ae + 700}>
            <Animated.View style={[styles.tools, !memOpen && chromeStyle]} pointerEvents={props.chromeOn || memOpen ? 'box-none' : 'none'}>
-            <Pressable onPress={props.onKeepReading} style={[styles.tool, { borderColor: tone.accent }]} accessibilityRole="button">
-              <Icon name="book" size={16} color={tone.accent} />
-              <Text style={[styles.toolText, { color: tone.accent }]}>Keep reading</Text>
-            </Pressable>
+            {props.onKeepReading && (
+              <Pressable onPress={props.onKeepReading} style={[styles.tool, { borderColor: tone.accent }]} accessibilityRole="button">
+                <Icon name="book" size={16} color={tone.accent} />
+                <Text style={[styles.toolText, { color: tone.accent }]}>Keep reading</Text>
+              </Pressable>
+            )}
             <Pressable onPress={() => setMemOpen((o) => !o)} style={[styles.tool, { borderColor: memOpen ? tone.accent : line }]} accessibilityRole="button" accessibilityState={{ expanded: memOpen }}>
               <Text style={[styles.toolText, { color: memOpen ? tone.accent : text }]}>Memorise</Text>
             </Pressable>

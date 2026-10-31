@@ -12,7 +12,7 @@ import { Sheet } from '@/components/Sheet';
 import { useToast } from '@/components/Toast';
 import { VerseCard } from '@/components/VerseCard';
 import { ayahAudio, prefetchAudio, wordAt } from '@/lib/audio';
-import { ayahKeys, feedRound, interleave, ladderCards, LEVELS, orderCards, MOODS, MoodId, SUPPORT, SURAHS, translationFor, Verse } from '@/lib/quran';
+import { ayahKeys, feedRound, interleave, ladderCards, LEVELS, loadChapter, orderCards, MOODS, MoodId, SUPPORT, SURAHS, translationFor, Verse } from '@/lib/quran';
 import { useAccount } from '@/lib/account';
 import { dayKey, useProgress } from '@/lib/progress';
 import { askPermission, REMINDER_TIMES, ReminderData, scheduleReminders } from '@/lib/reminders';
@@ -39,7 +39,7 @@ const withTimeout = <T,>(p: Promise<T>, ms: number, fallback: T) => Promise.race
  * The feed: rounds of curated ayat, forever, with the attention ladder's longer cards mixed in.
  * Never shows the same card twice in a row, and keeps recent cards from coming straight back.
  */
-function useEndlessFeed(mood: MoodId | null, mode: 'foryou' | 'order') {
+function useEndlessFeed(mood: MoodId | null, mode: 'foryou' | 'order', jump: number) {
   const prefs = usePrefs();
   // In order: which surah to load next, and where to start (read when the feed is rebuilt).
   const placeRef = useRef(prefs.place);
@@ -107,6 +107,8 @@ function useEndlessFeed(mood: MoodId | null, mode: 'foryou' | 'order') {
           if (g !== gen.current) return;
           nextSurah.current = start.s === 114 ? 1 : start.s + 1;
           setItems(orderChunk([], start.s, list));
+          // Have the next surah ready too (and saved for offline).
+          loadChapter(nextSurah.current, live.current.lang).catch(() => {});
         },
         () => g === gen.current && setOrderFailed(true),
       );
@@ -121,7 +123,7 @@ function useEndlessFeed(mood: MoodId | null, mode: 'foryou' | 'order') {
       }, 0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mood, mode, refreshAhead]);
+  }, [mood, mode, jump, refreshAhead]);
 
   const more = useCallback(async () => {
     if (busy.current) return;
@@ -194,7 +196,7 @@ export default function Feed() {
   const acct = useAccount();
   const [reflectFor, setReflectFor] = useState<Verse | null>(null);
 
-  const { items, setItems, reset, more, refreshAhead, orderFailed } = useEndlessFeed(prefs.mood, prefs.feedMode);
+  const { items, setItems, reset, more, refreshAhead, orderFailed } = useEndlessFeed(prefs.mood, prefs.feedMode, prefs.feedMode === 'order' ? prefs.jump : 0);
 
   /** For you (curated, by mood) or In order (the whole Quran, from where you left off). */
   const switchMode = (m: 'foryou' | 'order') => {
@@ -230,8 +232,13 @@ export default function Feed() {
   const [paused, setPausedState] = useState(false);
   const pausedRef = useRef(false);
   // Once someone pauses, the next cards stay quiet too until they choose to play again (this session).
-  const [held, setHeldState] = useState(false);
-  const heldRef = useRef(false);
+  // (Older versions had a mute button; anyone who had muted starts paused instead.)
+  const [held, setHeldState] = useState(!prefs.sound);
+  const heldRef = useRef(!prefs.sound);
+  useEffect(() => {
+    if (!prefs.sound) prefs.set({ sound: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const setHeld = useCallback((v: boolean) => {
     heldRef.current = v;
     setHeldState(v);
@@ -328,7 +335,9 @@ export default function Feed() {
   // Look up the audio for this card and the next two ahead of time, so recitation starts without a wait.
   useEffect(() => {
     for (const it of items.slice(active, active + 3)) if (it.kind === 'verse') prefetchAudio(prefs.reciter, it.v.s);
-  }, [items, active, prefs.reciter]);
+    // And the text, so curated cards already show the Quran Foundation text when they arrive.
+    for (const it of items.slice(active, active + 4)) if (it.kind === 'verse') loadChapter(it.v.s, prefs.lang).catch(() => {});
+  }, [items, active, prefs.reciter, prefs.lang]);
 
   // Each time a new card settles, recite it (if sound is on). Keyed on the card itself, so it also starts
   // when the feed first loads on opening the app, and after a mood change swaps the cards.
@@ -408,11 +417,11 @@ export default function Feed() {
     const tr = translationFor(v, prefs.lang) ?? [];
     Share.share({ message: `${v.ar.map(([t]) => t).join(' ')}\n\n${tr.join(' ')}\n— Quran ${v.k}\n\nShared from Munib` }).catch(() => {});
   };
-  const openSurah = (s: number, from = 1, to = 0) => {
+  /** Every "read more" opens the Quran tab at that ayah: one reading experience, always swipeable. */
+  const openSurah = (s: number, from = 1) => {
     stop();
-    router.push({ pathname: '/surah/[id]', params: { id: String(s), from: String(from), to: String(to || from) } });
+    prefs.readAt(s, from);
   };
-
   /* ---------- daily check-in ---------- */
   // Re-plan the next week of reminders whenever the app opens or the settings change.
   const progRef = useRef(prog.progress);
@@ -543,7 +552,7 @@ export default function Feed() {
                 onListen={() => togglePlay(item, reps)}
                 onSingleTap={() => togglePlay(item, reps)}
                 onShare={() => share(item.v)}
-                onKeepReading={() => openSurah(item.v.s, item.v.a, item.v.b)}
+                onKeepReading={item.ord ? null : () => openSurah(item.v.s, item.v.a)}
                 onContext={() => {
                   setContextVerse(item.v);
                   setSheet('context');
@@ -589,17 +598,11 @@ export default function Feed() {
         mode={prefs.feedMode}
         onMode={switchMode}
         showTl={prefs.showTl}
-        sound={prefs.sound}
         onMood={() => setSheet('mood')}
         onTl={() => prefs.set({ showTl: !prefs.showTl })}
         onRead={() => {
           stop();
           router.push('/read');
-        }}
-        onSound={() => {
-          // Turning sound on is a clear "play": release any pause.
-          if (!prefs.sound) setHeld(false);
-          prefs.set({ sound: !prefs.sound });
         }}
         onYou={() => {
           stop();
@@ -772,7 +775,7 @@ function OffRamp(p: { pal: Palette; tone: { bg: string; accent: string }; height
   );
 }
 
-function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palette; top: number; moodLabel: string; mode: 'foryou' | 'order'; onMode: (m: 'foryou' | 'order') => void; showTl: boolean; sound: boolean; onMood: () => void; onTl: () => void; onSound: () => void; onRead: () => void; onYou: () => void }) {
+function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palette; top: number; moodLabel: string; mode: 'foryou' | 'order'; onMode: (m: 'foryou' | 'order') => void; showTl: boolean; onMood: () => void; onTl: () => void; onRead: () => void; onYou: () => void }) {
   const { pal } = p;
   const pill = [styles.pill, { borderColor: pal.line, backgroundColor: pal.surface }];
   const fade = useAnimatedStyle(() => ({ opacity: p.chrome.value }));
@@ -802,16 +805,11 @@ function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palett
             </Text>
           </Pressable>
         )}
-        {p.mode === 'order' && (
-          <Pressable onPress={p.onRead} style={pill} accessibilityRole="button" accessibilityLabel="All surahs">
-            <Icon name="book" size={17} color={pal.text} />
-          </Pressable>
-        )}
+        <Pressable onPress={p.onRead} style={pill} accessibilityRole="button" accessibilityLabel="All surahs">
+          <Icon name="book" size={17} color={pal.text} />
+        </Pressable>
         <Pressable onPress={p.onTl} style={[pill, p.showTl && { borderColor: pal.accent }]} accessibilityRole="switch" accessibilityState={{ checked: p.showTl }} accessibilityLabel="Show transliteration">
           <Text style={[styles.aa, { color: p.showTl ? pal.accent : pal.text }]}>Aa</Text>
-        </Pressable>
-        <Pressable onPress={p.onSound} style={pill} accessibilityRole="switch" accessibilityState={{ checked: p.sound }} accessibilityLabel="Recitation">
-          <Icon name={p.sound ? 'sound' : 'mute'} size={17} color={p.sound ? pal.text : pal.muted} />
         </Pressable>
         <Pressable onPress={p.onYou} style={[pill, { backgroundColor: pal.text, borderColor: pal.text }]} accessibilityRole="button" accessibilityLabel="Your progress and settings">
           <Icon name="user" size={17} color={pal.bg} />

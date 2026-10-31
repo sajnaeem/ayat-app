@@ -125,7 +125,7 @@ export function ReflectionsSheet({ verseKey, title, pal, onClose }: { verseKey: 
                 <Text style={[styles.empty, { color: pal.muted }]}>Couldn't load reflections. Tap to try again.</Text>
               </Pressable>
             )}
-            {list && list.length === 0 && <Text style={[styles.empty, { color: pal.muted }]}>No reflections on {verseKey} yet. Be the first.</Text>}
+            {list && list.length === 0 && <Text style={[styles.empty, { color: pal.muted }]}>Be the first to share what {verseKey} means to you.</Text>}
             {list?.map((r) => {
               const mine = r.user_id === acct.userId;
               return (

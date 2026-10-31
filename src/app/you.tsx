@@ -69,8 +69,8 @@ export default function You() {
 
   const openKey = (k: string) => {
     const [s, ab] = k.split(':');
-    const [a, b] = ab.split('-');
-    router.push({ pathname: '/surah/[id]', params: { id: s, from: a, to: b ?? a } });
+    prefs.readAt(Number(s), Number(ab.split('-')[0]));
+    router.dismissAll();
   };
 
   return (
@@ -160,7 +160,7 @@ export default function You() {
                 <Text style={[styles.saveText, { color: pal.bg }]}>Save</Text>
               </Pressable>
             </View>
-            {!!acct.handle && <NameMeaning name={acct.handle} pal={pal} onOpenAyah={(s, a) => router.push({ pathname: '/surah/[id]', params: { id: String(s), from: String(a), to: String(a) } })} />}
+            {!!acct.handle && <NameMeaning name={acct.handle} pal={pal} onOpenAyah={(s, a) => openKey(`${s}:${a}`)} />}
             <Text style={[styles.small, { color: pal.muted }]}>
               Your likes, saves and progress are backed up to your account automatically.
             </Text>

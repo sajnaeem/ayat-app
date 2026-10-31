@@ -1,7 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReciterId } from './audio';
+import surahs from '@/data/surahs.json';
 import type { LangId, MoodId } from './quran';
+
+/** The ayah just before (s, a), so the Quran tab's "next ayah" lands exactly on (s, a). */
+function placeBefore(s: number, a: number): { s: number; a: number } | null {
+  if (a > 1) return { s, a: a - 1 };
+  if (s > 1) return { s: s - 1, a: (surahs as [string, string, string, number][])[s - 2][3] };
+  return null;
+}
 
 type Prefs = {
   onboarded: boolean;
@@ -20,6 +28,8 @@ type Prefs = {
   place: { s: number; a: number } | null;
   /** The feed: curated ayat for you, or the whole Quran in order. */
   feedMode: 'foryou' | 'order';
+  /** Changes whenever someone asks to read from a particular ayah, so the Quran tab rebuilds from there. */
+  jump: number;
 };
 
 const DEFAULTS: Prefs = {
@@ -35,6 +45,7 @@ const DEFAULTS: Prefs = {
   remindersOffered: false,
   place: null,
   feedMode: 'foryou',
+  jump: 0,
 };
 
 const KEY = 'ayat.prefs.v1';
@@ -42,6 +53,8 @@ const KEY = 'ayat.prefs.v1';
 type Store = Prefs & {
   ready: boolean;
   set: (patch: Partial<Prefs>) => void;
+  /** Opens the Quran tab at this ayah (the one reading experience). */
+  readAt: (s: number, a?: number) => void;
   toggleLike: (k: string) => boolean;
   toggleSave: (k: string) => boolean;
 };
@@ -81,6 +94,7 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
       ...prefs,
       ready,
       set,
+      readAt: (s: number, a = 1) => set({ place: placeBefore(s, a), feedMode: 'order', jump: Date.now() }),
       toggleLike: (k) => {
         const on = !prefs.likes[k];
         setIn('likes', k, on);
