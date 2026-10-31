@@ -36,13 +36,13 @@ const withTimeout = <T,>(p: Promise<T>, ms: number, fallback: T) => Promise.race
  */
 function useEndlessFeed(mood: MoodId | null) {
   const prefs = usePrefs();
-  const { level } = useProgress();
+  const { level, progress: readSoFar } = useProgress();
   const [items, setItems] = useState<Item[]>([]);
   const round = useRef(0);
   const gen = useRef(0);
   const busy = useRef(false);
-  const live = useRef({ level, lang: prefs.lang, liked: Object.keys(prefs.likes) });
-  live.current = { level, lang: prefs.lang, liked: Object.keys(prefs.likes) };
+  const live = useRef({ level, lang: prefs.lang, liked: Object.keys(prefs.likes), fresh: readSoFar.readings === 0 });
+  live.current = { level, lang: prefs.lang, liked: Object.keys(prefs.likes), fresh: readSoFar.readings === 0 };
 
   const compose = (base: Item[], list: Verse[], r: number): Item[] => {
     const recent = new Set(base.slice(-14).flatMap((x) => (x.kind === 'verse' ? [x.v.k] : [])));
@@ -54,8 +54,8 @@ function useEndlessFeed(mood: MoodId | null) {
 
   const nextRound = async () => {
     const r = round.current++;
-    const { level: lv, lang, liked } = live.current;
-    const curated = feedRound(r, mood, liked);
+    const { level: lv, lang, liked, fresh } = live.current;
+    const curated = feedRound(r, mood, liked, fresh);
     const extras = lv > 1 ? await withTimeout(ladderCards(lv, r, mood, lang).catch(() => []), 6000, [] as Verse[]) : [];
     return { r, list: interleave(curated, extras, lv) };
   };
@@ -77,7 +77,7 @@ function useEndlessFeed(mood: MoodId | null) {
     round.current = 0;
     // Show curated ayat straight away; ladder cards join once their surahs have loaded.
     const r = round.current++;
-    setItems(compose([], feedRound(r, mood, live.current.liked), r));
+    setItems(compose([], feedRound(r, mood, live.current.liked, live.current.fresh), r));
     if (live.current.level > 1) {
       setTimeout(() => {
         if (g === gen.current) refreshAhead(1);

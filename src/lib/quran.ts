@@ -76,6 +76,9 @@ export const SUPPORT = [
 /** The opening order for a brand-new user with no mood picked. */
 const BASE = ['94:5-6', '2:255', '13:28', '39:53', '2:186', '112:1-4', '65:2-3', '93:3-5', '2:286', '20:25-28', '3:139', '2:152', '55:13', '14:7', '21:87', '17:23-24', '2:153', '49:13', '3:8', '103:1-3', '25:63', '2:201', '40:60', '3:185'];
 
+/** Different every time the app opens, so the feed (and each mood) comes in a fresh order each visit. */
+const SESSION = Math.floor(Math.random() * 1_000_000_007);
+
 function seeded(seed: number) {
   let x = seed % 2147483647;
   return () => {
@@ -84,13 +87,15 @@ function seeded(seed: number) {
   };
 }
 
-/** One round of the feed. Round 0 for a new user follows BASE; later rounds shuffle, mood-matched ayat first. */
-export function feedRound(round: number, mood: MoodId | null, liked: string[]): Verse[] {
+/**
+ * One round of the feed, shuffled freshly each visit with mood-matched ayat first.
+ * Only someone who has never read anything (and picked no mood) starts with the BASE opening sequence.
+ */
+export function feedRound(round: number, mood: MoodId | null, liked: string[], fresh = false): Verse[] {
   const affinity: Record<string, number> = {};
   for (const k of liked) VERSES.find((v) => v.k === k)?.tags.forEach((t) => (affinity[t] = (affinity[t] || 0) + 1));
-  const day = new Date();
-  const r = seeded(day.getFullYear() * 1000 + day.getMonth() * 40 + day.getDate() + round * 7919);
-  const plain = round === 0 && !mood && liked.length === 0;
+  const r = seeded(SESSION + round * 7919);
+  const plain = fresh && round === 0 && !mood && liked.length === 0;
   return VERSES.map((v) => {
     let score = r() * 0.9;
     if (mood && v.tags.includes(mood)) score += 4;
@@ -254,7 +259,7 @@ export async function verseForKey(k: string, lang: LangId): Promise<Verse | null
  */
 export async function ladderCards(level: number, round: number, mood: MoodId | null, lang: LangId): Promise<Verse[]> {
   if (level < 2) return [];
-  const r = seeded(Math.floor(Date.now() / 86400000) + round * 31 + level * 7);
+  const r = seeded(SESSION + round * 31 + level * 7);
   const curated = new Set(VERSES.map((v) => v.k));
   const pick = <T,>(arr: T[], n: number, tagsOf: (x: T) => MoodId[]) =>
     arr
