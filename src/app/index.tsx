@@ -11,7 +11,7 @@ import { ReflectionsSheet } from '@/components/Reflections';
 import { Sheet } from '@/components/Sheet';
 import { useToast } from '@/components/Toast';
 import { VerseCard } from '@/components/VerseCard';
-import { ayahAudio, wordAt } from '@/lib/audio';
+import { ayahAudio, prefetchAudio, wordAt } from '@/lib/audio';
 import { ayahKeys, feedRound, interleave, ladderCards, LEVELS, MOODS, MoodId, SUPPORT, SURAHS, translationFor, Verse } from '@/lib/quran';
 import { useAccount } from '@/lib/account';
 import { dayKey, useProgress } from '@/lib/progress';
@@ -173,6 +173,12 @@ export default function Feed() {
   const timings = useRef<[number, number, number][]>([]);
   const [word, setWord] = useState<{ pos: number; of: number } | null>(null);
   const [finished, setFinished] = useState(0);
+  const [paused, setPausedState] = useState(false);
+  const pausedRef = useRef(false);
+  const setPaused = useCallback((v: boolean) => {
+    pausedRef.current = v;
+    setPausedState(v);
+  }, []);
 
   useEffect(() => {
     const sub = player.addListener('playbackStatusUpdate', (st) => {
@@ -191,6 +197,7 @@ export default function Feed() {
     queue.current = null;
     timings.current = [];
     setWord(null);
+    setPaused(false);
     setPlaying(null);
   }, [player]);
 
@@ -207,7 +214,7 @@ export default function Feed() {
       if (queue.current !== at.q || at.q.idx !== at.idx || at.q.pass !== at.pass) return;
       timings.current = a.words;
       player.replace(a.url);
-      player.play();
+      if (!pausedRef.current) player.play();
     });
   }, [player, prefs.reciter]);
 
@@ -218,9 +225,26 @@ export default function Feed() {
         return;
       }
       queue.current = { card: item.key, s: item.v.s, ayat: item.v.ar.map(([, n]) => n), idx: 0, pass: 1, passes };
+      setPaused(false);
       playIdx();
     },
     [playIdx, stop],
+  );
+
+  /** Tap the card or the Listen button: pause, carry on from the same word, or start again if it had finished. */
+  const togglePlay = useCallback(
+    (item: Item, passes: number) => {
+      if (queue.current?.card === item.key) {
+        if (paused) {
+          player.play();
+          setPaused(false);
+        } else {
+          player.pause();
+          setPaused(true);
+        }
+      } else startCard(item, passes);
+    },
+    [paused, player, startCard],
   );
 
   useEffect(() => {
@@ -234,6 +258,11 @@ export default function Feed() {
     playIdx();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finished]);
+
+  // Look up the audio for this card and the next two ahead of time, so recitation starts without a wait.
+  useEffect(() => {
+    for (const it of items.slice(active, active + 3)) if (it.kind === 'verse') prefetchAudio(prefs.reciter, it.v.s);
+  }, [items, active, prefs.reciter]);
 
   // Each time a new card settles, recite it (if sound is on).
   useEffect(() => {
@@ -412,7 +441,9 @@ export default function Feed() {
                 onLike={() => like(item.v.k)}
                 onDoubleTap={() => like(item.v.k, true)}
                 onSave={() => prefs.toggleSave(item.v.k)}
-                onListen={() => (isPlaying ? stop() : startCard(item, reps))}
+                paused={isPlaying && paused}
+                onListen={() => togglePlay(item, reps)}
+                onSingleTap={() => togglePlay(item, reps)}
                 onShare={() => share(item.v)}
                 onKeepReading={() => openSurah(item.v.s, item.v.a, item.v.b)}
                 onContext={() => {

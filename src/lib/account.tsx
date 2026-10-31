@@ -37,6 +37,13 @@ type Ctx = {
   postReflection: (key: string, body: string) => Promise<void>;
   deleteReflection: (id: string, key: string) => Promise<void>;
   reportReflection: (id: string) => Promise<void>;
+  /** True once this person has agreed to the community guidelines (needed to post). */
+  guidelinesAccepted: boolean;
+  acceptGuidelines: () => Promise<void>;
+  /** Blocking: you and they no longer see each other's reflections. */
+  blockUser: (id: string) => Promise<void>;
+  unblockUser: (id: string) => Promise<void>;
+  listBlocked: () => Promise<{ id: string; handle: string }[]>;
 };
 
 const C = createContext<Ctx | null>(null);
@@ -67,6 +74,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
   const [handle, setHandleState] = useState<string | null>(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
+  const [guidelinesAccepted, setGuidelinesAccepted] = useState(false);
   const [stats, setStats] = useState<CardStats>({});
   const [myServerLikes, setMyServerLikes] = useState<Set<string>>(new Set());
   const synced = useRef(false);
@@ -95,12 +103,13 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     (async () => {
       const uid = userId;
       const [profile, state, likes] = await Promise.all([
-        supabase.from('profiles').select('handle').eq('id', uid).maybeSingle(),
+        supabase.from('profiles').select('*').eq('id', uid).maybeSingle(),
         supabase.from('user_state').select('saves, progress').eq('user_id', uid).maybeSingle(),
         supabase.from('likes').select('verse_key').eq('user_id', uid),
       ]);
       if (cancelled) return;
       setHandleState(profile.data?.handle ?? null);
+      setGuidelinesAccepted(!!profile.data?.guidelines_at);
       setProfileLoaded(!profile.error);
       if (state.data) {
         prefs.set({ saves: { ...(state.data.saves as Record<string, number>), ...prefs.saves } });
@@ -175,6 +184,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     serverLikes.current = new Set();
     setMyServerLikes(new Set());
     setHandleState(null);
+    setGuidelinesAccepted(false);
     setStats({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefs.set, prog.reset]);
@@ -286,13 +296,46 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     [userId],
   );
 
+  const acceptGuidelines = useCallback(async () => {
+    if (!supabase || !userId) throw new Error('offline');
+    const { error } = await supabase.from('profiles').update({ guidelines_at: new Date().toISOString() }).eq('id', userId);
+    if (error) throw error;
+    setGuidelinesAccepted(true);
+  }, [userId]);
+
+  const blockUser = useCallback(
+    async (id: string) => {
+      if (!supabase || !userId || id === userId) throw new Error('offline');
+      const { error } = await supabase.from('blocks').upsert({ blocker: userId, blocked: id });
+      if (error) throw error;
+    },
+    [userId],
+  );
+
+  const unblockUser = useCallback(
+    async (id: string) => {
+      if (!supabase || !userId) throw new Error('offline');
+      const { error } = await supabase.from('blocks').delete().eq('blocker', userId).eq('blocked', id);
+      if (error) throw error;
+    },
+    [userId],
+  );
+
+  const listBlocked = useCallback(async () => {
+    if (!supabase || !userId) return [];
+    const { data, error } = await supabase.from('blocks').select('blocked, profiles!blocks_blocked_fkey(handle)').eq('blocker', userId).order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map((b: any) => ({ id: b.blocked, handle: b.profiles?.handle ?? 'Someone' }));
+  }, [userId]);
+
   const value = useMemo<Ctx>(
     () => ({
       online: !!supabase, status, userId, handle, profileLoaded, setHandle,
       signInWithApple, signInWithGoogle, sendPhoneCode, verifyPhoneCode, signUpWithEmail, signInWithEmail, signOut, deleteAccount,
       stats, loadStats, myServerLikes, listReflections, postReflection, deleteReflection, reportReflection,
+      guidelinesAccepted, acceptGuidelines, blockUser, unblockUser, listBlocked,
     }),
-    [status, userId, handle, profileLoaded, setHandle, signInWithApple, signInWithGoogle, sendPhoneCode, verifyPhoneCode, signUpWithEmail, signInWithEmail, signOut, deleteAccount, stats, loadStats, myServerLikes, listReflections, postReflection, deleteReflection, reportReflection],
+    [status, userId, handle, profileLoaded, setHandle, signInWithApple, signInWithGoogle, sendPhoneCode, verifyPhoneCode, signUpWithEmail, signInWithEmail, signOut, deleteAccount, stats, loadStats, myServerLikes, listReflections, postReflection, deleteReflection, reportReflection, guidelinesAccepted, acceptGuidelines, blockUser, unblockUser, listBlocked],
   );
   return <C.Provider value={value}>{children}</C.Provider>;
 }

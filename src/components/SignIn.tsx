@@ -4,6 +4,7 @@ import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollVie
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { authMessage, useAccount } from '@/lib/account';
 import { fonts, usePalette } from '@/lib/theme';
+import { GuidelinesSheet } from './Guidelines';
 import { NameMeaning } from './NameMeaning';
 import { useToast } from './Toast';
 
@@ -194,12 +195,16 @@ export function ChooseName() {
   const toast = useToast();
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
-  const ok = name.trim().length >= 2;
+  const [agreed, setAgreed] = useState(false);
+  const [reading, setReading] = useState(false);
+  const ok = name.trim().length >= 2 && agreed;
   const save = async () => {
     if (!ok || busy) return;
     setBusy(true);
     try {
       await acct.setHandle(name);
+      // Recorded on the account; if this fails, they'll be asked again before their first reflection.
+      await acct.acceptGuidelines().catch(() => {});
     } catch {
       toast("Couldn't save — check your connection and try again");
     } finally {
@@ -225,6 +230,26 @@ export function ChooseName() {
           accessibilityLabel="Display name"
         />
         <NameMeaning name={name} pal={pal} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 4 }}>
+          <Pressable
+            onPress={() => setAgreed((a) => !a)}
+            hitSlop={8}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: agreed }}
+            accessibilityLabel="I agree to the community guidelines"
+            style={{ width: 26, height: 26, borderRadius: 7, borderWidth: 1.5, borderColor: agreed ? pal.accent : pal.muted, backgroundColor: agreed ? pal.accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}
+          >
+            {agreed && <Text style={{ color: pal.onAccent, fontFamily: fonts.uiBold, fontSize: 15, lineHeight: 18 }}>✓</Text>}
+          </Pressable>
+          <Text style={[styles.fine, { color: pal.text, flex: 1, fontSize: 14, lineHeight: 20 }]}>
+            I agree to Munib's{' '}
+            <Text onPress={() => setReading(true)} style={{ textDecorationLine: 'underline', fontFamily: fonts.uiSemi }} accessibilityRole="link">
+              community guidelines
+            </Text>
+            : be kind, no hate, no abuse.
+          </Text>
+        </View>
+        <GuidelinesSheet visible={reading} onClose={() => setReading(false)} pal={pal} />
         <Pressable onPress={save} disabled={!ok || busy} style={[styles.btn, { backgroundColor: pal.text, opacity: ok && !busy ? 1 : 0.4 }]} accessibilityRole="button">
           <Text style={[styles.btnText, { color: pal.bg }]}>{busy ? 'Saving…' : 'Continue'}</Text>
         </Pressable>

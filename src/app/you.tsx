@@ -2,7 +2,9 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GuidelinesSheet } from '@/components/Guidelines';
 import { Icon } from '@/components/Icon';
+import { Sheet } from '@/components/Sheet';
 import { NameMeaning } from '@/components/NameMeaning';
 import { useToast } from '@/components/Toast';
 import { useAccount } from '@/lib/account';
@@ -27,6 +29,17 @@ export default function You() {
   const toast = useToast();
   const [name, setName] = useState(acct.handle ?? '');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showRules, setShowRules] = useState(false);
+  const [blocked, setBlocked] = useState<{ id: string; handle: string }[] | null>(null);
+  const [blockedLoading, setBlockedLoading] = useState(false);
+  const openBlocked = () => {
+    setBlocked([]);
+    setBlockedLoading(true);
+    acct.listBlocked().then(setBlocked, () => {
+      setBlocked(null);
+      toast("Couldn't load. Check your connection and try again");
+    }).finally(() => setBlockedLoading(false));
+  };
   useEffect(() => setName(acct.handle ?? ''), [acct.handle]);
   const saveName = async () => {
     if (name.trim().length < 2) return toast('Choose a display name of at least 2 letters');
@@ -209,6 +222,42 @@ export default function You() {
         {acct.online && (
           <>
             <Text style={[styles.h3, { color: pal.muted }]}>ACCOUNT</Text>
+            <Pressable onPress={() => setShowRules(true)} style={[styles.saved, { borderColor: pal.line }]} accessibilityRole="button">
+              <Text style={[styles.savedText, { color: pal.text, fontFamily: fonts.uiSemi }]}>Community guidelines</Text>
+            </Pressable>
+            <Pressable onPress={openBlocked} style={[styles.saved, { borderColor: pal.line }]} accessibilityRole="button">
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={[styles.savedText, { color: pal.text, fontFamily: fonts.uiSemi }]}>Blocked people</Text>
+                <Text style={[styles.small, { color: pal.muted }]}>People whose reflections you've chosen not to see</Text>
+              </View>
+            </Pressable>
+            <GuidelinesSheet visible={showRules} onClose={() => setShowRules(false)} pal={pal} />
+            <Sheet visible={blocked !== null} onClose={() => setBlocked(null)} title="Blocked people" pal={pal}>
+              {blocked && blocked.length === 0 && !blockedLoading && (
+                <Text style={[styles.small, { color: pal.muted }]}>Nobody blocked. To block someone, tap Block next to their reflection.</Text>
+              )}
+              {blocked?.map((b) => (
+                <View key={b.id} style={[styles.saved, { borderColor: pal.line }]}>
+                  <Text style={[styles.savedText, { color: pal.text, flex: 1 }]}>{b.handle}</Text>
+                  <Pressable
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Unblock ${b.handle}`}
+                    onPress={async () => {
+                      try {
+                        await acct.unblockUser(b.id);
+                        setBlocked((l) => l?.filter((x) => x.id !== b.id) ?? null);
+                        toast(`Unblocked ${b.handle}`);
+                      } catch {
+                        toast("Couldn't unblock. Try again");
+                      }
+                    }}
+                  >
+                    <Text style={[styles.small, { color: pal.accent, fontFamily: fonts.uiSemi }]}>Unblock</Text>
+                  </Pressable>
+                </View>
+              ))}
+            </Sheet>
             <Pressable onPress={() => router.push('/feedback')} style={[styles.saved, { borderColor: pal.line }]} accessibilityRole="button">
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={[styles.savedText, { color: pal.text, fontFamily: fonts.uiSemi }]}>Send feedback</Text>

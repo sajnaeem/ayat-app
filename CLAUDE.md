@@ -28,7 +28,7 @@ A short-form, TikTok-style Quran app for Muslims whose attention has been shaped
 
 ## Features (all in the app today)
 
-Feed with mood picker ("What's on your heart today?": 11 feelings plus 5 life moments: marriage, divorce, family, conflict, parenting; heavier ones show a "Someone to talk to" link to UK helplines in `SUPPORT` in src/lib/quran.ts, checked Oct 2026; 70 curated ayat, new ones chosen to comfort rather than state rulings and need scholarly review), auto recitation with the current ayah and word highlighted, transliteration toggle, 7 translations, 4 reciters, like / save / share, Keep reading (whole surah), context notes, attention ladder (levels at 25 / 75 / 150 readings), You screen (progress, Juz' ʿAmma, saved ayat, display name with its Arabic meaning, settings), memorise mode (repeat 1–10×, hide words), time-check card, reflections (comments) with reporting, daily check-in notifications (local, max 1/day, Friday al-Kahf, one "we've missed you" after 7 days), in-app feedback, sign out and delete account.
+Feed with mood picker ("What's on your heart today?": 11 feelings plus 5 life moments: marriage, divorce, family, conflict, parenting; heavier ones show a "Someone to talk to" link to UK helplines in `SUPPORT` in src/lib/quran.ts, checked Oct 2026; 70 curated ayat, new ones chosen to comfort rather than state rulings and need scholarly review), auto recitation with the current ayah and word highlighted, transliteration toggle, 7 translations, 4 reciters, like / save / share, Keep reading (whole surah), context notes, attention ladder (levels at 25 / 75 / 150 readings), You screen (progress, Juz' ʿAmma, saved ayat, display name with its Arabic meaning, settings), memorise mode (repeat 1–10×, hide words), time-check card, reflections (comments) with reporting, blocking (both directions, enforced in RLS) and a light word/link/phone filter (src/lib/moderation.ts); community guidelines (src/components/Guidelines.tsx) agreed at the name step or before a first reflection (profiles.guidelines_at, required by the insert policy); tap a card to pause/resume (double-tap still likes); daily check-in notifications (local, max 1/day, Friday al-Kahf, one "we've missed you" after 7 days), in-app feedback, sign out and delete account.
 
 ## How it's built
 
@@ -42,12 +42,13 @@ src/components/     VerseCard (card + animation + memorise), SignIn/ChooseName, 
 src/lib/            quran (data, feed order, ladder), audio, store (prefs on phone), progress, account (Supabase auth + sync),
                     reminders (notifications), supabase, theme
 src/data/           verses.json, surahs.json, names.ts (128 names with Arabic + meaning; needs review by someone with Arabic)
-supabase/           schema.sql, 002_accounts.sql, 003_feedback.sql — run in order in the Supabase SQL Editor; functions/qf (Quran Foundation proxy)
+supabase/           schema.sql, 002_accounts.sql, 003_feedback.sql, 004_safety.sql — run in order in the Supabase SQL Editor; functions/qf (Quran Foundation proxy)
 ```
 
 ## Supabase settings (done by Saj in the dashboard)
 
-- SQL files run: `schema.sql`, `002_accounts.sql` (confirm `003_feedback.sql` has been run before relying on feedback).
+- SQL files run: `schema.sql`, `002_accounts.sql` (confirm `003_feedback.sql` and `004_safety.sql` have been run; without 004, blocking fails and agreeing to guidelines can't be saved).
+- Saj has committed (in the guidelines) to reviewing reports within 24 hours: Table Editor → reports / reflections.
 - Auth: anonymous **off**; Email on with **Confirm email off** for the beta (built-in email sender is rate-limited); Apple on with Client IDs `host.exp.Exponent,app.munib`; redirect URLs `munib://**`, `exp://**`.
 - Moderation: 3 reports from different people hide a reflection. Review in Table Editor → reflections (`hidden = true`). Feedback is in Table Editor → feedback; screenshots in Storage → feedback.
 
@@ -63,7 +64,7 @@ supabase/           schema.sql, 002_accounts.sql, 003_feedback.sql — run in or
 
 Saj: Apple Developer account (Individual or Organisation), getmunib.com, Supabase Pro at public launch ($25/month, backups and no pausing), optional UK trademark.
 
-Still to build: app icon and launch screen; community guidelines accepted at sign-up and **blocking users** (Apple rule for apps with user posts); getmunib.com with privacy policy and support pages; a demo account for Apple's reviewer; App Store listing and screenshots; EAS build → TestFlight → App Store. Recommended: crash reporting (Sentry), a one-off human security review before launch.
+Still to build: app icon and launch screen; getmunib.com with privacy policy and support pages; a demo account for Apple's reviewer; App Store listing and screenshots; EAS build → TestFlight → App Store. Recommended: crash reporting (Sentry), a one-off human security review before launch.
 
 ## Releasing an update (once on the App Store)
 

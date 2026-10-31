@@ -26,6 +26,10 @@ type Props = {
   first: boolean;
   onLike: () => void;
   onDoubleTap: () => void;
+  /** A single tap on the ayah (after waiting to rule out a double tap): pause or play. */
+  onSingleTap?: () => void;
+  /** Recitation is paused on this card. */
+  paused?: boolean;
   onSave: () => void;
   onListen: () => void;
   onShare: () => void;
@@ -182,18 +186,36 @@ export const VerseCard = memo(function VerseCard(props: Props) {
     return els;
   });
 
+  // One tap pauses or plays; two quick taps like. The single tap waits a moment so a double tap doesn't also pause.
+  const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => void (tapTimer.current && clearTimeout(tapTimer.current)), []);
   const onBodyPress = () => {
     const now = Date.now();
-    if (now - lastTap.current < 300) {
+    if (now - lastTap.current < 280) {
+      if (tapTimer.current) clearTimeout(tapTimer.current);
+      tapTimer.current = null;
       props.onDoubleTap();
       lastTap.current = 0;
-    } else lastTap.current = now;
+    } else {
+      lastTap.current = now;
+      tapTimer.current = setTimeout(() => {
+        tapTimer.current = null;
+        props.onSingleTap?.();
+      }, 280);
+    }
   };
 
   return (
     // Any touch on the card brings the faded controls back.
     <View onTouchStart={props.onTap} style={[styles.card, { height, backgroundColor: tone.bg, paddingTop: topInset + 64, paddingBottom: bottomInset + 24 }]}>
       <Pattern color={tone.accent} top={topInset} />
+      {props.paused && (
+        <View pointerEvents="none" style={styles.pausedWrap} accessibilityLiveRegion="polite" accessibilityLabel="Paused">
+          <View style={[styles.pausedDot, { backgroundColor: mix(tone.bg, text, 0.55) }]}>
+            <Icon name="play" size={30} color={tone.bg} fill strokeWidth={2} />
+          </View>
+        </View>
+      )}
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollInner}
@@ -338,14 +360,14 @@ export const VerseCard = memo(function VerseCard(props: Props) {
         <RailButton p={p} i={2} label="Share" onPress={props.onShare} color={text}>
           <Icon name="share" size={27} color={text} />
         </RailButton>
-        <RailButton p={p} i={3} label={playing ? 'Pause' : 'Listen'} onPress={props.onListen} color={text}>
-          <View style={[styles.playSquare, { backgroundColor: playing ? tone.accent : text }]}>
-            <Icon name={playing ? 'pause' : 'play'} size={20} color={tone.bg} fill={!playing} strokeWidth={2.2} />
+        <RailButton p={p} i={3} label={playing && !props.paused ? 'Pause' : 'Listen'} onPress={props.onListen} color={text}>
+          <View style={[styles.playSquare, { backgroundColor: playing && !props.paused ? tone.accent : text }]}>
+            <Icon name={playing && !props.paused ? 'pause' : 'play'} size={20} color={tone.bg} fill={!(playing && !props.paused)} strokeWidth={2.2} />
           </View>
         </RailButton>
       </Animated.View>
 
-      {first && <Text style={[styles.hint, { color: muted, bottom: bottomInset + 6 }]}>Swipe up for the next ayah · double-tap to like</Text>}
+      {first && <Text style={[styles.hint, { color: muted, bottom: bottomInset + 6 }]}>Swipe up for the next ayah · tap to pause · double-tap to like</Text>}
     </View>
   );
 });
@@ -362,6 +384,8 @@ function RailButton({ p, i, label, a11y, onPress, color, children }: { p: Shared
 }
 
 const styles = StyleSheet.create({
+  pausedWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', zIndex: 5 },
+  pausedDot: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', paddingLeft: 4, opacity: 0.75 },
   card: { width: '100%', paddingLeft: 20, paddingRight: 78 },
   scroll: { flex: 1 },
   scrollInner: { flexGrow: 1, justifyContent: 'center' },

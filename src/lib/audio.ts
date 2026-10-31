@@ -79,3 +79,8 @@ export function wordAt(words: [number, number, number][], ms: number): number | 
   for (const [pos, start] of words) if (ms >= start) cur = pos;
   return cur;
 }
+
+/** Looks up audio for a surah ahead of time, so the next cards start reciting straight away. */
+export function prefetchAudio(reciter: ReciterId, s: number) {
+  loadSurahAudio(reciter, s).catch(() => {});
+}

@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Reflection, useAccount } from '@/lib/account';
+import { checkReflection } from '@/lib/moderation';
 import { fonts, Palette } from '@/lib/theme';
+import { GuidelinesSheet } from './Guidelines';
 import { Icon } from './Icon';
 import { useToast } from './Toast';
 
@@ -24,6 +26,8 @@ export function ReflectionsSheet({ verseKey, title, pal, onClose }: { verseKey: 
   const [draft, setDraft] = useState('');
   const [name, setName] = useState('');
   const [sending, setSending] = useState(false);
+  const [reading, setReading] = useState(false);
+  const [agreeing, setAgreeing] = useState(false);
 
   const load = useCallback(() => {
     if (!verseKey) return;
@@ -43,10 +47,43 @@ export function ReflectionsSheet({ verseKey, title, pal, onClose }: { verseKey: 
 
   const needsName = !acct.handle;
 
+  const block = async (r: Reflection) => {
+    try {
+      await acct.blockUser(r.user_id);
+      setList((l) => l?.filter((x) => x.user_id !== r.user_id) ?? null);
+      toast(`Blocked ${r.handle}`);
+    } catch {
+      toast("Couldn't block. Try again");
+    }
+  };
+  const confirmBlock = (r: Reflection) => {
+    if (Platform.OS === 'web') return void block(r);
+    Alert.alert(`Block ${r.handle}?`, "You won't see each other's reflections. You can unblock them any time from You → Blocked people.", [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Block', style: 'destructive', onPress: () => void block(r) },
+    ]);
+  };
+
+  const agree = async () => {
+    setAgreeing(true);
+    try {
+      await acct.acceptGuidelines();
+    } catch {
+      toast("Couldn't save. Check your connection and try again");
+    } finally {
+      setAgreeing(false);
+    }
+  };
+
   const send = async () => {
     if (!verseKey || sending) return;
     const body = draft.trim();
     if (!body) return;
+    const problem = checkReflection(body);
+    if (problem) {
+      toast(problem);
+      return;
+    }
     setSending(true);
     try {
       if (needsName) {
@@ -100,26 +137,44 @@ export function ReflectionsSheet({ verseKey, title, pal, onClose }: { verseKey: 
                     <View style={styles.meta}>
                       <Text style={[styles.handle, { color: pal.text }]}>{r.handle}</Text>
                       <Text style={[styles.time, { color: pal.muted }]}>{ago(r.created_at)}</Text>
-                      <Pressable
-                        style={{ marginLeft: 'auto' }}
-                        hitSlop={8}
-                        accessibilityRole="button"
-                        onPress={async () => {
-                          try {
-                            if (mine) {
+                      {mine ? (
+                        <Pressable
+                          style={{ marginLeft: 'auto' }}
+                          hitSlop={8}
+                          accessibilityRole="button"
+                          onPress={async () => {
+                            try {
                               await acct.deleteReflection(r.id, verseKey!);
                               setList((l) => l?.filter((x) => x.id !== r.id) ?? null);
-                            } else {
-                              await acct.reportReflection(r.id);
-                              toast('Thanks — reported for review');
+                            } catch {
+                              toast("Couldn't do that. Try again");
                             }
-                          } catch {
-                            toast("Couldn't do that — try again");
-                          }
-                        }}
-                      >
-                        <Text style={[styles.time, { color: pal.muted, textDecorationLine: 'underline' }]}>{mine ? 'Delete' : 'Report'}</Text>
-                      </Pressable>
+                          }}
+                        >
+                          <Text style={[styles.time, styles.act, { color: pal.muted }]}>Delete</Text>
+                        </Pressable>
+                      ) : (
+                        <View style={{ marginLeft: 'auto', flexDirection: 'row', gap: 14 }}>
+                          <Pressable
+                            hitSlop={8}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Report ${r.handle}'s reflection`}
+                            onPress={async () => {
+                              try {
+                                await acct.reportReflection(r.id);
+                                toast('Thanks. Reported for review');
+                              } catch {
+                                toast("Couldn't do that. Try again");
+                              }
+                            }}
+                          >
+                            <Text style={[styles.time, styles.act, { color: pal.muted }]}>Report</Text>
+                          </Pressable>
+                          <Pressable hitSlop={8} accessibilityRole="button" accessibilityLabel={`Block ${r.handle}`} onPress={() => confirmBlock(r)}>
+                            <Text style={[styles.time, styles.act, { color: pal.muted }]}>Block</Text>
+                          </Pressable>
+                        </View>
+                      )}
                     </View>
                     <Text style={[styles.body, { color: pal.text }]}>{r.body}</Text>
                   </View>
@@ -129,34 +184,56 @@ export function ReflectionsSheet({ verseKey, title, pal, onClose }: { verseKey: 
           </ScrollView>
 
           <View style={[styles.compose, { borderTopColor: pal.line }]}>
-            {needsName && (
-              <TextInput
-                value={name}
-                onChangeText={setName}
-                placeholder="Your display name (everyone sees this)"
-                placeholderTextColor={pal.muted}
-                maxLength={32}
-                style={[styles.input, { color: pal.text, borderColor: pal.line, backgroundColor: pal.bg }]}
-                accessibilityLabel="Display name"
-              />
+            {acct.guidelinesAccepted ? (
+              <>
+                {needsName && (
+                  <TextInput
+                    value={name}
+                    onChangeText={setName}
+                    placeholder="Your display name (everyone sees this)"
+                    placeholderTextColor={pal.muted}
+                    maxLength={32}
+                    style={[styles.input, { color: pal.text, borderColor: pal.line, backgroundColor: pal.bg }]}
+                    accessibilityLabel="Display name"
+                  />
+                )}
+                <View style={styles.row}>
+                  <TextInput
+                    value={draft}
+                    onChangeText={setDraft}
+                    placeholder="What does this ayah mean to you right now?"
+                    placeholderTextColor={pal.muted}
+                    maxLength={400}
+                    multiline
+                    style={[styles.input, { flex: 1, color: pal.text, borderColor: pal.line, backgroundColor: pal.bg }]}
+                    accessibilityLabel="Write a reflection"
+                  />
+                  <Pressable onPress={send} disabled={sending || !draft.trim()} style={[styles.post, { backgroundColor: pal.text, opacity: sending || !draft.trim() ? 0.4 : 1 }]} accessibilityRole="button">
+                    <Text style={[styles.postText, { color: pal.bg }]}>{sending ? '…' : 'Post'}</Text>
+                  </Pressable>
+                </View>
+                <Text style={[styles.rules, { color: pal.muted }]}>
+                  Keep it kind and about the ayah.{' '}
+                  <Text onPress={() => setReading(true)} style={{ textDecorationLine: 'underline' }}>
+                    Community guidelines
+                  </Text>
+                </Text>
+              </>
+            ) : (
+              <View style={{ gap: 10 }}>
+                <Text style={[styles.body, { color: pal.text }]}>Before you post, please agree to Munib's community guidelines: be kind, stay with the ayah, no hate or abuse.</Text>
+                <View style={styles.row}>
+                  <Pressable onPress={() => setReading(true)} style={[styles.post, { flex: 1, borderWidth: 1, borderColor: pal.line, alignItems: 'center' }]} accessibilityRole="button">
+                    <Text style={[styles.postText, { color: pal.text }]}>Read them</Text>
+                  </Pressable>
+                  <Pressable onPress={agree} disabled={agreeing} style={[styles.post, { flex: 1, backgroundColor: pal.text, alignItems: 'center', opacity: agreeing ? 0.5 : 1 }]} accessibilityRole="button">
+                    <Text style={[styles.postText, { color: pal.bg }]}>{agreeing ? '…' : 'I agree'}</Text>
+                  </Pressable>
+                </View>
+              </View>
             )}
-            <View style={styles.row}>
-              <TextInput
-                value={draft}
-                onChangeText={setDraft}
-                placeholder="What does this ayah mean to you right now?"
-                placeholderTextColor={pal.muted}
-                maxLength={400}
-                multiline
-                style={[styles.input, { flex: 1, color: pal.text, borderColor: pal.line, backgroundColor: pal.bg }]}
-                accessibilityLabel="Write a reflection"
-              />
-              <Pressable onPress={send} disabled={sending || !draft.trim()} style={[styles.post, { backgroundColor: pal.text, opacity: sending || !draft.trim() ? 0.4 : 1 }]} accessibilityRole="button">
-                <Text style={[styles.postText, { color: pal.bg }]}>{sending ? '…' : 'Post'}</Text>
-              </Pressable>
-            </View>
-            <Text style={[styles.rules, { color: pal.muted }]}>Keep it kind and about the ayah. Reflections reported by several people are hidden for review.</Text>
           </View>
+          <GuidelinesSheet visible={reading} onClose={() => setReading(false)} pal={pal} />
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -186,4 +263,5 @@ const styles = StyleSheet.create({
   post: { borderRadius: 10, paddingHorizontal: 16, paddingVertical: 12 },
   postText: { fontFamily: fonts.uiBold, fontSize: 15 },
   rules: { fontFamily: fonts.ui, fontSize: 11, lineHeight: 15 },
+  act: { textDecorationLine: 'underline' },
 });
