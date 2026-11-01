@@ -34,7 +34,7 @@
   --muted: #5E6066;
   --line: #E2E2DF;
   --emerald: #1F6E52;     /* brand green: logo dot, one highlight, the app itself */
-  --accent: var(--ink);   /* everything else stays quiet */
+  --accent: var(--emerald); /* green for accents and highlights; backgrounds stay neutral */
   --clay: #A4462F;
   --mist: #EEF0F5;
   --blush: #F5EEEB;
@@ -245,23 +245,13 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 20px; justify-content: space
 footer nav { display: flex; gap: 18px; flex-wrap: wrap; }
 footer a { color: var(--muted); }
 
-/* Quiet version (1 Nov 2026): one calm background, green used sparingly. */
-.brand span { color: var(--emerald); }
-.hero h1 em { color: inherit; }
+/* Balanced (1 Nov 2026): neutral backgrounds everywhere, green for accents and highlights. */
 .hero, .band-ground, .band-mist, .band-blush, .band-sea { background: var(--paper); }
 section { border-top: 1px solid var(--line); }
 .hero + section { border-top: 0; }
-.eyebrow { color: var(--muted); }
-.compare .head div:last-child { background: var(--ink); color: var(--paper); }
-.research .bar { background: color-mix(in srgb, var(--muted) 28%, var(--paper)); }
-.research .bar.now { background: var(--ink); }
-.dayline .one { background: var(--emerald); }
-.result .sum .hl b { color: var(--ink); }
-.moods .shown { background: var(--paper); }
-.moods .when { color: var(--muted); }
-.moods .shown .ar .n { color: var(--muted); }
-.name-line b { color: var(--ink); }
-.minute .n { color: var(--ink); }
+.research .bar { background: color-mix(in srgb, var(--emerald) 22%, var(--paper)); }
+.moods .shown { background: color-mix(in srgb, var(--emerald) 5%, var(--paper)); }
+.plan.plus { background: color-mix(in srgb, var(--emerald) 4%, var(--paper)); }
 </style>
 </head>
 <body>
