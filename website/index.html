@@ -200,6 +200,22 @@ section .lede { margin-bottom: 8px; }
 .dayline .lab { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; font-family: var(--display); font-size: 14px; color: var(--muted); }
 .dayline .lab b { color: var(--emerald); }
 
+/* moods: try "What's on your heart today?" */
+.moods .picker { display: grid; grid-template-columns: 1fr 1.1fr; gap: 32px; margin-top: 34px; align-items: start; }
+@media (max-width: 860px) { .moods .picker { grid-template-columns: 1fr; } }
+.moods .group + .group { margin-top: 20px; }
+.moods .glabel { font-family: var(--display); font-weight: 700; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+.moods .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.moods .chip { font: 600 15px var(--display); color: var(--ink); background: var(--paper); border: 1.5px solid var(--line); border-radius: 999px; padding: 8px 14px; cursor: pointer; }
+.moods .chip[aria-pressed="true"] { border-color: var(--emerald); background: color-mix(in srgb, var(--emerald) 12%, var(--paper)); }
+.moods .shown { background: var(--ground); border: 1px solid var(--line); border-radius: 22px; padding: 26px; display: flex; flex-direction: column; gap: 10px; min-height: 340px; }
+.moods .when { font-family: var(--display); font-weight: 700; font-size: 14px; color: var(--emerald); }
+.moods .shown .ar { font-family: var(--arabic); direction: rtl; text-align: right; font-size: 26px; line-height: 2; margin: 4px 0 0; color: var(--ink); }
+.moods .shown .ar .n { color: var(--emerald); font-size: 0.8em; white-space: nowrap; }
+.moods .shown .tr { font-size: 17px; line-height: 1.55; }
+.moods .shown .ref { font-family: var(--display); font-size: 13px; color: var(--muted); }
+.moods .help { font-family: var(--display); font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 10px; margin-top: 4px; }
+
 /* founder */
 .founder { border-left: 3px solid var(--emerald); padding-left: 24px; }
 .founder .sig { margin-top: 18px; font-family: var(--display); font-weight: 700; }
@@ -245,6 +261,7 @@ footer a { color: var(--muted); }
     <a class="brand" href="#top" aria-label="Munib home">munib<span>.</span></a>
     <nav aria-label="Sections">
       <a href="#why">Why Munib</a>
+      <a href="#moods">For you</a>
       <a href="#features">What's inside</a>
       <a href="#pricing">Pricing</a>
       <a href="#faq">Questions</a>
@@ -352,6 +369,21 @@ footer a { color: var(--muted); }
       <div class="prose">
         <p>Most feeds are built to keep you angry, anxious or envious. Every minute spent there is a minute of someone else's noise taking up space in your heart.</p>
         <p>Munib is a feed you can trust with that space. No ads, no outrage, no algorithm guessing what will keep you hooked. When you've been scrolling for 20 minutes, Munib tells you, and suggests you rest or go deeper instead of scrolling on.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="moods" id="moods">
+    <div class="wrap">
+      <div class="eyebrow">For you</div>
+      <h2>What's on your heart today?</h2>
+      <p class="lede" style="max-width:42em">Most of us only open the Quran when we already know what we're looking for. Munib starts from how you feel. Pick a feeling, or something happening in your life, and For you begins with ayat that speak to it, chosen with care and never stating rulings.</p>
+      <div class="picker">
+        <div>
+          <div class="group"><div class="glabel">Feelings</div><div class="chips" id="chips-feeling"></div></div>
+          <div class="group"><div class="glabel">Something happening in my life</div><div class="chips" id="chips-life"></div></div>
+        </div>
+        <div class="shown" id="mood-shown" aria-live="polite"></div>
       </div>
     </div>
   </section>
@@ -631,6 +663,34 @@ footer a { color: var(--muted); }
     stop();
     if (state.started) playAyah(i, 0);
   }, { passive: true });
+})();
+</script>
+<script>
+// "What's on your heart today?": tap a feeling to see one of the ayat For you would start with.
+(function () {
+  var MOODS = [{"id": "anxious", "label": "Anxious or overwhelmed", "sub": "Calm and reassurance", "when": "For when you're anxious or overwhelmed", "group": "feeling", "help": false, "k": "13:28", "name": "Ar-Ra'd · The Thunder", "ar": [["ٱلَّذِينَ ءَامَنُواْ وَتَطْمَئِنُّ قُلُوبُهُم بِذِكْرِ ٱللَّهِ أَلَا بِذِكْرِ ٱللَّهِ تَطْمَئِنُّ ٱلْقُلُوبُ", 28]], "en": "Those who have believed and whose hearts are assured by the remembrance of Allah. Unquestionably, by the remembrance of Allah hearts are assured"}, {"id": "grateful", "label": "Grateful", "sub": "Blessings and shukr", "when": "For when you're grateful", "group": "feeling", "help": false, "k": "14:7", "name": "Ibrahim · Abraham", "ar": [["وَإِذْ تَأَذَّنَ رَبُّكُمْ لَئِن شَكَرْتُمْ لَأَزِيدَنَّكُمْ وَلَئِن كَفَرْتُمْ إِنَّ عَذَابِي لَشَدِيدٞ", 7]], "en": "And [remember] when your Lord proclaimed, 'If you are grateful, I will surely increase you [in favor]; but if you deny, indeed, My punishment is severe"}, {"id": "grieving", "label": "Grieving or low", "sub": "Comfort and hope", "when": "For when you're grieving or low", "group": "feeling", "help": true, "k": "2:153", "name": "Al-Baqarah · The Cow", "ar": [["يَـٰٓأَيُّهَا ٱلَّذِينَ ءَامَنُواْ ٱسْتَعِينُواْ بِٱلصَّبْرِ وَٱلصَّلَوٰةِ إِنَّ ٱللَّهَ مَعَ ٱلصَّـٰبِرِينَ", 153]], "en": "O you who have believed, seek help through patience and prayer. Indeed, Allah is with the patient"}, {"id": "lonely", "label": "Lonely", "sub": "He is near", "when": "For when you feel alone", "group": "feeling", "help": true, "k": "50:16", "name": "Qaf · The Letter \"Qaf\"", "ar": [["وَلَقَدْ خَلَقْنَا ٱلْإِنسَٰنَ وَنَعْلَمُ مَا تُوَسْوِسُ بِهِۦ نَفْسُهُۥ وَنَحْنُ أَقْرَبُ إِلَيْهِ مِنْ حَبْلِ ٱلْوَرِيدِ", 16]], "en": "And We have already created man and know what his soul whispers to him, and We are closer to him than [his] jugular vein"}, {"id": "money", "label": "Money worries", "sub": "Provision and trust", "when": "For when money is worrying you", "group": "feeling", "help": false, "k": "51:22", "name": "Adh-Dhariyat · The Winnowing Winds", "ar": [["وَفِي ٱلسَّمَآءِ رِزْقُكُمْ وَمَا تُوعَدُونَ", 22]], "en": "And in the heaven is your provision and whatever you are promised"}, {"id": "angry", "label": "Angry or frustrated", "sub": "Patience and pardon", "when": "For when you're angry or frustrated", "group": "feeling", "help": false, "k": "42:37", "name": "Ash-Shuraa · The Consultation", "ar": [["وَٱلَّذِينَ يَجْتَنِبُونَ كَبَـٰٓئِرَ ٱلْإِثْمِ وَٱلْفَوَٰحِشَ وَإِذَا مَا غَضِبُواْ هُمْ يَغْفِرُونَ", 37]], "en": "And those who avoid the major sins and immoralities, and when they are angry, they forgive"}, {"id": "temptation", "label": "Struggling with temptation", "sub": "Turning back", "when": "For when temptation is strong", "group": "feeling", "help": false, "k": "7:201", "name": "Al-A'raf · The Heights", "ar": [["إِنَّ ٱلَّذِينَ ٱتَّقَوْاْ إِذَا مَسَّهُمْ طَـٰٓئِفٞ مِّنَ ٱلشَّيْطَٰنِ تَذَكَّرُواْ فَإِذَا هُم مُّبْصِرُونَ", 201]], "en": "Indeed, those who fear Allah - when an impulse touches them from Satan, they remember [Him] and at once they have insight"}, {"id": "unwell", "label": "Unwell", "sub": "Healing and patience", "when": "For when you're unwell", "group": "feeling", "help": false, "k": "26:80", "name": "Ash-Shu'ara · The Poets", "ar": [["وَإِذَا مَرِضْتُ فَهُوَ يَشْفِينِ", 80]], "en": "And when I am ill, it is He who cures me"}, {"id": "forgiveness", "label": "Seeking forgiveness", "sub": "Mercy and tawbah", "when": "For when you seek forgiveness", "group": "feeling", "help": false, "k": "39:53", "name": "Az-Zumar · The Troops", "ar": [["۞قُلْ يَٰعِبَادِيَ ٱلَّذِينَ أَسْرَفُواْ عَلَىٰٓ أَنفُسِهِمْ لَا تَقْنَطُواْ مِن رَّحْمَةِ ٱللَّهِ إِنَّ ٱللَّهَ يَغْفِرُ ٱلذُّنُوبَ جَمِيعًا إِنَّهُۥ هُوَ ٱلْغَفُورُ ٱلرَّحِيمُ", 53]], "en": "Say, \"O My servants who have transgressed against themselves [by sinning], do not despair of the mercy of Allah. Indeed, Allah forgives all sins. Indeed, it is He who is the Forgiving, the Merciful"}, {"id": "strength", "label": "Need strength", "sub": "Patience and resolve", "when": "For when you need strength", "group": "feeling", "help": false, "k": "3:139", "name": "Ali 'Imran · Family of Imran", "ar": [["وَلَا تَهِنُواْ وَلَا تَحْزَنُواْ وَأَنتُمُ ٱلْأَعْلَوْنَ إِن كُنتُم مُّؤْمِنِينَ", 139]], "en": "So do not weaken and do not grieve, and you will be superior if you are [true] believers"}, {"id": "guidance", "label": "Seeking guidance", "sub": "Direction and wisdom", "when": "For when you seek guidance", "group": "feeling", "help": false, "k": "3:8", "name": "Ali 'Imran · Family of Imran", "ar": [["رَبَّنَا لَا تُزِغْ قُلُوبَنَا بَعْدَ إِذْ هَدَيْتَنَا وَهَبْ لَنَا مِن لَّدُنكَ رَحْمَةً إِنَّكَ أَنتَ ٱلْوَهَّابُ", 8]], "en": "[Who say], \"Our Lord, let not our hearts deviate after You have guided us and grant us from Yourself mercy. Indeed, You are the Bestower"}, {"id": "marriage", "label": "Marriage", "sub": "Love, mercy, finding a spouse", "when": "For marriage", "group": "life", "help": false, "k": "30:21", "name": "Ar-Rum · The Romans", "ar": [["وَمِنْ ءَايَٰتِهِۦٓ أَنْ خَلَقَ لَكُم مِّنْ أَنفُسِكُمْ أَزْوَٰجًا لِّتَسْكُنُوٓاْ إِلَيْهَا وَجَعَلَ بَيْنَكُم مَّوَدَّةً وَرَحْمَةً إِنَّ فِي ذَٰلِكَ لَأٓيَٰتٖ لِّقَوْمٖ يَتَفَكَّرُونَ", 21]], "en": "And of His signs is that He created for you from yourselves mates that you may find tranquillity in them; and He placed between you affection and mercy. Indeed in that are signs for a people who give thought"}, {"id": "divorce", "label": "Divorce or separation", "sub": "A way through", "when": "For divorce and separation", "group": "life", "help": true, "k": "4:130", "name": "An-Nisa · The Women", "ar": [["وَإِن يَتَفَرَّقَا يُغْنِ ٱللَّهُ كُلًّا مِّن سَعَتِهِۦ وَكَانَ ٱللَّهُ وَٰسِعًا حَكِيمًا", 130]], "en": "But if they separate [by divorce], Allah will enrich each [of them] from His abundance. And ever is Allah Encompassing and Wise"}, {"id": "family", "label": "Family", "sub": "Parents and relatives", "when": "For family", "group": "life", "help": false, "k": "31:14", "name": "Luqman · Luqman", "ar": [["وَوَصَّيْنَا ٱلْإِنسَٰنَ بِوَٰلِدَيْهِ حَمَلَتْهُ أُمُّهُۥ وَهْنًا عَلَىٰ وَهْنٖ وَفِصَٰلُهُۥ فِي عَامَيْنِ أَنِ ٱشْكُرْ لِي وَلِوَٰلِدَيْكَ إِلَيَّ ٱلْمَصِيرُ", 14]], "en": "And We have enjoined upon man [care] for his parents. His mother carried him, [increasing her] in weakness upon weakness, and his weaning is in two years. Be grateful to Me and to your parents; to Me is the [final] destination"}, {"id": "conflict", "label": "Conflict", "sub": "Making peace", "when": "For conflict with others", "group": "life", "help": true, "k": "49:10", "name": "Al-Hujurat · The Rooms", "ar": [["إِنَّمَا ٱلْمُؤْمِنُونَ إِخْوَةٞ فَأَصْلِحُواْ بَيْنَ أَخَوَيْكُمْ وَٱتَّقُواْ ٱللَّهَ لَعَلَّكُمْ تُرْحَمُونَ", 10]], "en": "The believers are but brothers, so make settlement between your brothers. And fear Allah that you may receive mercy"}, {"id": "parenting", "label": "Parenting", "sub": "Raising children", "when": "For parents", "group": "life", "help": false, "k": "25:74", "name": "Al-Furqan · The Criterion", "ar": [["وَٱلَّذِينَ يَقُولُونَ رَبَّنَا هَبْ لَنَا مِنْ أَزْوَٰجِنَا وَذُرِّيَّـٰتِنَا قُرَّةَ أَعْيُنٖ وَٱجْعَلْنَا لِلْمُتَّقِينَ إِمَامًا", 74]], "en": "And those who say, \"Our Lord, grant us from among our wives and offspring comfort to our eyes and make us an example for the righteous"}];
+  var DIGITS = '٠١٢٣٤٥٦٧٨٩';
+  var num = function (n) { return String(n).replace(/\d/g, function (d) { return DIGITS[+d]; }); };
+  var shown = document.getElementById('mood-shown');
+  var buttons = [];
+  function show(m) {
+    buttons.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.id === m.id)); });
+    var ar = m.ar.map(function (a) { return a[0] + '\u00a0<span class="n">\uFD3F' + num(a[1]) + '\uFD3E</span>'; }).join(' ');
+    shown.innerHTML = '<div class="when">' + m.when + '</div>' +
+      '<p class="ar" lang="ar" dir="rtl">' + ar + '</p>' +
+      '<p class="tr">' + m.en + (/[.!?"”’)\]]$/.test(m.en) ? '' : '.') + '</p>' +
+      '<div class="ref">' + m.name + ' · ' + m.k + ' · Saheeh International</div>' +
+      (m.help ? '<div class="help">For heavier moments, Munib also shows "Someone to talk to", with UK helplines such as Samaritans and the Muslim Youth Helpline.</div>' : '');
+  }
+  MOODS.forEach(function (m) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.dataset.id = m.id; b.textContent = m.label; b.title = m.sub;
+    b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', function () { show(m); });
+    document.getElementById(m.group === 'life' ? 'chips-life' : 'chips-feeling').appendChild(b);
+    buttons.push(b);
+  });
+  show(MOODS[0]);
 })();
 </script>
 </body>
