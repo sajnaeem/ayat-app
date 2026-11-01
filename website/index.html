@@ -254,6 +254,10 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 20px; justify-content: space
 footer nav { display: flex; gap: 18px; flex-wrap: wrap; }
 footer a { color: var(--muted); }
 
+/* In dark mode the phone's frame needs to stand out from the page. */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .phone { background: #2C2C2E; box-shadow: 0 0 0 1px #3A3A3C, 0 30px 60px -20px rgba(0,0,0,0.6); } }
+:root[data-theme="dark"] .phone { background: #2C2C2E; box-shadow: 0 0 0 1px #3A3A3C, 0 30px 60px -20px rgba(0,0,0,0.6); }
+
 /* Quiet version (1 Nov 2026): one calm background, green used sparingly. */
 .brand span { color: var(--emerald); }
 .hero h1 em { color: inherit; }
