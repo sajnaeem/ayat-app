@@ -28,10 +28,10 @@
 /* Layout idea: a calm editorial page that scrolls like the app, with one phone in the hero and the same soft tinted card grounds marking each section. */
 :root {
   --ground: #F1F3EF;      /* sage card ground, the app's first tone */
-  --paper: #FAFBF8;
-  --ink: #16201B;
-  --muted: #5C6862;
-  --line: #D9DED8;
+  --paper: #FAFAF8;
+  --ink: #18181A;
+  --muted: #5E6066;
+  --line: #E2E2DF;
   --emerald: #1F6E52;     /* brand green: logo dot, one highlight, the app itself */
   --accent: var(--ink);   /* everything else stays quiet */
   --clay: #A4462F;
@@ -45,12 +45,12 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --ground: #121A16; --paper: #0D1310; --ink: #E8EEEA; --muted: #9AA8A0; --line: #26322C;
+    --ground: #141414; --paper: #111112; --ink: #EDEDEC; --muted: #A1A1A6; --line: #2A2A2C;
     --emerald: #5FC29A; --clay: #E8957A; --mist: #13161F; --blush: #1C1513; --sea: #101A1A; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --ground: #121A16; --paper: #0D1310; --ink: #E8EEEA; --muted: #9AA8A0; --line: #26322C;
+  --ground: #141414; --paper: #111112; --ink: #EDEDEC; --muted: #A1A1A6; --line: #2A2A2C;
   --emerald: #5FC29A; --clay: #E8957A; --mist: #13161F; --blush: #1C1513; --sea: #101A1A; color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -256,7 +256,7 @@ footer a { color: var(--muted); }
 
 /* Quiet version (1 Nov 2026): one calm background, green used sparingly. */
 .brand span { color: var(--emerald); }
-.hero h1 em { color: var(--emerald); }
+.hero h1 em { color: inherit; }
 .hero, .band-ground, .band-mist, .band-blush, .band-sea { background: var(--paper); }
 section { border-top: 1px solid var(--line); }
 .hero + section { border-top: 0; }
@@ -265,7 +265,7 @@ section { border-top: 1px solid var(--line); }
 .research .bar { background: color-mix(in srgb, var(--muted) 28%, var(--paper)); }
 .research .bar.now { background: var(--ink); }
 .dayline .one { background: var(--emerald); }
-.result .sum .hl b { color: var(--emerald); }
+.result .sum .hl b { color: var(--ink); }
 .moods .shown { background: var(--paper); }
 .moods .when { color: var(--muted); }
 .moods .shown .ar .n { color: var(--muted); }
