@@ -64,7 +64,7 @@ supabase/           schema.sql, 002_accounts.sql, 003_feedback.sql, 004_safety.s
 
 Saj: Apple Developer account (Individual or Organisation), getmunib.com, Supabase Pro at public launch ($25/month, backups and no pausing), optional UK trademark.
 
-Website: `website/` (index, privacy, terms, support; static HTML, ready for getmunib.com via GitHub Pages or Cloudflare Pages once the domain is bought; contact email placeholder hello@getmunib.com). Early-access form writes to the `waitlist` table (supabase/005_waitlist.sql, insert-only RLS; read it in Table Editor). Preview artifact: https://claude.ai/artifact/C2tbzXHx2b9KjhJFRMGM5H.
+Website: `website/` (index, privacy, terms, support; static HTML, ready for getmunib.com via GitHub Pages or Cloudflare Pages once the domain is bought; contact email placeholder hello@getmunib.com). The site exists for Apple's requirements (marketing, privacy and support URLs), not for a pre-launch campaign: Saj decided against early access on 1 Nov 2026, so there is no sign-up form (the empty `waitlist` table from 005_waitlist.sql is unused). On launch, the header badge becomes an App Store link. Preview artifact: https://claude.ai/artifact/C2tbzXHx2b9KjhJFRMGM5H.
 
 Still to build: app icon and launch screen; a demo account for Apple's reviewer; App Store listing and screenshots; EAS build → TestFlight → App Store. Recommended: crash reporting (Sentry), a one-off human security review before launch.
 

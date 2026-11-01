@@ -165,12 +165,6 @@ summary::after { content: "+"; color: var(--emerald); font-size: 24px; line-heig
 details[open] summary::after { content: "–"; }
 details p { margin-top: 10px; color: var(--muted); font-size: 17px; }
 
-/* waitlist */
-.join { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; max-width: 520px; }
-.join label { position: absolute; left: -9999px; }
-.join input { flex: 1 1 240px; min-height: 52px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--paper); color: var(--ink); padding: 0 16px; font: 500 17px var(--display); }
-.join .btn { min-height: 52px; }
-#join-msg { margin-top: 12px; font-family: var(--display); font-size: 15px; color: var(--muted); min-height: 1.4em; }
 
 footer { border-top: 1px solid var(--line); padding: 36px 0 48px; font-family: var(--display); font-size: 14px; color: var(--muted); }
 footer .wrap { display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between; align-items: center; }
@@ -189,7 +183,7 @@ footer a { color: var(--muted); }
       <a href="#pricing">Pricing</a>
       <a href="#faq">Questions</a>
     </nav>
-    <a class="btn small" href="#join">Get early access</a>
+    <span class="btn small ghost" aria-label="Coming soon to the App Store">Coming soon to iPhone</span>
   </div>
 </header>
 
@@ -201,7 +195,6 @@ footer a { color: var(--muted); }
         <h1>Your thumb already knows how to scroll. Let it scroll <em>the Quran</em>.</h1>
         <p class="lede">Munib takes the habit social media gave you and points it somewhere better: one ayah at a time, recited aloud, with translation and pronunciation. Start with one minute a day.</p>
         <div class="cta">
-          <a class="btn" href="#join">Get early access</a>
           <span class="note">30 days free · then £0.99 a month · the Quran tab is always free</span>
         </div>
         <div class="name-line"><b>مُنِيب</b> <span>Munib: one who turns back to Allah (Quran 50:33)</span></div>
@@ -361,24 +354,11 @@ footer a { color: var(--muted); }
       <details><summary>I can't read Arabic. Is Munib for me?</summary><p>Yes. Every ayah has a translation and a pronunciation guide you can switch on, the recitation highlights each word as it's said, and you can hold any word to see its meaning.</p></details>
       <details><summary>Where does the Quran text come from?</summary><p>From the Quran Foundation (Quran.com), including the translations, the recitations and Tafsir Ibn Kathir. The short context notes on the For you feed are written for Munib and are being checked by a scholar before launch.</p></details>
       <details><summary>Isn't this just more screen time?</summary><p>Munib is designed for coming back, not for staying. After 20 minutes it suggests a break, it never sends more than one reminder a day, and it doesn't use streaks or guilt.</p></details>
-      <details><summary>When can I get it?</summary><p>Munib is coming to iPhone first, with Android after. Join the early access list below and we'll let you know the day it's ready.</p></details>
+      <details><summary>When can I get it?</summary><p>Munib is coming to the App Store for iPhone first, with Android after.</p></details>
       <details><summary>Can I delete my account?</summary><p>Yes, at any time from the You screen in the app. It permanently deletes your account, progress, saved ayat and reflections.</p></details>
     </div>
   </section>
 
-  <section id="join">
-    <div class="wrap narrow">
-      <div class="eyebrow">Early access</div>
-      <h2>Be among the first to scroll the Quran</h2>
-      <p class="lede">Leave your email and we'll tell you the day Munib arrives on the App Store. Nothing else, and never shared.</p>
-      <form class="join" id="join-form" novalidate>
-        <label for="email">Your email address</label>
-        <input id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
-        <button class="btn" type="submit">Notify me</button>
-      </form>
-      <p id="join-msg" role="status"></p>
-    </div>
-  </section>
 </main>
 
 <footer>
@@ -392,40 +372,5 @@ footer a { color: var(--muted); }
   </div>
 </footer>
 
-<script>
-// Early access list: saved to Munib's database (Supabase). Only Munib can read it.
-(function () {
-  var URL = 'https://skuhimrzjddujzwdedot.supabase.co/rest/v1/waitlist';
-  var KEY = 'sb_publishable_JWfeg2nuIB6XrdtTCzzpzA_b952cZJk';
-  var form = document.getElementById('join-form');
-  var input = document.getElementById('email');
-  var msg = document.getElementById('join-msg');
-  form.addEventListener('submit', function (e) {
-    e.preventDefault();
-    var email = (input.value || '').trim().toLowerCase();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-      msg.textContent = 'That email address doesn’t look right. Check it and try again.';
-      input.focus();
-      return;
-    }
-    msg.textContent = 'Adding you…';
-    fetch(URL, {
-      method: 'POST',
-      headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
-      body: JSON.stringify({ email: email, source: 'website' })
-    }).then(function (r) {
-      // 409 means they're already on the list, which is fine.
-      if (r.ok || r.status === 409) {
-        msg.textContent = 'JazakAllahu khayran. You’re on the list, and we’ll email you the day Munib launches.';
-        form.reset();
-      } else {
-        msg.textContent = 'Something went wrong on our side. Please try again in a minute.';
-      }
-    }).catch(function () {
-      msg.textContent = 'Couldn’t reach Munib. Check your connection and try again. (In this preview, sign-ups only work once the site is live at getmunib.com.)';
-    });
-  });
-})();
-</script>
 </body>
 </html>
