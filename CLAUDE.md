@@ -19,7 +19,7 @@ A short-form, TikTok-style Quran app for Muslims whose attention has been shaped
 ## Product decisions (don't reverse without asking Saj)
 
 - **Name:** Munib (منيب, "one who turns back to Allah", 50:33). Bundle ID `app.munib`, scheme `munib://`. Domain getmunib.com; company/developer name Munib Labs. ("Ayat" and "Awwab" were dropped; Awwab clashed with an existing Islamic app.)
-- **Pricing (decided 31 Oct 2026, not built yet; replaces the earlier 6-month-trial / £3.99 plan):** **30-day free trial** (Apple's introductory offer), then **£0.99/month or £9.99/year**, aimed at the mass Muslim market. **The Quran tab (reading the whole Quran in order) is free forever**; the subscription covers everything else (For you and moods, memorise mode, reflections, reciters beyond the default, the attention ladder). Apple requirements: paywall with clear price, trial length, auto-renew terms, Terms and Privacy links and Restore purchases; needs a TestFlight/development build (not Expo Go), App Store Connect subscription products, the Paid Apps Agreement with bank and tax details, ideally RevenueCat. Since 31 Oct 2026 the **Quran tab works without an account** (guests land there; For you, reflections and You open `src/app/signin.tsx` with a reason). Sponsored ayat and supporter ideas are on hold.
+- **Pricing (decided 31 Oct 2026, not built yet; replaces the earlier 6-month-trial / £3.99 plan):** **30-day free trial** (Apple's introductory offer), then **£0.99/month or £9/year** (Saj changed the yearly price from £9.99 to £9 on 1 Nov 2026; confirm Apple offers a £9.00 price point when setting up the product), aimed at the mass Muslim market. **The Quran tab (reading the whole Quran in order) is free forever**; the subscription covers everything else (For you and moods, memorise mode, reflections, reciters beyond the default, the attention ladder). Apple requirements: paywall with clear price, trial length, auto-renew terms, Terms and Privacy links and Restore purchases; needs a TestFlight/development build (not Expo Go), App Store Connect subscription products, the Paid Apps Agreement with bank and tax details, ideally RevenueCat. Since 31 Oct 2026 the **Quran tab works without an account** (guests land there; For you, reflections and You open `src/app/signin.tsx` with a reason). Sponsored ayat and supporter ideas are on hold.
 - **Never sell or share user data.** Religion is special-category data under UK GDPR. No ad networks.
 - **iOS first.** Android later from the same code.
 - **Accounts:** required for For you, reflections, You and progress backup, but not for the Quran tab. Sign in with Apple and email for the iOS launch; Google and phone (SMS, paid per text) are coded but hidden (`SHOW_GOOGLE` / `SHOW_PHONE` in SignIn.tsx).
@@ -42,7 +42,7 @@ src/components/     VerseCard (card + animation + memorise), Study (word meaning
 src/lib/            quran (data, feed order, ladder), audio, store (prefs on phone), progress, account (Supabase auth + sync),
                     reminders (notifications), supabase, theme
 src/data/           verses.json, surahs.json, names.ts (128 names with Arabic + meaning; needs review by someone with Arabic)
-supabase/           schema.sql, 002_accounts.sql, 003_feedback.sql, 004_safety.sql — run in order in the Supabase SQL Editor; functions/qf (Quran Foundation proxy)
+supabase/           schema.sql, 002_accounts.sql, 003_feedback.sql, 004_safety.sql, 005_waitlist.sql (applied via connector) — run in order in the Supabase SQL Editor; functions/qf (Quran Foundation proxy)
 ```
 
 ## Supabase settings (done by Saj in the dashboard)
@@ -64,7 +64,9 @@ supabase/           schema.sql, 002_accounts.sql, 003_feedback.sql, 004_safety.s
 
 Saj: Apple Developer account (Individual or Organisation), getmunib.com, Supabase Pro at public launch ($25/month, backups and no pausing), optional UK trademark.
 
-Still to build: app icon and launch screen; getmunib.com with privacy policy and support pages; a demo account for Apple's reviewer; App Store listing and screenshots; EAS build → TestFlight → App Store. Recommended: crash reporting (Sentry), a one-off human security review before launch.
+Website: `website/` (index, privacy, terms, support; static HTML, ready for getmunib.com via GitHub Pages or Cloudflare Pages once the domain is bought; contact email placeholder hello@getmunib.com). Early-access form writes to the `waitlist` table (supabase/005_waitlist.sql, insert-only RLS; read it in Table Editor). Preview artifact: https://claude.ai/artifact/C2tbzXHx2b9KjhJFRMGM5H.
+
+Still to build: app icon and launch screen; a demo account for Apple's reviewer; App Store listing and screenshots; EAS build → TestFlight → App Store. Recommended: crash reporting (Sentry), a one-off human security review before launch.
 
 ## Releasing an update (once on the App Store)
 

@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Munib · Scroll the Quran</title>
+<meta name="description" content="Munib turns the scroll you already do into a few minutes with the Quran: one ayah at a time, with recitation, translation and pronunciation. Start with one minute a day.">
+<meta property="og:title" content="Munib · Scroll the Quran">
+<meta property="og:description" content="Your thumb already knows how to scroll. Let it scroll the Quran. Start with one minute a day.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;1,7..72,400&family=Noto+Naskh+Arabic:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a calm editorial page that scrolls like the app, with one phone in the hero and the same soft tinted card grounds marking each section. */
+:root {
+  --ground: #F1F3EF;      /* sage card ground, the app's first tone */
+  --paper: #FAFBF8;
+  --ink: #16201B;
+  --muted: #5C6862;
+  --line: #D9DED8;
+  --emerald: #1F6E52;     /* icon and accent */
+  --clay: #A4462F;
+  --mist: #EEF0F5;
+  --blush: #F5EEEB;
+  --sea: #E9F1F0;
+  --display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --read: "Literata", Georgia, "Times New Roman", serif;
+  --arabic: "Noto Naskh Arabic", "Geeza Pro", serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #121A16; --paper: #0D1310; --ink: #E8EEEA; --muted: #9AA8A0; --line: #26322C;
+    --emerald: #5FC29A; --clay: #E8957A; --mist: #13161F; --blush: #1C1513; --sea: #101A1A; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #121A16; --paper: #0D1310; --ink: #E8EEEA; --muted: #9AA8A0; --line: #26322C;
+  --emerald: #5FC29A; --clay: #E8957A; --mist: #13161F; --blush: #1C1513; --sea: #101A1A; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { animation: none !important; transition: none !important; } }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--read); font-size: 18px; line-height: 1.6; }
+a { color: var(--emerald); }
+a:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid var(--emerald); outline-offset: 3px; border-radius: 6px; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.08; letter-spacing: -0.02em; text-wrap: balance; margin: 0; }
+p { margin: 0; }
+.wrap { width: min(1120px, 100% - 40px); margin: 0 auto; }
+.narrow { max-width: 640px; }
+
+/* top bar */
+.top { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--paper) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+.top .wrap { display: flex; align-items: center; justify-content: space-between; height: 62px; gap: 16px; }
+.brand { font-family: var(--display); font-weight: 800; font-size: 26px; letter-spacing: -0.04em; color: var(--ink); text-decoration: none; }
+.brand span { color: var(--emerald); }
+.top nav { display: flex; gap: 22px; font-family: var(--display); font-weight: 600; font-size: 15px; }
+.top nav a { color: var(--muted); text-decoration: none; }
+.top nav a:hover { color: var(--ink); }
+@media (max-width: 640px) { .top nav { display: none; } }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 22px; border-radius: 12px; border: 0; background: var(--ink); color: var(--paper); font-family: var(--display); font-weight: 700; font-size: 16px; text-decoration: none; cursor: pointer; }
+.btn.small { min-height: 40px; padding: 0 16px; font-size: 14px; }
+.btn.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
+
+/* hero */
+.hero { background: var(--ground); border-bottom: 1px solid var(--line); overflow: hidden; }
+.hero .wrap { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 48px; align-items: center; padding: 64px 0 56px; }
+@media (max-width: 860px) { .hero .wrap { grid-template-columns: 1fr; padding: 40px 0; } }
+.eyebrow { font-family: var(--display); font-weight: 700; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--emerald); }
+.hero h1 { font-size: clamp(42px, 6.4vw, 76px); font-weight: 800; margin: 14px 0 20px; }
+.hero h1 em { font-style: normal; color: var(--emerald); }
+.lede { font-size: 20px; color: var(--muted); max-width: 34em; }
+.cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; align-items: center; }
+.note { font-family: var(--display); font-size: 14px; color: var(--muted); }
+.name-line { margin-top: 26px; display: flex; gap: 12px; align-items: baseline; color: var(--muted); font-size: 15px; }
+.name-line b { font-family: var(--arabic); font-weight: 600; font-size: 26px; color: var(--emerald); }
+
+/* the phone */
+.phone { justify-self: center; width: 290px; aspect-ratio: 9 / 19.2; border-radius: 44px; background: #0E1411; padding: 11px; box-shadow: 0 30px 60px -20px rgba(22, 32, 27, 0.35); }
+.screen { position: relative; height: 100%; border-radius: 34px; overflow: hidden; background: #F1F3EF; color: #16201B; display: flex; flex-direction: column; padding: 46px 18px 18px; }
+.screen .bar { position: absolute; top: 14px; left: 18px; right: 18px; display: flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 700; font-size: 13px; }
+.screen .bar .off { color: #8A958F; }
+.screen .bar .on { border-bottom: 2px solid #1F6E52; padding-bottom: 1px; }
+.screen .star { position: absolute; right: -60px; top: 40px; width: 220px; opacity: 0.18; }
+.screen .chip { align-self: flex-start; margin-top: 54px; background: #1F6E52; color: #fff; font-family: var(--display); font-weight: 700; font-size: 11px; padding: 3px 8px; border-radius: 6px; }
+.screen .chip + span { font-family: var(--display); font-size: 11px; color: #5C6862; margin-top: 6px; }
+.screen .ar { font-family: var(--arabic); direction: rtl; text-align: right; font-size: 25px; line-height: 1.9; margin-top: 14px; }
+.screen .ar .said { color: #1F6E52; }
+.screen .ar .dim { color: #9AA59F; }
+.screen .mk { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border: 1.5px solid #1F6E52; border-radius: 50%; font-size: 12px; line-height: 1; color: #1F6E52; vertical-align: middle; }
+.screen .rule { height: 2px; background: #D9DED8; margin: 10px 0 12px; }
+.screen .tr { font-family: var(--read); font-size: 15px; line-height: 1.5; }
+.screen .by { font-family: var(--display); font-size: 10px; color: #7A857F; margin-top: 6px; }
+.screen .rail { position: absolute; right: 12px; bottom: 26px; display: flex; flex-direction: column; gap: 14px; align-items: center; font-family: var(--display); font-size: 9px; color: #5C6862; }
+.screen .rail i { display: block; width: 26px; height: 26px; border-radius: 50%; border: 1.6px solid #16201B; }
+.screen .rail .play { width: 40px; height: 40px; border-radius: 12px; border: 0; background: #1F6E52; }
+
+/* sections */
+section { padding: 84px 0; }
+section h2 { font-size: clamp(32px, 4.4vw, 52px); font-weight: 800; margin-bottom: 18px; }
+section .lede { margin-bottom: 8px; }
+.band-mist { background: var(--mist); }
+.band-blush { background: var(--blush); }
+.band-sea { background: var(--sea); }
+.band-ground { background: var(--ground); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
+@media (max-width: 860px) { .two { grid-template-columns: 1fr; gap: 28px; } }
+.big-quote { font-family: var(--display); font-weight: 700; font-size: clamp(26px, 3.2vw, 36px); line-height: 1.2; letter-spacing: -0.015em; }
+.prose p + p { margin-top: 16px; }
+
+/* steps: the attention ladder */
+.ladder { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 36px; }
+@media (max-width: 760px) { .ladder { grid-template-columns: 1fr; } }
+.rung { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 10px; }
+.rung .when { font-family: var(--display); font-weight: 700; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--emerald); }
+.rung h3 { font-size: 24px; font-weight: 800; }
+.rung p { color: var(--muted); font-size: 16px; }
+.rung .ar { font-family: var(--arabic); direction: rtl; text-align: right; font-size: 22px; line-height: 1.8; color: var(--ink); }
+
+/* features */
+.features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; margin-top: 36px; }
+@media (max-width: 860px) { .features { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 520px) { .features { grid-template-columns: 1fr; } }
+.feature { background: var(--paper); padding: 24px; display: flex; flex-direction: column; gap: 8px; }
+.feature h3 { font-size: 19px; font-weight: 700; }
+.feature p { font-size: 16px; color: var(--muted); }
+.feature .free { align-self: flex-start; font-family: var(--display); font-weight: 700; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--emerald); border: 1px solid currentColor; border-radius: 6px; padding: 1px 6px; }
+
+/* one minute */
+.minute { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; }
+.minute .n { font-family: var(--display); font-weight: 800; font-size: clamp(90px, 14vw, 170px); line-height: 0.85; letter-spacing: -0.05em; color: var(--emerald); font-variant-numeric: tabular-nums; }
+.minute .u { font-family: var(--display); font-weight: 700; font-size: clamp(24px, 3vw, 34px); }
+.days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 28px; max-width: 520px; }
+.day { border-radius: 10px; background: var(--paper); border: 1px solid var(--line); padding: 10px 6px; text-align: center; font-family: var(--display); font-size: 12px; color: var(--muted); }
+.day b { display: block; font-size: 16px; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* founder */
+.founder { border-left: 3px solid var(--emerald); padding-left: 24px; }
+.founder .sig { margin-top: 18px; font-family: var(--display); font-weight: 700; }
+.founder .sig span { display: block; font-weight: 500; color: var(--muted); font-size: 15px; }
+
+/* pricing */
+.plans { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 36px; }
+@media (max-width: 760px) { .plans { grid-template-columns: 1fr; } }
+.plan { background: var(--paper); border: 1px solid var(--line); border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 14px; }
+.plan.plus { border: 2px solid var(--emerald); }
+.plan h3 { font-size: 26px; font-weight: 800; }
+.price { font-family: var(--display); font-weight: 800; font-size: 44px; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.price small { font-size: 16px; font-weight: 600; color: var(--muted); letter-spacing: 0; }
+.plan ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; font-size: 16px; }
+.plan .fine { font-family: var(--display); font-size: 13px; color: var(--muted); }
+
+/* promises */
+.promises { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 32px; }
+@media (max-width: 760px) { .promises { grid-template-columns: 1fr; } }
+.promises h3 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+.promises p { color: var(--muted); font-size: 16px; }
+
+/* faq */
+details { border-top: 1px solid var(--line); padding: 18px 0; }
+details:last-child { border-bottom: 1px solid var(--line); }
+summary { cursor: pointer; font-family: var(--display); font-weight: 700; font-size: 19px; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+summary::-webkit-details-marker { display: none; }
+summary::after { content: "+"; color: var(--emerald); font-size: 24px; line-height: 1; }
+details[open] summary::after { content: "–"; }
+details p { margin-top: 10px; color: var(--muted); font-size: 17px; }
+
+/* waitlist */
+.join { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; max-width: 520px; }
+.join label { position: absolute; left: -9999px; }
+.join input { flex: 1 1 240px; min-height: 52px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--paper); color: var(--ink); padding: 0 16px; font: 500 17px var(--display); }
+.join .btn { min-height: 52px; }
+#join-msg { margin-top: 12px; font-family: var(--display); font-size: 15px; color: var(--muted); min-height: 1.4em; }
+
+footer { border-top: 1px solid var(--line); padding: 36px 0 48px; font-family: var(--display); font-size: 14px; color: var(--muted); }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between; align-items: center; }
+footer nav { display: flex; gap: 18px; flex-wrap: wrap; }
+footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Munib home">munib<span>.</span></a>
+    <nav aria-label="Sections">
+      <a href="#why">Why Munib</a>
+      <a href="#features">What's inside</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">Questions</a>
+    </nav>
+    <a class="btn small" href="#join">Get early access</a>
+  </div>
+</header>
+
+<main id="top">
+  <div class="hero">
+    <div class="wrap">
+      <div>
+        <div class="eyebrow">Coming soon to iPhone</div>
+        <h1>Your thumb already knows how to scroll. Let it scroll <em>the Quran</em>.</h1>
+        <p class="lede">Munib takes the habit social media gave you and points it somewhere better: one ayah at a time, recited aloud, with translation and pronunciation. Start with one minute a day.</p>
+        <div class="cta">
+          <a class="btn" href="#join">Get early access</a>
+          <span class="note">30 days free · then £0.99 a month · the Quran tab is always free</span>
+        </div>
+        <div class="name-line"><b>مُنِيب</b> <span>Munib: one who turns back to Allah (Quran 50:33)</span></div>
+      </div>
+
+      <div class="phone" role="img" aria-label="Munib on an iPhone: a card showing Quran 94:5–6 in Arabic, with its English translation, and the word being recited highlighted">
+        <div class="screen">
+          <div class="bar"><span class="on">For you</span><span class="off">Quran</span></div>
+          <svg class="star" viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#1F6E52" stroke-width="1.6"><rect x="22" y="22" width="56" height="56"/><rect x="22" y="22" width="56" height="56" transform="rotate(45 50 50)"/><circle cx="50" cy="50" r="22"/></g></svg>
+          <span class="chip">94:5–6</span><span>Ash-Sharh · The Relief</span>
+          <p class="ar"><span class="said">فَإِنَّ</span> مَعَ ٱلْعُسْرِ يُسْرًا <span class="mk">٥</span> <span class="dim">إِنَّ مَعَ ٱلْعُسْرِ يُسْرًا</span> <span class="mk">٦</span></p>
+          <div class="rule"></div>
+          <p class="tr">For indeed, with hardship will be ease. Indeed, with hardship will be ease.</p>
+          <p class="by">Saheeh International</p>
+          <div class="rail" aria-hidden="true"><i></i>Like<i></i>Save<i class="play"></i>Pause</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section id="why">
+    <div class="wrap two">
+      <div>
+        <div class="eyebrow">Why Munib</div>
+        <h2>Doomscrolling changed how we pay attention. We can use that.</h2>
+      </div>
+      <div class="prose">
+        <p>Years of short videos have trained us to take things in quickly, a few seconds at a time. Sitting down with a whole page of the Quran can feel impossible, and then the guilt makes it harder still.</p>
+        <p>Munib doesn't fight that habit. It borrows it. The feed you scroll is made of ayat, each one short enough to take in, recited aloud as it appears, with the word being recited lighting up so you can follow along.</p>
+        <p>As you keep coming back, Munib gently stretches your attention: single ayat, then short passages, then whole surahs.</p>
+      </div>
+    </div>
+    <div class="wrap">
+      <div class="ladder">
+        <div class="rung">
+          <div class="when">Day one</div>
+          <h3>A single ayah</h3>
+          <p class="ar">فَإِنَّ مَعَ ٱلْعُسْرِ يُسْرًا</p>
+          <p>A few seconds. One ayah, heard and understood.</p>
+        </div>
+        <div class="rung">
+          <div class="when">After 25 readings</div>
+          <h3>Short passages</h3>
+          <p>Two to four ayat together, like the comfort at the end of Surah al-Baqarah.</p>
+        </div>
+        <div class="rung">
+          <div class="when">After 75 and 150</div>
+          <h3>Whole surahs</h3>
+          <p>Short surahs from start to finish, then longer readings. The attention you rebuilt, put to its best use.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band-blush">
+    <div class="wrap two">
+      <p class="big-quote">The first step to staying sane in insane times is choosing what you let into your head.</p>
+      <div class="prose">
+        <p>Most feeds are built to keep you angry, anxious or envious. Every minute spent there is a minute of someone else's noise taking up space in your heart.</p>
+        <p>Munib is a feed you can trust with that space. No ads, no outrage, no algorithm guessing what will keep you hooked. When you've been scrolling for 20 minutes, Munib tells you, and suggests you rest or go deeper instead of scrolling on.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="wrap">
+      <div class="eyebrow">What's inside</div>
+      <h2>Everything you need to read, understand and remember</h2>
+      <div class="features">
+        <div class="feature"><span class="free">Always free</span><h3>The whole Quran, in order</h3><p>All 114 surahs as bite-size cards you swipe through. Munib remembers your place, and you can read without an account.</p></div>
+        <div class="feature"><h3>What's on your heart today?</h3><p>Pick how you feel, anxious, grieving, grateful, lonely, or what's happening in your life, and For you starts with ayat that speak to it.</p></div>
+        <div class="feature"><h3>Recitation, word by word</h3><p>Recited by Mishary Alafasy, as-Sudais, al-Husary or al-Minshawi. Each word lights up as it's said.</p></div>
+        <div class="feature"><h3>Hold a word for its meaning</h3><p>Press and hold any Arabic word to see what it means and how to say it. Slowly, the Arabic starts to make sense.</p></div>
+        <div class="feature"><h3>Tafsir on every ayah</h3><p>The explanation from Tafsir Ibn Kathir, in English, Urdu or Bengali, one tap away.</p></div>
+        <div class="feature"><h3>7 translations and pronunciation</h3><p>English, Urdu, Bengali, Indonesian, Turkish, French and Spanish, with transliteration for anyone still learning to read Arabic.</p></div>
+        <div class="feature"><h3>Share a beautiful ayah</h3><p>Send an ayah as an image to your family WhatsApp group, with an optional Jumuʿah, Ramadan or Eid greeting.</p></div>
+        <div class="feature"><h3>Memorise mode</h3><p>Repeat an ayah up to 10 times, then hide the words one by one and recite from memory.</p></div>
+        <div class="feature"><h3>Reads offline</h3><p>Surahs you've opened stay on your phone for a week, for the Tube, the plane or patchy signal.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band-sea">
+    <div class="wrap two">
+      <div>
+        <div class="eyebrow">Start small</div>
+        <div class="minute"><span class="n">1</span><span class="u">minute a day</span></div>
+      </div>
+      <div class="prose">
+        <p>New habits aren't built by diving into the deep end. They're built by small steps, taken every day, for long enough that they become part of you.</p>
+        <p>So start with one minute. A few ayat on your commute, before bed, or instead of opening another app. Munib sends one gentle check-in a day at most, with no streaks to break and no guilt.</p>
+        <div class="days" aria-label="An example week: one, two, three, three, four, five and six minutes a day">
+          <div class="day">Mon<b>1</b></div><div class="day">Tue<b>2</b></div><div class="day">Wed<b>3</b></div><div class="day">Thu<b>3</b></div><div class="day">Fri<b>4</b></div><div class="day">Sat<b>5</b></div><div class="day">Sun<b>6</b></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap narrow founder">
+      <div class="eyebrow">Why I built it</div>
+      <div class="prose" style="margin-top:14px">
+        <p>This year, after my father passed away, I set out to become a better Muslim. One of the first things I wanted was to read the Quran properly, and I struggled. I'd sit down with good intentions and lose focus within minutes.</p>
+        <p>Then I noticed how easily I could lose an hour scrolling. My attention wasn't gone. It had just been trained for something else.</p>
+        <p>Munib is the app I needed: the same scroll, pointed back towards Allah. I hope it helps you too.</p>
+      </div>
+      <p class="sig">Saj<span>Founder, Munib · East London</span></p>
+    </div>
+  </section>
+
+  <section id="pricing" class="band-ground">
+    <div class="wrap">
+      <div class="eyebrow">Pricing</div>
+      <h2>Free to read. Less than a pound to go further.</h2>
+      <div class="plans">
+        <div class="plan">
+          <h3>Quran</h3>
+          <div class="price">Free <small>forever</small></div>
+          <ul>
+            <li>The whole Quran, in order, as bite-size cards</li>
+            <li>Arabic, translation and recitation</li>
+            <li>No account needed</li>
+          </ul>
+        </div>
+        <div class="plan plus">
+          <h3>Munib Plus</h3>
+          <div class="price">£0.99 <small>a month, or £9 a year</small></div>
+          <ul>
+            <li>For you: ayat for how you feel and what you're going through</li>
+            <li>Word meanings, tafsir and memorise mode</li>
+            <li>Reflections, saved ayat and progress on every device</li>
+            <li>All reciters and 7 translations</li>
+          </ul>
+          <p class="fine">Starts with 30 days free. Cancel any time in your iPhone's Settings before the trial ends and you won't be charged.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="eyebrow">Our promises</div>
+      <h2>Your faith is personal. We treat it that way.</h2>
+      <div class="promises">
+        <div><h3>We never sell your data</h3><p>No ads, no ad networks, no selling or sharing what you read. Ever.</p></div>
+        <div><h3>Trusted sources</h3><p>Quran text, translations, recitation and tafsir come from the Quran Foundation, the team behind Quran.com.</p></div>
+        <div><h3>A kind community</h3><p>Reflections follow clear guidelines. You can report or block anyone, and reports are reviewed within 24 hours.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq" class="band-mist">
+    <div class="wrap narrow">
+      <div class="eyebrow">Questions</div>
+      <h2>Good to know</h2>
+      <details><summary>Is Munib free?</summary><p>Reading the whole Quran in Munib is free forever, with no account. Munib Plus adds For you, word meanings, tafsir, memorise mode and more. It starts with 30 days free, then costs £0.99 a month or £9 a year.</p></details>
+      <details><summary>I can't read Arabic. Is Munib for me?</summary><p>Yes. Every ayah has a translation and a pronunciation guide you can switch on, the recitation highlights each word as it's said, and you can hold any word to see its meaning.</p></details>
+      <details><summary>Where does the Quran text come from?</summary><p>From the Quran Foundation (Quran.com), including the translations, the recitations and Tafsir Ibn Kathir. The short context notes on the For you feed are written for Munib and are being checked by a scholar before launch.</p></details>
+      <details><summary>Isn't this just more screen time?</summary><p>Munib is designed for coming back, not for staying. After 20 minutes it suggests a break, it never sends more than one reminder a day, and it doesn't use streaks or guilt.</p></details>
+      <details><summary>When can I get it?</summary><p>Munib is coming to iPhone first, with Android after. Join the early access list below and we'll let you know the day it's ready.</p></details>
+      <details><summary>Can I delete my account?</summary><p>Yes, at any time from the You screen in the app. It permanently deletes your account, progress, saved ayat and reflections.</p></details>
+    </div>
+  </section>
+
+  <section id="join">
+    <div class="wrap narrow">
+      <div class="eyebrow">Early access</div>
+      <h2>Be among the first to scroll the Quran</h2>
+      <p class="lede">Leave your email and we'll tell you the day Munib arrives on the App Store. Nothing else, and never shared.</p>
+      <form class="join" id="join-form" novalidate>
+        <label for="email">Your email address</label>
+        <input id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+        <button class="btn" type="submit">Notify me</button>
+      </form>
+      <p id="join-msg" role="status"></p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span><b style="color:var(--ink)">munib.</b> · Munib Labs · London</span>
+    <nav aria-label="Legal and help">
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <a href="support.html">Support</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+// Early access list: saved to Munib's database (Supabase). Only Munib can read it.
+(function () {
+  var URL = 'https://skuhimrzjddujzwdedot.supabase.co/rest/v1/waitlist';
+  var KEY = 'sb_publishable_JWfeg2nuIB6XrdtTCzzpzA_b952cZJk';
+  var form = document.getElementById('join-form');
+  var input = document.getElementById('email');
+  var msg = document.getElementById('join-msg');
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var email = (input.value || '').trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      msg.textContent = 'That email address doesn’t look right. Check it and try again.';
+      input.focus();
+      return;
+    }
+    msg.textContent = 'Adding you…';
+    fetch(URL, {
+      method: 'POST',
+      headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify({ email: email, source: 'website' })
+    }).then(function (r) {
+      // 409 means they're already on the list, which is fine.
+      if (r.ok || r.status === 409) {
+        msg.textContent = 'JazakAllahu khayran. You’re on the list, and we’ll email you the day Munib launches.';
+        form.reset();
+      } else {
+        msg.textContent = 'Something went wrong on our side. Please try again in a minute.';
+      }
+    }).catch(function () {
+      msg.textContent = 'Couldn’t reach Munib. Check your connection and try again. (In this preview, sign-ups only work once the site is live at getmunib.com.)';
+    });
+  });
+})();
+</script>
+</body>
+</html>
