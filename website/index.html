@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Munib: Quran app for iPhone · Scroll the Quran a little every day</title>
+<title>Munib: a new way to read the Quran · Quran app for iPhone</title>
 <meta name="description" content="Munib is a Quran app for iPhone that scrolls like social media: one ayah at a time, recited aloud, with translation, pronunciation, word meanings and tafsir. Read the whole Quran free. Start with one minute a day.">
 <link rel="canonical" href="https://getmunib.com/">
 <link rel="icon" type="image/png" href="favicon.png">
@@ -12,7 +12,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Munib">
 <meta property="og:url" content="https://getmunib.com/">
-<meta property="og:title" content="Munib · Scroll the Quran, one minute a day">
+<meta property="og:title" content="Munib · A new way to read the Quran">
 <meta property="og:description" content="Your thumb already knows how to scroll. Let it scroll the Quran: one ayah at a time, recited aloud, with translation and pronunciation.">
 <meta property="og:image" content="https://getmunib.com/og.png">
 <meta property="og:image:width" content="1200">
@@ -131,6 +131,17 @@ section .lede { margin-bottom: 8px; }
 .big-quote { font-family: var(--display); font-weight: 700; font-size: clamp(26px, 3.2vw, 36px); line-height: 1.2; letter-spacing: -0.015em; }
 .prose p + p { margin-top: 16px; }
 
+/* comparison */
+.compare { margin-top: 32px; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+.compare .head, .compare .line { display: grid; grid-template-columns: 1fr 1fr; }
+.compare .head div { padding: 14px 22px; font-family: var(--display); font-weight: 700; font-size: 15px; letter-spacing: 0.04em; text-transform: uppercase; }
+.compare .head div:first-child { color: var(--muted); background: color-mix(in srgb, var(--muted) 8%, var(--paper)); }
+.compare .head div:last-child { color: var(--paper); background: var(--emerald); }
+.compare .line div { padding: 16px 22px; border-top: 1px solid var(--line); font-size: 17px; }
+.compare .line div:first-child { color: var(--muted); background: color-mix(in srgb, var(--muted) 4%, var(--paper)); }
+.compare .line div:last-child { font-weight: 500; }
+@media (max-width: 600px) { .compare .head div, .compare .line div { padding: 12px 14px; font-size: 15px; } }
+
 /* steps: the attention ladder */
 .ladder { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 36px; }
 @media (max-width: 760px) { .ladder { grid-template-columns: 1fr; } }
@@ -246,7 +257,7 @@ footer a { color: var(--muted); }
   <div class="hero">
     <div class="wrap">
       <div>
-        <div class="eyebrow">Coming soon to iPhone</div>
+        <div class="eyebrow">A new way to read the Quran</div>
         <h1>Your thumb already knows how to scroll. Let it scroll <em>the Quran</em>.</h1>
         <p class="lede">Munib takes the habit social media gave you and points it somewhere better: one ayah at a time, recited aloud, with translation and pronunciation. Start with one minute a day.</p>
         <div class="cta">
@@ -266,6 +277,22 @@ footer a { color: var(--muted); }
       </div>
     </div>
   </div>
+
+  <section class="new">
+    <div class="wrap">
+      <div class="eyebrow">Not another Quran app</div>
+      <h2>Most Quran apps are made for people who already read every day</h2>
+      <p class="lede" style="max-width:40em">They're digital mushafs: pages of text, waiting for you to sit down and focus. That's wonderful if you can. Munib is for the rest of us, built around how we actually use our phones.</p>
+      <div class="compare" role="table" aria-label="Most Quran apps compared with Munib">
+        <div class="head" role="row"><div role="columnheader">Most Quran apps</div><div role="columnheader">Munib</div></div>
+        <div class="line" role="row"><div role="cell">Open to a page of text</div><div role="cell">Opens to one ayah, recited aloud as it appears</div></div>
+        <div class="line" role="row"><div role="cell">You need a long, quiet sitting</div><div role="cell">One minute counts, and your focus grows over time</div></div>
+        <div class="line" role="row"><div role="cell">You have to know where to look</div><div role="cell">Ayat find you, for how you feel today</div></div>
+        <div class="line" role="row"><div role="cell">Translation underneath, if you scroll</div><div role="cell">Every word explained: hold it for its meaning</div></div>
+        <div class="line" role="row"><div role="cell">Read on your own</div><div role="cell">Share an ayah as a beautiful image with family</div></div>
+      </div>
+    </div>
+  </section>
 
   <section id="why">
     <div class="wrap two">
