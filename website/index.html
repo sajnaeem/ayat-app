@@ -150,6 +150,31 @@ section .lede { margin-bottom: 8px; }
 .result .sum i { font-style: normal; font-family: var(--display); font-size: 40px; color: var(--muted); }
 .result .sum .hl b { color: var(--emerald); }
 
+/* research: attention chart */
+.research .chart { margin-top: 30px; display: grid; gap: 14px; max-width: 760px; }
+.research .row { display: grid; grid-template-columns: 64px 1fr; align-items: center; gap: 14px; }
+.research .yr { font-family: var(--display); font-weight: 700; font-size: 15px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.research .track { position: relative; height: 40px; }
+.research .bar { height: 100%; border-radius: 0 4px 4px 0; background: color-mix(in srgb, var(--emerald) 38%, var(--paper)); display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; min-width: 64px; }
+.research .bar.now { background: var(--emerald); }
+.research .bar b { font-family: var(--display); font-weight: 700; font-size: 15px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.research .bar.now b { color: var(--paper); }
+.research .cap { margin-top: 14px; font-family: var(--display); font-size: 13px; color: var(--muted); max-width: 60em; }
+.research .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 36px; }
+@media (max-width: 760px) { .research .facts { grid-template-columns: 1fr; } }
+.research .fact { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 6px; }
+.research .fact b { font-family: var(--display); font-weight: 800; font-size: 40px; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+.research .fact p { font-size: 16px; color: var(--muted); }
+.research .fact a { font-family: var(--display); font-size: 13px; }
+/* a day online, with the 1% that finishes the Quran */
+.dayline { margin-top: 26px; max-width: 760px; }
+.dayline .strip { display: flex; height: 22px; gap: 2px; }
+.dayline .strip span { border-radius: 4px; }
+.dayline .rest { flex: 99; background: color-mix(in srgb, var(--muted) 22%, var(--paper)); }
+.dayline .one { flex: 1.4; background: var(--emerald); min-width: 6px; }
+.dayline .lab { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; font-family: var(--display); font-size: 14px; color: var(--muted); }
+.dayline .lab b { color: var(--emerald); }
+
 /* founder */
 .founder { border-left: 3px solid var(--emerald); padding-left: 24px; }
 .founder .sig { margin-top: 18px; font-family: var(--display); font-weight: 700; }
@@ -262,6 +287,24 @@ footer a { color: var(--muted); }
     </div>
   </section>
 
+  <section class="research band-ground" id="research">
+    <div class="wrap">
+      <div class="eyebrow">The research</div>
+      <h2>Our attention has been shrinking</h2>
+      <p class="lede" style="max-width:40em">How long people stay focused on one screen before switching to something else, measured by Professor Gloria Mark at the University of California, Irvine.</p>
+      <div class="chart" role="img" aria-label="Average time on one screen before switching: about 150 seconds in 2004, 75 seconds in 2012 and 47 seconds in recent studies">
+        <div class="row"><span class="yr">2004</span><div class="track"><div class="bar" style="width:100%" title="2004: about 2½ minutes (150 seconds)"><b>2½ min</b></div></div></div>
+        <div class="row"><span class="yr">2012</span><div class="track"><div class="bar" style="width:50%" title="2012: 75 seconds"><b>75 sec</b></div></div></div>
+        <div class="row"><span class="yr">Today</span><div class="track"><div class="bar now" style="width:31.3%" title="Recent studies: 47 seconds"><b>47 sec</b></div></div></div>
+      </div>
+      <p class="cap">Average time on one screen before switching. Office workers observed in 2004, then tracked by software in 2012 and in studies from 2016 onwards. Source: Gloria Mark, <i>Attention Span</i> (2023).</p>
+      <div class="facts">
+        <div class="fact"><b>4½ hours</b><p>The time the average UK adult spends online every day, mostly on a phone.</p><a href="https://www.ofcom.org.uk/media-use-and-attitudes/online-habits/from-apps-to-ai-search-how-the-uk-goes-online-in-2025">Ofcom, Online Nation 2025</a></div>
+        <div class="fact"><b>98,000 people</b><p>In 70 studies, heavier use of short videos like TikTok and Reels was linked to poorer attention and self-control.</p><a href="https://www.psypost.org/large-meta-analysis-links-tiktok-and-instagram-reels-to-poorer-cognitive-and-mental-health/">Psychological Bulletin, 2025</a></div>
+      </div>
+    </div>
+  </section>
+
   <section class="band-blush">
     <div class="wrap two">
       <p class="big-quote">The first step to staying sane in insane times is choosing what you let into your head.</p>
@@ -317,7 +360,11 @@ footer a { color: var(--muted); }
         <i aria-hidden="true">=</i>
         <div class="hl"><b>17</b><span>ayat a day</span></div>
       </div>
-      <p class="lede" style="margin-top:22px;max-width:40em">Seventeen ayat takes a few minutes. Do it every day, in the Quran tab, and a year from now you'll have read the whole Quran, cover to cover, a little at a time. Munib keeps your place and shows how far you've come.</p>
+      <div class="dayline" role="img" aria-label="A day online is about 270 minutes; 1 percent of it, about 3 minutes, is enough for 17 ayat">
+        <div class="strip"><span class="one"></span><span class="rest"></span></div>
+        <div class="lab"><span><b>About 3 minutes:</b> 1% of a day online</span><span>4½ hours online a day</span></div>
+      </div>
+      <p class="lede" style="margin-top:22px;max-width:40em">Seventeen ayat takes about three minutes: roughly 1% of the time the average person in the UK spends online each day. Do it every day, in the Quran tab, and a year from now you'll have read the whole Quran, cover to cover, a little at a time. Munib keeps your place and shows how far you've come.</p>
     </div>
   </section>
 
