@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Munib · A new way to read the Quran</title>
+<meta name="description" content="A Quran app for iPhone that scrolls like social media: one ayah at a time, recited aloud, with translation. Read the whole Quran free.">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#FAFAF8">
+<meta property="og:title" content="Munib · A new way to read the Quran">
+<meta property="og:image" content="/og.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Literata:opsz,wght@7..72,400&family=Noto+Naskh+Arabic:wght@400;600&display=swap" rel="stylesheet">
+<!--
+  Munib website, version 2: one page, four sections, one script (the phone demo).
+  Structure: hero (claim + working demo) · attention (the problem, as one picture) · a year (the promise) · price · footer.
+  Rules: no taglines, helper text or secondary labels. If something needs explaining, change the layout instead.
+-->
+<style>
+:root {
+  --paper: #FAFAF8; --ink: #18181A; --muted: #6B6E73; --line: #E6E6E2; --soft: #F1F3EF;
+  --accent: #1F6E52;
+  --display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --read: "Literata", Georgia, serif;
+  --arabic: "Noto Naskh Arabic", "Geeza Pro", serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--display); }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+h1, h2 { font-weight: 800; letter-spacing: -0.035em; line-height: 1.02; margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(44px, 8vw, 88px); }
+h2 { font-size: clamp(32px, 5vw, 56px); }
+em { font-style: normal; color: var(--accent); }
+section { padding: 120px 0; border-top: 1px solid var(--line); }
+
+header { padding: 22px 0; }
+.brand { font-weight: 800; font-size: 24px; letter-spacing: -0.04em; text-decoration: none; }
+.brand span { color: var(--accent); }
+
+.hero { text-align: center; padding: 72px 0 120px; }
+.soon { display: inline-block; margin: 28px 0 64px; padding: 12px 22px; border-radius: 999px; background: var(--ink); color: var(--paper); font-weight: 700; font-size: 16px; }
+.hero .phone { margin: 0 auto; }
+
+/* attention: three bars shrink, three steps grow */
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; margin-top: 64px; }
+.bars { display: grid; gap: 14px; }
+.bars div { display: grid; grid-template-columns: 64px 1fr; align-items: center; gap: 14px; font-weight: 700; font-size: 15px; color: var(--muted); }
+.bars b { display: block; height: 44px; border-radius: 10px; background: #D9DBD6; color: var(--ink); font-size: 15px; line-height: 44px; padding-left: 14px; white-space: nowrap; }
+.bars.grow b { background: var(--accent); color: #fff; }
+.src { margin-top: 40px; font-size: 13px; color: var(--muted); }
+
+.year { text-align: center; }
+.big { font-size: clamp(120px, 24vw, 240px); font-weight: 800; letter-spacing: -0.06em; line-height: 0.9; color: var(--accent); }
+.year h2 { margin-top: 12px; }
+
+.plans { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 56px; }
+.plan { border: 1px solid var(--line); border-radius: 22px; padding: 32px; background: #fff; }
+.plan h3 { margin: 0; font-size: 20px; }
+.plan .p { font-size: 44px; font-weight: 800; letter-spacing: -0.03em; margin: 10px 0 18px; }
+.plan .p small { font-size: 16px; font-weight: 700; color: var(--muted); letter-spacing: 0; }
+.plan ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; font-family: var(--read); font-size: 17px; }
+.plan.plus { border-color: var(--accent); }
+.plan .trial { margin: -12px 0 18px; font-weight: 700; color: var(--accent); }
+
+footer { border-top: 1px solid var(--line); padding: 32px 0 48px; font-size: 14px; color: var(--muted); }
+footer .wrap { display: flex; gap: 24px; flex-wrap: wrap; }
+footer a { text-decoration: none; }
+
+@media (max-width: 760px) {
+  section { padding: 88px 0; }
+  .split, .plans { grid-template-columns: 1fr; gap: 40px; }
+}
+
+/* the phone demo (shared with the current site) */
+/* the phone: a working demo you can swipe and listen to */
+.phone { justify-self: center; width: 300px; height: 640px; border-radius: 46px; background: #0E1411; padding: 11px; box-shadow: 0 30px 60px -20px rgba(22, 32, 27, 0.35); }
+.screen { position: relative; height: 100%; border-radius: 36px; overflow: hidden; color: #16201B; }
+.screen .bar { position: absolute; z-index: 3; top: 16px; left: 18px; right: 18px; display: flex; align-items: center; gap: 12px; font-family: var(--display); font-weight: 700; font-size: 13px; pointer-events: none; }
+.screen .bar .off { color: #8A958F; }
+.screen .bar .on { border-bottom: 2px solid #1F6E52; padding-bottom: 1px; }
+.feed { height: 100%; overflow-y: auto; scroll-snap-type: y mandatory; overscroll-behavior: contain; scrollbar-width: none; }
+.feed::-webkit-scrollbar { display: none; }
+.dcard { position: relative; height: 100%; scroll-snap-align: start; scroll-snap-stop: always; display: flex; flex-direction: column; justify-content: center; padding: 50px 54px 30px 18px; overflow: hidden; cursor: pointer; }
+.dcard .star { position: absolute; right: -70px; top: 30px; width: 230px; opacity: 0.17; pointer-events: none; }
+.dcard .ref { display: flex; align-items: center; gap: 8px; font-family: var(--display); font-size: 11px; color: #5C6862; }
+.dcard .chip { color: #fff; font-weight: 700; padding: 3px 8px; border-radius: 6px; }
+.dcard .ar { font-family: var(--arabic); direction: rtl; text-align: right; font-size: 23px; line-height: 2; margin: 12px 0 0; }
+.dcard .ar .w { transition: color 0.15s; }
+.dcard .mk2 { color: var(--tone); font-size: 0.8em; white-space: nowrap; }
+.dcard .ar .w.on { color: var(--tone); }
+.dcard .ar .ay.dim { color: #9AA59F; }
+.dcard .mk { display: inline-block; text-align: center; width: 21px; height: 21px; line-height: 18px; unicode-bidi: isolate; border: 1.5px solid var(--tone); border-radius: 50%; font-size: 11px; line-height: 1; color: var(--tone); vertical-align: middle; margin: 0 2px; }
+.dcard .rule { height: 2px; background: rgba(22, 32, 27, 0.13); margin: 8px 0 10px; }
+.dcard .tr { font-family: var(--read); font-size: 14px; line-height: 1.5; margin: 0; }
+.dcard .by { font-family: var(--display); font-size: 10px; color: #7A857F; margin-top: 6px; }
+.dcard .rail { position: absolute; right: 10px; bottom: 34px; display: flex; flex-direction: column; gap: 12px; align-items: center; font-family: var(--display); font-size: 9px; color: #5C6862; }
+.dcard .rail .play { width: 40px; height: 40px; border-radius: 12px; border: 0; background: #16201B; color: #fff; display: grid; place-items: center; cursor: pointer; }
+.dcard.playing .rail .play { background: var(--tone); }
+.dcard .rail svg { display: block; }
+.dcard .hint { position: absolute; left: 0; right: 0; bottom: 12px; text-align: center; font-family: var(--display); font-size: 10px; color: #7A857F; }
+</style>
+</head>
+<body>
+<header><div class="wrap"><a class="brand" href="/v2/">munib<span>.</span></a></div></header>
+
+<main>
+  <div class="hero wrap">
+    <h1>A new way to read <em>the Quran</em>.</h1>
+    <span class="soon">Coming soon to iPhone</span>
+    <div class="phone">
+      <div class="screen">
+        <div class="bar" aria-hidden="true"><span class="on">For you</span><span class="off">Quran</span></div>
+        <div class="feed" id="feed" aria-label="Swipe up for the next ayah. Tap a card to hear it."></div>
+      </div>
+    </div>
+  </div>
+
+  <section>
+    <div class="wrap">
+      <h2>Attention spans fell to <em>47 seconds</em>. Munib starts with one ayah.</h2>
+      <div class="split">
+        <div class="bars" role="img" aria-label="Time on one screen before switching: 2½ minutes in 2004, 75 seconds in 2012, 47 seconds today">
+          <div>2004<b style="width:100%">2½ min</b></div>
+          <div>2012<b style="width:50%">75 sec</b></div>
+          <div>Today<b style="width:31%">47 sec</b></div>
+        </div>
+        <div class="bars grow" role="img" aria-label="Munib builds from one ayah, to a passage, to a whole surah">
+          <div>Now<b style="width:34%">One ayah</b></div>
+          <div>Next<b style="width:62%">A passage</b></div>
+          <div>Later<b style="width:100%">A whole surah</b></div>
+        </div>
+      </div>
+      <p class="src">Gloria Mark, <i>Attention Span</i> (2023).</p>
+    </div>
+  </section>
+
+  <section class="year">
+    <div class="wrap">
+      <div class="big">17</div>
+      <h2>ayat a day finishes the Quran in a year.</h2>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Free to read. <em>£0.99</em> to go further.</h2>
+      <div class="plans">
+        <div class="plan">
+          <h3>Quran</h3>
+          <div class="p">Free</div>
+          <ul><li>The whole Quran</li><li>Recitation</li><li>7 translations</li><li>No account</li></ul>
+        </div>
+        <div class="plan plus">
+          <h3>Munib Plus</h3>
+          <div class="p">£0.99<small> / month</small></div><div class="trial">30 days free</div>
+          <ul><li>For you, by mood</li><li>Word meanings and tafsir</li><li>Memorise mode</li><li>Every reciter</li></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap"><span>© Munib Labs</span><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><a href="/support.html">Support</a><a href="/">Version 1</a></div></footer>
+
+<script>
+// (The Arabic here uses standard marks, because the web font lacks a few Uthmani-specific ones; the app shows the full Uthmani text.)
+// The live demo in the phone: four real cards you can swipe through and listen to,
+// with the recited word lighting up (recitation and word timings from the Quran Foundation, via Munib's server).
+(function () {
+  var QF = 'https://skuhimrzjddujzwdedot.supabase.co/functions/v1/qf';
+  var DIGITS = '٠١٢٣٤٥٦٧٨٩';
+  var num = function (n) { return String(n).replace(/\d/g, function (d) { return DIGITS[+d]; }); };
+  var pad = function (n) { return String(n).padStart(3, '0'); };
+  var DEMO = [
+    { s: 94, k: '94:5–6', name: 'Ash-Sharh · The Relief', bg: '#F1F3EF', tone: '#1F6E52',
+      ayat: [[5, 'فَإِنَّ مَعَ ٱلْعُسْرِ يُسْرًا'], [6, 'إِنَّ مَعَ ٱلْعُسْرِ يُسْرًا']],
+      en: 'For indeed, with hardship [will be] ease. Indeed, with hardship [will be] ease.' },
+    { s: 13, k: '13:28', name: "Ar-Ra'd · The Thunder", bg: '#EEF0F5', tone: '#2F4FA3',
+      ayat: [[28, 'ٱلَّذِينَ ءَامَنُواْ وَتَطْمَئِنُّ قُلُوبُهُم بِذِكْرِ ٱللَّهِ أَلَا بِذِكْرِ ٱللَّهِ تَطْمَئِنُّ ٱلْقُلُوبُ']],
+      en: 'Those who have believed and whose hearts are assured by the remembrance of Allah. Unquestionably, by the remembrance of Allah hearts are assured.' },
+    { s: 2, k: '2:152', name: 'Al-Baqarah · The Cow', bg: '#F5EEEB', tone: '#A4462F',
+      ayat: [[152, 'فَٱذْكُرُونِيٓ أَذْكُرْكُمْ وَٱشْكُرُواْ لِي وَلَا تَكْفُرُونِ']],
+      en: 'So remember Me; I will remember you. And be grateful to Me and do not deny Me.' },
+    { s: 112, k: '112:1–4', name: 'Al-Ikhlas · The Sincerity', bg: '#E9F1F0', tone: '#1B6868',
+      ayat: [[1, 'قُلْ هُوَ ٱللَّهُ أَحَدٌ'], [2, 'ٱللَّهُ ٱلصَّمَدُ'], [3, 'لَمْ يَلِدْ وَلَمْ يُولَدْ'], [4, 'وَلَمْ يَكُن لَّهُۥ كُفُوًا أَحَدٌ']],
+      en: 'Say, "He is Allah, [who is] One. Allah, the Eternal Refuge. He neither begets nor is born, nor is there to Him any equivalent."' }
+  ];
+  var STAR = '<svg class="star" viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6"><rect x="22" y="22" width="56" height="56"/><rect x="22" y="22" width="56" height="56" transform="rotate(45 50 50)"/><circle cx="50" cy="50" r="22"/></g></svg>';
+  var PLAY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+  var PAUSE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M8 5v14M16 5v14"/></svg>';
+
+  var feed = document.getElementById('feed');
+  var note = document.getElementById('demo-note');
+  if (!feed) return;
+
+  feed.innerHTML = DEMO.map(function (c, ci) {
+    var ar = c.ayat.map(function (a) {
+      var words = a[1].split(' ').map(function (w, wi) { return '<span class="w" data-w="' + (wi + 1) + '">' + w + '</span>'; }).join(' ');
+      return '<span class="ay" data-n="' + a[0] + '">' + words + '\u00a0<span class="mk2">\uFD3F' + num(a[0]) + '\uFD3E</span></span>';
+    }).join(' ');
+    return '<article class="dcard" data-i="' + ci + '" style="background:' + c.bg + ';--tone:' + c.tone + ';color:#16201B">' +
+      '<span style="color:' + c.tone + '">' + STAR + '</span>' +
+      '<div class="ref"><span class="chip" style="background:' + c.tone + '">' + c.k + '</span><span>' + c.name + '</span></div>' +
+      '<p class="ar" lang="ar" dir="rtl">' + ar + '</p><div class="rule"></div>' +
+      '<p class="tr">' + c.en + '</p><p class="by">Saheeh International</p>' +
+      '<div class="rail"><button class="play" type="button" aria-label="Listen to ' + c.k + '">' + PLAY + '</button><span>Listen</span></div>' +
+      (ci < DEMO.length - 1 ? '<div class="hint">Swipe up for the next ayah</div>' : '<div class="hint">In the app, the feed never ends</div>') +
+    '</article>';
+  }).join('');
+
+  var audio = new Audio();
+  audio.preload = 'auto';
+  var timings = {};          // surah → { ayah: { url, segs } }
+  var state = { card: -1, idx: 0, segs: null, started: false };
+  var cards = Array.prototype.slice.call(feed.querySelectorAll('.dcard'));
+
+  function surahAudio(s) {
+    if (timings[s]) return timings[s];
+    timings[s] = fetch(QF, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ s: s, audio: 7 }) })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (d) {
+        var m = {};
+        (d.files || []).forEach(function (f) {
+          var n = +String(f.verse_key).split(':')[1];
+          var url = /^https?:/.test(f.url) ? f.url : 'https://verses.quran.com/' + String(f.url).replace(/^\//, '');
+          m[n] = { url: url, segs: (f.segments || []).filter(function (g) { return g.length >= 4; }).map(function (g) { return [g[1], g[2]]; }) };
+        });
+        return m;
+      })
+      .catch(function () { timings[s] = null; return null; });
+    return timings[s];
+  }
+
+  function clearMarks(card) {
+    card.querySelectorAll('.w.on').forEach(function (w) { w.classList.remove('on'); });
+    card.querySelectorAll('.ay.dim').forEach(function (a) { a.classList.remove('dim'); });
+  }
+  function setPlaying(ci, on) {
+    cards.forEach(function (c, i) {
+      var playing = on && i === ci;
+      c.classList.toggle('playing', playing);
+      c.querySelector('.play').innerHTML = playing ? PAUSE : PLAY;
+      if (!playing) clearMarks(c);
+    });
+  }
+
+  function playAyah(ci, idx) {
+    var c = DEMO[ci];
+    var n = c.ayat[idx][0];
+    state.card = ci; state.idx = idx; state.segs = null;
+    var card = cards[ci];
+    card.querySelectorAll('.ay').forEach(function (a) { a.classList.toggle('dim', +a.dataset.n !== n); });
+    surahAudio(c.s).then(function (m) {
+      if (state.card !== ci || state.idx !== idx) return;
+      var info = m && m[n];
+      var words = c.ayat[idx][1].split(' ').length;
+      state.segs = info && info.segs.length && info.segs[info.segs.length - 1][0] === words ? info.segs : null;
+      audio.src = info ? info.url : 'https://everyayah.com/data/Alafasy_128kbps/' + pad(c.s) + pad(n) + '.mp3';
+      audio.play().then(function () { setPlaying(ci, true); }, function () {
+        setPlaying(ci, false);
+        if (note) note.textContent = 'The recitation plays on getmunib.com and in the app.';
+      });
+    });
+  }
+
+  function stop() { audio.pause(); state.card = -1; setPlaying(-1, false); }
+  function toggle(ci) {
+    if (state.card === ci && !audio.paused) { audio.pause(); setPlaying(ci, false); return; }
+    if (state.card === ci && audio.src && audio.paused) { audio.play(); setPlaying(ci, true); return; }
+    state.started = true;
+    playAyah(ci, 0);
+  }
+
+  audio.addEventListener('ended', function () {
+    var ci = state.card;
+    if (ci < 0) return;
+    if (state.idx < DEMO[ci].ayat.length - 1) playAyah(ci, state.idx + 1);
+    else setPlaying(ci, false);
+  });
+
+  // Light up the word being recited.
+  (function tick() {
+    if (state.card >= 0 && state.segs && !audio.paused) {
+      var ms = audio.currentTime * 1000, pos = 0;
+      state.segs.forEach(function (g) { if (ms >= g[1]) pos = g[0]; });
+      var ay = cards[state.card].querySelector('.ay[data-n="' + DEMO[state.card].ayat[state.idx][0] + '"]');
+      if (ay) ay.querySelectorAll('.w').forEach(function (w) { w.classList.toggle('on', +w.dataset.w === pos); });
+    }
+    requestAnimationFrame(tick);
+  })();
+
+  cards.forEach(function (card, ci) { card.addEventListener('click', function () { toggle(ci); }); });
+
+  // Swiping to a new card: carry on reciting if they'd started listening, like the app.
+  var current = 0;
+  feed.addEventListener('scroll', function () {
+    var i = Math.round(feed.scrollTop / feed.clientHeight);
+    if (i === current) return;
+    current = i;
+    stop();
+    if (state.started) playAyah(i, 0);
+  }, { passive: true });
+})();
+</script>
+</body>
+</html>
