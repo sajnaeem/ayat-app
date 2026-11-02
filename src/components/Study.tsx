@@ -70,7 +70,7 @@ export function TafsirSheet({ verseKey, lang, pal, onClose }: { verseKey: string
           ))}
           <Text style={[styles.small, { color: pal.muted, marginTop: 8 }]}>
             {t.by}
-            {lang !== 'en' && lang !== 'ur' && lang !== 'bn' ? ' (in English)' : ''} · via Quran.com
+            {lang !== 'en' && lang !== 'ur' && lang !== 'bn' ? ' (in English)' : ''}, the classic 14th-century commentary by Ibn Kathir of Damascus · via Quran.com
           </Text>
         </>
       )}

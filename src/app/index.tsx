@@ -13,7 +13,7 @@ import { Sheet } from '@/components/Sheet';
 import { useToast } from '@/components/Toast';
 import { VerseCard } from '@/components/VerseCard';
 import { ayahAudio, prefetchAudio, wordAt } from '@/lib/audio';
-import { ayahKeys, feedRound, interleave, ladderCards, LEVELS, loadChapter, orderCards, MOODS, MoodId, SUPPORT, SURAHS, translationFor, Verse } from '@/lib/quran';
+import { ayahKeys, feedRound, interleave, ladderCards, LEVELS, loadChapter, orderCards, MOODS, MoodId, revealedIn, SUPPORT, SURAHS, translationFor, Verse } from '@/lib/quran';
 import { useAccount } from '@/lib/account';
 import { dayKey, useProgress } from '@/lib/progress';
 import { askPermission, REMINDER_TIMES, ReminderData, scheduleReminders } from '@/lib/reminders';
@@ -714,6 +714,7 @@ function SurahStart(p: { pal: Palette; tone: { bg: string; accent: string }; hei
       <Text style={[styles.offBody, { color: mix(tone.bg, pal.text, 0.75), textAlign: 'center' }]}>
         {meaning} · {count} ayat
       </Text>
+      <Text style={[styles.optSub, { color: tone.accent, marginTop: 6 }]}>Revealed in {revealedIn(s)}</Text>
       {s !== 9 && s !== 1 && <Text style={[styles.basmalah, { color: pal.text }]}>بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</Text>}
       <Text style={[styles.optSub, { color: mix(tone.bg, pal.text, 0.6) }]}>Swipe up to begin</Text>
     </View>

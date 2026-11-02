@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
 import { surahDone, useProgress } from '@/lib/progress';
 import { usePrefs } from '@/lib/store';
-import { arabicNumber, SURAHS } from '@/lib/quran';
+import { arabicNumber, revealedIn, SURAHS } from '@/lib/quran';
 import { fonts, mix, usePalette } from '@/lib/theme';
 
 /** Folds spellings together so "yaseen", "Ya-Sin" and "yasin" all match, and "kahf" finds "Al-Kahf". */
@@ -92,7 +92,7 @@ export default function Read() {
               onPress={() => open(item.s)}
               style={({ pressed }) => [styles.row, { borderBottomColor: pal.line, backgroundColor: pressed ? mix(pal.bg, pal.accent, 0.08) : 'transparent' }]}
               accessibilityRole="button"
-              accessibilityLabel={`${item.s}. ${item.name}, ${item.meaning}, ${item.count} ayat${done ? ', read' : ''}`}
+              accessibilityLabel={`${item.s}. ${item.name}, ${item.meaning}, ${item.count} ayat, revealed in ${revealedIn(item.s)}${done ? ', read' : ''}`}
             >
               <View style={[styles.num, { borderColor: done ? pal.accent : pal.line, backgroundColor: done ? pal.accent : 'transparent' }]}>
                 <Text style={[styles.numText, { color: done ? pal.onAccent : pal.muted }]}>{item.s}</Text>
@@ -100,7 +100,7 @@ export default function Read() {
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={[styles.name, { color: pal.text }]}>{item.name}</Text>
                 <Text style={[styles.meta, { color: pal.muted }]}>
-                  {item.meaning} · {item.count} ayat{done ? ' · read' : ''}
+                  {item.meaning} · {item.count} ayat · {revealedIn(item.s) === 'Makkah' ? 'Makkan' : 'Madinan'}{done ? ' · read' : ''}
                 </Text>
               </View>
               <Text style={[styles.ar, { color: pal.text }]}>{item.ar}</Text>

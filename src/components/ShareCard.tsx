@@ -2,7 +2,7 @@ import * as Sharing from 'expo-sharing';
 import React, { useRef, useState } from 'react';
 import { Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
-import { arabicNumber, LangId, liveVerse, translationFor, Verse } from '@/lib/quran';
+import { arabicNumber, LangId, liveVerse, revealedIn, translationFor, Verse } from '@/lib/quran';
 import { fonts, mix, Palette, Tone } from '@/lib/theme';
 import { Pattern } from './Pattern';
 import { Sheet } from './Sheet';
@@ -43,6 +43,7 @@ function Card({ v, lang, tone, greeting }: { v: Verse; lang: LangId; tone: Tone;
         <Text style={[styles.ref, { color: tone.accent }]}>
           {v.name} · {v.k.replace('-', '–')}
         </Text>
+        <Text style={[styles.rev, { color: mix(tone.bg, INK, 0.55) }]}>Revealed in {revealedIn(v.s)}</Text>
       </View>
       <View style={styles.foot}>
         <Text style={[styles.brand, { color: INK }]}>
@@ -137,6 +138,7 @@ const styles = StyleSheet.create({
   rule: { height: 1.5, width: 54, alignSelf: 'flex-end' },
   tr: { fontFamily: fonts.read },
   ref: { fontFamily: fonts.uiSemi, fontSize: 10.5, letterSpacing: 0.2 },
+  rev: { fontFamily: fonts.ui, fontSize: 9, marginTop: -6 },
   foot: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
   brand: { fontFamily: fonts.uiBold, fontSize: 17, letterSpacing: -0.4 },
   tag: { fontFamily: fonts.ui, fontSize: 9.5 },

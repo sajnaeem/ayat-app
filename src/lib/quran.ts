@@ -31,7 +31,11 @@ export type Verse = {
 export const VERSES = (versesJson as unknown as Omit<Verse, 'b'>[]).map((v) => ({ ...v, b: v.ar[v.ar.length - 1][1] })) as Verse[];
 
 /** [transliterated name, Arabic name, English meaning, ayah count] for each of the 114 surahs. */
-export const SURAHS = surahsJson as [string, string, string, number][];
+/** Each surah: [name, Arabic name, meaning, number of ayat, where it was revealed (standard Mushaf classification)]. */
+export const SURAHS = surahsJson as [string, string, string, number, 'makkah' | 'madinah'][];
+
+/** "Revealed in Makkah" / "Revealed in Madinah" for a surah. */
+export const revealedIn = (s: number) => (SURAHS[s - 1]?.[4] === 'madinah' ? 'Madinah' : 'Makkah');
 
 export const LANGS: { id: LangId; name: string; native: string; by: string }[] = [
   { id: 'en', name: 'English', native: '', by: 'Saheeh International' },
@@ -48,22 +52,22 @@ export const LANGS: { id: LangId; name: string; native: string; by: string }[] =
  * `when` is the line shown on matching cards. `help` adds a gentle pointer to real-world support.
  */
 export const MOODS: { id: MoodId; label: string; sub: string; when: string; group: 'feeling' | 'life'; help?: boolean }[] = [
-  { id: 'anxious', label: 'Anxious or overwhelmed', sub: 'Calm and reassurance', when: "For when you're anxious or overwhelmed", group: 'feeling' },
-  { id: 'grateful', label: 'Grateful', sub: 'Blessings and shukr', when: "For when you're grateful", group: 'feeling' },
-  { id: 'grieving', label: 'Grieving or low', sub: 'Comfort and hope', when: "For when you're grieving or low", group: 'feeling', help: true },
-  { id: 'lonely', label: 'Lonely', sub: 'He is near', when: 'For when you feel alone', group: 'feeling', help: true },
-  { id: 'money', label: 'Money worries', sub: 'Provision and trust', when: 'For when money is worrying you', group: 'feeling' },
-  { id: 'angry', label: 'Angry or frustrated', sub: 'Patience and pardon', when: "For when you're angry or frustrated", group: 'feeling' },
-  { id: 'temptation', label: 'Struggling with temptation', sub: 'Turning back', when: 'For when temptation is strong', group: 'feeling' },
-  { id: 'unwell', label: 'Unwell', sub: 'Healing and patience', when: "For when you're unwell", group: 'feeling' },
-  { id: 'forgiveness', label: 'Seeking forgiveness', sub: 'Mercy and tawbah', when: 'For when you seek forgiveness', group: 'feeling' },
-  { id: 'strength', label: 'Need strength', sub: 'Patience and resolve', when: 'For when you need strength', group: 'feeling' },
-  { id: 'guidance', label: 'Seeking guidance', sub: 'Direction and wisdom', when: 'For when you seek guidance', group: 'feeling' },
-  { id: 'marriage', label: 'Marriage', sub: 'Love, mercy, finding a spouse', when: 'For marriage', group: 'life' },
-  { id: 'divorce', label: 'Divorce or separation', sub: 'A way through', when: 'For divorce and separation', group: 'life', help: true },
-  { id: 'family', label: 'Family', sub: 'Parents and relatives', when: 'For family', group: 'life' },
-  { id: 'conflict', label: 'Conflict', sub: 'Making peace', when: 'For conflict with others', group: 'life', help: true },
-  { id: 'parenting', label: 'Parenting', sub: 'Raising children', when: 'For parents', group: 'life' },
+  { id: 'anxious', label: 'Anxious or overwhelmed', sub: 'For a racing mind and a heavy chest', when: "For when you're anxious or overwhelmed", group: 'feeling' },
+  { id: 'grateful', label: 'Grateful', sub: "For counting what you've been given", when: "For when you're grateful", group: 'feeling' },
+  { id: 'grieving', label: 'Grieving or low', sub: "For when you've lost someone, or something", when: "For when you're grieving or low", group: 'feeling', help: true },
+  { id: 'lonely', label: 'Lonely', sub: "For quiet nights when it feels like no one's there", when: 'For when you feel alone', group: 'feeling', help: true },
+  { id: 'money', label: 'Money worries', sub: 'For when the bills are bigger than the balance', when: 'For when money is worrying you', group: 'feeling' },
+  { id: 'angry', label: 'Angry or frustrated', sub: 'For when your temper is close to the surface', when: "For when you're angry or frustrated", group: 'feeling' },
+  { id: 'temptation', label: 'Struggling with temptation', sub: 'For when you keep going back to what you left', when: 'For when temptation is strong', group: 'feeling' },
+  { id: 'unwell', label: 'Unwell', sub: 'For hospital waits and sleepless nights', when: "For when you're unwell", group: 'feeling' },
+  { id: 'forgiveness', label: 'Seeking forgiveness', sub: 'For when you want to start again', when: 'For when you seek forgiveness', group: 'feeling' },
+  { id: 'strength', label: 'Need strength', sub: "For when you're running on empty", when: 'For when you need strength', group: 'feeling' },
+  { id: 'guidance', label: 'Seeking guidance', sub: "For a decision you can't make alone", when: 'For when you seek guidance', group: 'feeling' },
+  { id: 'marriage', label: 'Marriage', sub: 'For finding someone, and keeping the love alive', when: 'For marriage', group: 'life' },
+  { id: 'divorce', label: 'Divorce or separation', sub: 'For when a marriage is ending', when: 'For divorce and separation', group: 'life', help: true },
+  { id: 'family', label: 'Family', sub: 'For parents, siblings and everyone in between', when: 'For family', group: 'life' },
+  { id: 'conflict', label: 'Conflict', sub: 'For mending things with someone', when: 'For conflict with others', group: 'life', help: true },
+  { id: 'parenting', label: 'Parenting', sub: 'For raising children who love their deen', when: 'For parents', group: 'life' },
 ];
 
 /** UK support shown under the moods marked `help`. Checked October 2026. */
