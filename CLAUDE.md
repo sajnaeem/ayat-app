@@ -14,6 +14,8 @@ Expo-specific coding rules are in `AGENTS.md` (always read the docs for the inst
 
 **Mission (Saj, 2 Nov 2026): onboarding the world to Islam.** Munib is the easiest first step into the Quran, for anyone. The first audience is still Muslims whose attention has been shaped by social media, but decisions should also work for someone meeting the Quran for the first time (shared ayah pages, plain-English context, nothing that assumes prior knowledge).
 
+**Long-term vision (Saj, 2 Nov 2026):** a single destination to begin and grow your journey in Islam. The Quran is the starting point; later, an educational hub with video lessons by category (learning about Islam, fitness, finances, relationships), all through an Islamic lens. Not being built yet: launch and prove the Quran app first.
+
 A short-form, TikTok-style Quran app for Muslims whose attention has been shaped by social media and who struggle to read the Quran. It scrolls like a social feed, but every card is an ayah, and it **gently stretches attention**: single ayat → passages → whole surahs.
 
 **Success = people coming back and reading more, not time-on-app.** Design choices follow from that (time-check card after 20 minutes, no streak guilt, one notification a day maximum).
