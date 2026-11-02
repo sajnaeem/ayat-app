@@ -110,7 +110,7 @@ footer a { color: var(--muted); }
 <main>
 <article class="card">
   <div class="chip"><b>${esc(ref)}</b><span>${esc(name)} · ${esc(meaning)}</span><span lang="ar" style="font-family:var(--ar)">${esc(arName)}</span></div>
-  <div class="ar" lang="ar">${ayat.map((a, i) => webArabic(a.ar).split(/\s+/).map((w) => `<span class="w" data-a="${i}">${esc(w)}</span>`).join(' ') + ` <span class="m">﴿${arNum(a.n)}﴾</span>`).join(' ')}</div>
+  <div class="ar" lang="ar">${ayat.map((a, i) => webArabic(a.ar).trim().split(/\s+/).filter(Boolean).map((w) => `<span class="w" data-a="${i}">${esc(w)}</span>`).join(' ') + ` <span class="m">﴿${arNum(a.n)}﴾</span>`).join(' ')}</div>
   <hr>
   <div class="tr">${ayat.map((a) => `<p>${ayat.length > 1 ? `<sup>${a.n}</sup>` : ''}${esc(a.tr)}</p>`).join('')}</div>
   <div class="by">Translation: Saheeh International · Revealed in ${revealed}</div>
