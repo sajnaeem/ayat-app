@@ -3,6 +3,7 @@ import React, { useRef, useState } from 'react';
 import { Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
 import { arabicNumber, LangId, liveVerse, revealedIn, translationFor, Verse } from '@/lib/quran';
+import { ayahLink, shortLink } from '@/lib/site';
 import { fonts, mix, Palette, Tone } from '@/lib/theme';
 import { Pattern } from './Pattern';
 import { Sheet } from './Sheet';
@@ -23,6 +24,12 @@ type Greeting = (typeof GREETINGS)[number];
 const W = 300; // on-screen preview width; saved at 1080 × 1350 (4:5, right for WhatsApp, Instagram and Facebook)
 
 /** The image itself: the ayah in Arabic, its translation and reference, in Munib's style. */
+/** The link for a card: its surah, first ayah and (for a run of ayat) last ayah. */
+function linkFor(v: Verse) {
+  const ns = v.ar.map(([, n]) => n);
+  return ayahLink(v.s, Math.min(...ns), Math.max(...ns));
+}
+
 function Card({ v, lang, tone, greeting }: { v: Verse; lang: LangId; tone: Tone; greeting: Greeting }) {
   const ar = v.ar.map(([t, n]) => `${t} ۝${arabicNumber(n)}`).join(' ');
   const tr = (translationFor(v, lang) ?? []).join(' ');
@@ -49,7 +56,7 @@ function Card({ v, lang, tone, greeting }: { v: Verse; lang: LangId; tone: Tone;
         <Text style={[styles.brand, { color: INK }]}>
           munib<Text style={{ color: tone.accent }}>.</Text>
         </Text>
-        <Text style={[styles.tag, { color: mix(tone.bg, INK, 0.6) }]}>The Quran, a little every day</Text>
+        <Text style={[styles.tag, { color: mix(tone.bg, INK, 0.6) }]}>{shortLink(linkFor(v))}</Text>
       </View>
     </View>
   );
@@ -66,7 +73,7 @@ export function ShareSheet({ verse, lang, pal, onClose }: { verse: Verse | null;
   const asText = () => {
     if (!v) return;
     const tr = translationFor(v, lang) ?? [];
-    Share.share({ message: `${v.ar.map(([t]) => t).join(' ')}\n\n${tr.join(' ')}\n— Quran ${v.k}\n\nShared from Munib` }).catch(() => {});
+    Share.share({ message: `${v.ar.map(([t]) => t).join(' ')}\n\n${tr.join(' ')}\n— Quran ${v.k}\n\n${linkFor(v)}` }).catch(() => {});
   };
 
   const asImage = async () => {
@@ -75,7 +82,13 @@ export function ShareSheet({ verse, lang, pal, onClose }: { verse: Verse | null;
     setBusy(true);
     try {
       const uri = await captureRef(shot as never, { format: 'png', quality: 1, width: 1080, height: 1350 });
-      await Sharing.shareAsync(uri, { mimeType: 'image/png', UTI: 'public.png', dialogTitle: `Quran ${v.k}` });
+      if (Platform.OS === 'ios') {
+        // The image plus a caption with the link: WhatsApp and iMessage send both, and the link is tappable.
+        const res = await Share.share({ url: uri, message: `${v.name} ${v.k.replace('-', '–')}\n${linkFor(v)}` });
+        if (res.action === Share.dismissedAction) return;
+      } else {
+        await Sharing.shareAsync(uri, { mimeType: 'image/png', UTI: 'public.png', dialogTitle: `Quran ${v.k}` });
+      }
     } catch {
       asText();
     } finally {
