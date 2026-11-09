@@ -1,0 +1,14 @@
+name: Send update to phones
+
+on:
+  push:
+    branches: ['main']
+    paths-ignore: ['website/**', 'supabase/**', '*.md']
+
+jobs:
+  update:
+    name: Publish update (production)
+    type: update
+    params:
+      channel: production
+      platform: ios
