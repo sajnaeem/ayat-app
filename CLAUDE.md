@@ -75,7 +75,7 @@ Still to build: app icon and launch screen; a demo account for Apple's reviewer;
 
 ## TestFlight setup (9 Nov 2026)
 
-Expo account `sajdood` (owner in app.json), Apple Team ID `PU56752R6X` (`ios.appleTeamId`). `expo-updates` installed, `runtimeVersion` policy `appVersion`, eas.json channels development / preview / production. Still needed, on Saj's Mac once: `eas init` (creates the project and writes `extra.eas.projectId`), `eas update:configure`, then `eas build -p ios --profile production --auto-submit` (Apple login, certificates, App Store Connect record). After that, JS changes go out with `npx eas-cli@latest update --channel production`.
+Expo account `sajdood` (owner in app.json), Apple Team ID `PU56752R6X` (`ios.appleTeamId`). `expo-updates` installed, `runtimeVersion` policy `appVersion`, eas.json channels development / preview / production. Expo project ID `ba03556b-e7ef-461b-867b-db976fca47ac` (`extra.eas.projectId`, updates url u.expo.dev/<id>), created by Saj with `eas init` on 9 Nov 2026. First build, on Saj's Mac: `eas build -p ios --profile production --auto-submit` (Apple login, certificates, App Store Connect record). After that, JS changes go out with `npx eas-cli@latest update --channel production`.
 
 ## Releasing an update (once on the App Store)
 

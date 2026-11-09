@@ -74,6 +74,14 @@
     "scheme": "munib",
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "ba03556b-e7ef-461b-867b-db976fca47ac"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/ba03556b-e7ef-461b-867b-db976fca47ac"
     }
   }
 }
