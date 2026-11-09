@@ -91,6 +91,7 @@ begin
 end $$;
 drop trigger if exists hide_post_after_reports on public.post_reports;
 create trigger hide_post_after_reports after insert on public.post_reports for each row execute function public.hide_post_after_reports();
+revoke execute on function public.hide_post_after_reports() from public, anon, authenticated;
 
 -- Likes and comments on posts reuse likes and reflections with the key "p:<post id>" (38 characters).
 alter table public.likes drop constraint if exists likes_verse_key_check;

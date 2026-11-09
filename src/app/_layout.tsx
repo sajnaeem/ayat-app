@@ -70,6 +70,8 @@ function Root() {
         <Stack.Screen name="you" options={{ presentation: 'modal' }} />
         <Stack.Screen name="feedback" options={{ presentation: 'modal' }} />
         <Stack.Screen name="signin" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="post" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="review" options={{ presentation: 'modal' }} />
       </Stack>
     </>
   );

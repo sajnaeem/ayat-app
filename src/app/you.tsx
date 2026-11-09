@@ -1,5 +1,5 @@
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GuidelinesSheet } from '@/components/Guidelines';
@@ -13,6 +13,7 @@ import { dayKey, surahDone, useProgress } from '@/lib/progress';
 import { LANGS, LEVELS, SURAHS, VERSES } from '@/lib/quran';
 import { askPermission, REMINDER_TIMES } from '@/lib/reminders';
 import { usePrefs } from '@/lib/store';
+import { amReviewer, deletePost, myPosts, Post, reviewQueue } from '@/lib/posts';
 import { fonts, Palette, usePalette } from '@/lib/theme';
 
 /** Juz' ʿAmma: surahs 78–114, 564 ayat. */
@@ -41,6 +42,25 @@ export default function You() {
     }).finally(() => setBlockedLoading(false));
   };
   useEffect(() => setName(acct.handle ?? ''), [acct.handle]);
+  // Your posts and their review status; for reviewers, how many posts are waiting.
+  const [posts, setPosts] = useState<Post[] | null>(null);
+  const [waiting, setWaiting] = useState<number | null>(null);
+  useFocusEffect(
+    useCallback(() => {
+      if (!acct.userId) return;
+      myPosts(acct.userId).then(setPosts, () => setPosts([]));
+      amReviewer(acct.userId).then((yes) => (yes ? reviewQueue().then((q) => setWaiting(q.length)) : setWaiting(null)));
+    }, [acct.userId]),
+  );
+  const removePost = async (p: Post) => {
+    try {
+      await deletePost(p);
+      setPosts((l) => l?.filter((x) => x.id !== p.id) ?? null);
+      toast('Post deleted');
+    } catch {
+      toast("Couldn't delete. Try again");
+    }
+  };
   const saveName = async () => {
     if (name.trim().length < 2) return toast('Choose a display name of at least 2 letters');
     try {
@@ -221,6 +241,39 @@ export default function You() {
         </View>
         {acct.online && (
           <>
+            <Text style={[styles.h3, { color: pal.muted }]}>YOUR POSTS</Text>
+            <Pressable onPress={() => router.push('/post')} style={[styles.saved, { borderColor: pal.accent }]} accessibilityRole="button">
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={[styles.savedText, { color: pal.text, fontFamily: fonts.uiSemi }]}>Create a post</Text>
+                <Text style={[styles.small, { color: pal.muted }]}>Share a benefit, a reminder or a short video. Every post is checked first.</Text>
+              </View>
+            </Pressable>
+            {posts?.map((p) => {
+              const label = p.status === 'approved' ? 'Live' : p.status === 'pending' ? 'Waiting for review' : p.status === 'rejected' ? 'Not approved' : 'Removed';
+              const color = p.status === 'approved' ? pal.accent : p.status === 'pending' ? pal.muted : '#B4432F';
+              return (
+                <View key={p.id} style={[styles.saved, { borderColor: pal.line, alignItems: 'flex-start' }]}>
+                  <View style={{ flex: 1, gap: 4 }}>
+                    <Text style={[styles.small, { color, fontFamily: fonts.uiBold }]}>{label}</Text>
+                    <Text style={[styles.savedText, { color: pal.text }]} numberOfLines={3}>
+                      {p.kind !== 'text' ? (p.kind === 'image' ? '[Photo] ' : '[Video] ') : ''}
+                      {p.body}
+                    </Text>
+                    {p.status === 'rejected' && !!p.review_note && <Text style={[styles.small, { color: pal.muted }]}>Why: {p.review_note}</Text>}
+                  </View>
+                  <Pressable onPress={() => removePost(p)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Delete post">
+                    <Text style={[styles.small, { color: pal.muted, textDecorationLine: 'underline' }]}>Delete</Text>
+                  </Pressable>
+                </View>
+              );
+            })}
+            {waiting !== null && (
+              <Pressable onPress={() => router.push('/review')} style={[styles.saved, { borderColor: pal.line }]} accessibilityRole="button">
+                <Text style={[styles.savedText, { color: pal.text, fontFamily: fonts.uiSemi }]}>Review posts</Text>
+                <Text style={[styles.savedKey, { color: waiting ? pal.accent : pal.muted }]}>{waiting} waiting</Text>
+              </Pressable>
+            )}
+
             <Text style={[styles.h3, { color: pal.muted }]}>ACCOUNT</Text>
             <Pressable onPress={() => setShowRules(true)} style={[styles.saved, { borderColor: pal.line }]} accessibilityRole="button">
               <Text style={[styles.savedText, { color: pal.text, fontFamily: fonts.uiSemi }]}>Community guidelines</Text>

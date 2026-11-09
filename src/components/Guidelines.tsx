@@ -10,6 +10,7 @@ export const GUIDELINES: { title: string; body: string }[] = [
   { title: 'No hate', body: 'Nothing attacking anyone for their religion, sect, race, ethnicity, gender, disability or any other part of who they are.' },
   { title: 'Nothing harmful', body: 'Nothing sexual, violent or extreme, and nothing that encourages anyone to harm themselves or others.' },
   { title: 'No spam', body: 'No adverts, links, selling or asking for money.' },
+  { title: 'Posts are checked first', body: 'Every post is reviewed before anyone else sees it. Share Islamic content, give the source when you quote the Quran or hadith, and only post what you made or have permission to share.' },
   { title: 'Protect privacy', body: "Don't share personal details: phone numbers, addresses, or other people's names and stories without their permission." },
 ];
 

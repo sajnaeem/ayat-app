@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, ActivityIndicator, AppState, FlatList, Linking, Modal, Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, ActivityIndicator, Alert, AppState, FlatList, Linking, Modal, Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import Animated, { SharedValue, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
@@ -21,6 +21,8 @@ import { usePrefs } from '@/lib/store';
 import type { FeedVideo, Snippet } from '@/data/snippets';
 import { SNIPPET_EVERY, snippetOrder, Timely, timelyCard, VIDEO_EVERY, videoOrder } from '@/lib/extras';
 import { ProgressCard, SnippetCard, TimelyCard, VideoCard } from '@/components/FeedExtras';
+import { PostCard } from '@/components/PostCard';
+import { approvedPosts, myPostLikes, Post, postKey, postsForMood, reportPost, setPostLike } from '@/lib/posts';
 import { fonts, mix, Palette, usePalette } from '@/lib/theme';
 
 type VerseItem = { kind: 'verse'; key: string; v: Verse; i: number; ord?: boolean };
@@ -34,8 +36,10 @@ type SnipItem = { kind: 'snip'; key: string; i: number; s: Snippet; part?: numbe
 /** Once a visit: a card for this time of day, week or year; and how much of the Quran the reader has covered. */
 type TimeItem = { kind: 'time'; key: string; i: number; t: Timely };
 type ProgressItem = { kind: 'progress'; key: string; i: number };
+/** For you only: an approved post from the community. */
+type PostItem = { kind: 'post'; key: string; i: number; p: Post };
 type VideoItem = { kind: 'video'; key: string; i: number; v: FeedVideo };
-type Item = VerseItem | OffItem | ContItem | TitleItem | SnipItem | VideoItem | TimeItem | ProgressItem;
+type Item = VerseItem | OffItem | ContItem | TitleItem | SnipItem | VideoItem | TimeItem | ProgressItem | PostItem;
 const CONT_EVERY = 12;
 
 /** How long someone scrolls before the "time check" card appears. */
@@ -73,6 +77,12 @@ function useEndlessFeed(mood: MoodId | null, mode: 'foryou' | 'order', jump: num
   // Extras for this mood, in a fresh order each visit; each is shown once before any repeats.
   const extras = useRef({ mood, snips: snippetOrder(mood), vids: videoOrder(mood), si: 0, vi: 0 });
   if (extras.current.mood !== mood) extras.current = { mood, snips: snippetOrder(mood), vids: videoOrder(mood), si: 0, vi: 0 };
+  // Approved community posts, for this mood first. Each is shown once per visit, in every other extras slot.
+  const posts = useRef<{ list: Post[]; pi: number }>({ list: [], pi: 0 });
+  useEffect(() => {
+    if (mode !== 'foryou') return;
+    approvedPosts().then((l) => (posts.current = { list: postsForMood(l, mood), pi: 0 }));
+  }, [mood, mode]);
 
   const compose = (base: Item[], list: Verse[], r: number): Item[] => {
     const recent = new Set(base.slice(-14).flatMap((x) => (x.kind === 'verse' ? [x.v.k] : [])));
@@ -98,7 +108,10 @@ function useEndlessFeed(mood: MoodId | null, mode: 'foryou' | 'order', jump: num
       }
       if (n % CONT_EVERY === 0) out.push({ kind: 'cont', key: `cont-${r}-${n}`, i: out.length });
       else if (n % VIDEO_EVERY === 0 && x.vids.length) out.push({ kind: 'video', key: `vid-${r}-${n}`, i: out.length, v: x.vids[x.vi++ % x.vids.length] });
-      else if (n % SNIPPET_EVERY === 0 && x.snips.length) {
+      else if (n % SNIPPET_EVERY === 0 && (n / SNIPPET_EVERY) % 2 === 1 && posts.current.pi < posts.current.list.length) {
+        const post = posts.current.list[posts.current.pi++];
+        out.push({ kind: 'post', key: `post-${post.id}-${r}`, i: out.length, p: post });
+      } else if (n % SNIPPET_EVERY === 0 && x.snips.length) {
         const s = x.snips[x.si++ % x.snips.length];
         // A story is told over three cards in a row.
         for (let part = 0; part < (s.kind === 'story' ? 3 : 1); part++) out.push({ kind: 'snip', key: `snip-${r}-${n}-${part}`, i: out.length, s, part });
@@ -227,6 +240,30 @@ export default function Feed() {
   useEffect(() => () => void (chromeTimer.current && clearTimeout(chromeTimer.current)), []);
   const acct = useAccount();
   const [reflectFor, setReflectFor] = useState<Verse | null>(null);
+  const [reflectPost, setReflectPost] = useState<Post | null>(null);
+  const [postLikes, setPostLikes] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    if (acct.userId) myPostLikes(acct.userId).then(setPostLikes, () => {});
+  }, [acct.userId]);
+  const likePost = (p: Post) => {
+    if (!acct.userId) return;
+    const on = !postLikes.has(p.id);
+    setPostLikes((s) => {
+      const n = new Set(s);
+      if (on) n.add(p.id);
+      else n.delete(p.id);
+      return n;
+    });
+    setPostLike(acct.userId, p.id, on).catch(() => {});
+  };
+  const postOptions = (p: Post) => {
+    if (!acct.userId) return;
+    Alert.alert(`Post by ${p.handle}`, undefined, [
+      { text: 'Report this post', onPress: () => reportPost(p.id, acct.userId!).then(() => toast('Thanks. We’ll review it within 24 hours'), () => toast('Couldn’t send the report. Try again')) },
+      { text: `Block ${p.handle}`, style: 'destructive', onPress: () => acct.blockUser(p.user_id).then(() => toast(`Blocked ${p.handle}`), () => toast('Couldn’t block. Try again')) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
 
   const { items, setItems, reset, more, refreshAhead, orderFailed } = useEndlessFeed(prefs.mood, mode, mode === 'order' ? prefs.jump : 0);
 
@@ -557,6 +594,23 @@ export default function Feed() {
                 />
               );
             }
+            if (item.kind === 'post') {
+              return (
+                <PostCard
+                  post={item.p}
+                  pal={pal}
+                  tone={tone}
+                  height={height}
+                  bottomInset={insets.bottom}
+                  active={index === active && sheet !== 'mood'}
+                  autoplay={prefs.sound && !held}
+                  liked={postLikes.has(item.p.id)}
+                  onLike={() => likePost(item.p)}
+                  onComment={() => setReflectPost(item.p)}
+                  onMore={() => postOptions(item.p)}
+                />
+              );
+            }
             if (item.kind === 'progress') return <ProgressCard read={Object.keys(prog.progress.ayat).length} pal={pal} tone={tone} height={height} bottomInset={insets.bottom} />;
             if (item.kind === 'video') {
               return (
@@ -755,6 +809,7 @@ export default function Feed() {
       </Sheet>
 
       <ShareSheet verse={shareVerse} lang={prefs.lang} pal={pal} onClose={() => setShareVerse(null)} />
+      <ReflectionsSheet verseKey={reflectPost ? postKey(reflectPost.id) : null} title={reflectPost ? `Post by ${reflectPost.handle}` : ''} pal={pal} onClose={() => setReflectPost(null)} />
       <ReflectionsSheet verseKey={reflectFor?.k ?? null} title={reflectFor ? `${reflectFor.name} ${reflectFor.k.replace('-', '–')}` : ''} pal={pal} onClose={() => setReflectFor(null)} />
 
       <Modal visible={resting} animationType="fade" onRequestClose={() => setResting(false)}>
