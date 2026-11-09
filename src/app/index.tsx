@@ -19,8 +19,8 @@ import { dayKey, useProgress } from '@/lib/progress';
 import { askPermission, REMINDER_TIMES, ReminderData, scheduleReminders } from '@/lib/reminders';
 import { usePrefs } from '@/lib/store';
 import type { FeedVideo, Snippet } from '@/data/snippets';
-import { SNIPPET_EVERY, snippetOrder, VIDEO_EVERY, videoOrder } from '@/lib/extras';
-import { SnippetCard, VideoCard } from '@/components/FeedExtras';
+import { SNIPPET_EVERY, snippetOrder, Timely, timelyCard, VIDEO_EVERY, videoOrder } from '@/lib/extras';
+import { ProgressCard, SnippetCard, TimelyCard, VideoCard } from '@/components/FeedExtras';
 import { fonts, mix, Palette, usePalette } from '@/lib/theme';
 
 type VerseItem = { kind: 'verse'; key: string; v: Verse; i: number; ord?: boolean };
@@ -30,9 +30,12 @@ type ContItem = { kind: 'cont'; key: string; i: number };
 /** In order: the opening of each surah. */
 type TitleItem = { kind: 'title'; key: string; i: number; s: number };
 /** For you only: a fact, myth or Arabic word, or one of Munib's short videos, to break up the ayat. */
-type SnipItem = { kind: 'snip'; key: string; i: number; s: Snippet };
+type SnipItem = { kind: 'snip'; key: string; i: number; s: Snippet; part?: number };
+/** Once a visit: a card for this time of day, week or year; and how much of the Quran the reader has covered. */
+type TimeItem = { kind: 'time'; key: string; i: number; t: Timely };
+type ProgressItem = { kind: 'progress'; key: string; i: number };
 type VideoItem = { kind: 'video'; key: string; i: number; v: FeedVideo };
-type Item = VerseItem | OffItem | ContItem | TitleItem | SnipItem | VideoItem;
+type Item = VerseItem | OffItem | ContItem | TitleItem | SnipItem | VideoItem | TimeItem | ProgressItem;
 const CONT_EVERY = 12;
 
 /** How long someone scrolls before the "time check" card appears. */
@@ -81,9 +84,25 @@ function useEndlessFeed(mood: MoodId | null, mode: 'foryou' | 'order', jump: num
     for (const v of l) {
       out.push({ kind: 'verse', key: `${r}-${v.k}`, v, i: out.length });
       const n = ++verses, x = extras.current;
+      // Once per feed: a card for this time of day (early on), and later how far the reader has come.
+      if (n >= 2 && !out.some((it) => it.kind === 'time')) {
+        const t = timelyCard();
+        if (t) {
+          out.push({ kind: 'time', key: `time-${t.id}-${r}`, i: out.length, t });
+          continue;
+        }
+      }
+      if (n >= 14 && !out.some((it) => it.kind === 'progress') && Object.keys(readSoFar.ayat ?? {}).length >= 20) {
+        out.push({ kind: 'progress', key: `progress-${r}`, i: out.length });
+        continue;
+      }
       if (n % CONT_EVERY === 0) out.push({ kind: 'cont', key: `cont-${r}-${n}`, i: out.length });
       else if (n % VIDEO_EVERY === 0 && x.vids.length) out.push({ kind: 'video', key: `vid-${r}-${n}`, i: out.length, v: x.vids[x.vi++ % x.vids.length] });
-      else if (n % SNIPPET_EVERY === 0 && x.snips.length) out.push({ kind: 'snip', key: `snip-${r}-${n}`, i: out.length, s: x.snips[x.si++ % x.snips.length] });
+      else if (n % SNIPPET_EVERY === 0 && x.snips.length) {
+        const s = x.snips[x.si++ % x.snips.length];
+        // A story is told over three cards in a row.
+        for (let part = 0; part < (s.kind === 'story' ? 3 : 1); part++) out.push({ kind: 'snip', key: `snip-${r}-${n}-${part}`, i: out.length, s, part });
+      }
     }
     return out;
   };
@@ -512,7 +531,33 @@ export default function Feed() {
           renderItem={({ item, index }) => {
             const tone = pal.tones[item.i % pal.tones.length];
             if (item.kind === 'title') return <SurahStart pal={pal} tone={tone} height={height} s={item.s} />;
-            if (item.kind === 'snip') return <SnippetCard s={item.s} pal={pal} tone={tone} height={height} bottomInset={insets.bottom} />;
+            if (item.kind === 'snip') {
+              return (
+                <SnippetCard
+                  s={item.s}
+                  part={item.part}
+                  pal={pal}
+                  tone={tone}
+                  height={height}
+                  bottomInset={insets.bottom}
+                  active={index === active && sheet !== 'mood'}
+                  autoplay={prefs.sound && !held}
+                />
+              );
+            }
+            if (item.kind === 'time') {
+              return (
+                <TimelyCard
+                  t={item.t}
+                  pal={pal}
+                  tone={tone}
+                  height={height}
+                  bottomInset={insets.bottom}
+                  onAction={(s, a) => (s === 0 ? switchMode('order') : openSurah(s, a))}
+                />
+              );
+            }
+            if (item.kind === 'progress') return <ProgressCard read={Object.keys(prog.progress.ayat).length} pal={pal} tone={tone} height={height} bottomInset={insets.bottom} />;
             if (item.kind === 'video') {
               return (
                 <VideoCard

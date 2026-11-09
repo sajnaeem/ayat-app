@@ -7,7 +7,8 @@ export type LangId = 'en' | 'ur' | 'bn' | 'id' | 'tr' | 'fr' | 'es';
 export type MoodId =
   | 'anxious' | 'grateful' | 'grieving' | 'forgiveness' | 'strength' | 'guidance'
   | 'lonely' | 'money' | 'angry' | 'temptation' | 'unwell'
-  | 'marriage' | 'divorce' | 'family' | 'conflict' | 'parenting';
+  | 'marriage' | 'divorce' | 'family' | 'conflict' | 'parenting'
+  | 'newmuslim';
 
 export type Verse = {
   k: string; // "94:5-6"
@@ -63,6 +64,7 @@ export const MOODS: { id: MoodId; label: string; sub: string; when: string; grou
   { id: 'forgiveness', label: 'Seeking forgiveness', sub: 'For when you want to start again', when: 'For when you seek forgiveness', group: 'feeling' },
   { id: 'strength', label: 'Need strength', sub: "For when you're running on empty", when: 'For when you need strength', group: 'feeling' },
   { id: 'guidance', label: 'Seeking guidance', sub: "For a decision you can't make alone", when: 'For when you seek guidance', group: 'feeling' },
+  { id: 'newmuslim', label: 'New to Islam', sub: 'For your first steps, or if you’re simply curious', when: 'For your first steps into Islam', group: 'life' },
   { id: 'marriage', label: 'Marriage', sub: 'For finding someone, and keeping the love alive', when: 'For marriage', group: 'life' },
   { id: 'divorce', label: 'Divorce or separation', sub: 'For when a marriage is ending', when: 'For divorce and separation', group: 'life', help: true },
   { id: 'family', label: 'Family', sub: 'For parents, siblings and everyone in between', when: 'For family', group: 'life' },
