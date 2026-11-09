@@ -2,7 +2,11 @@
   "expo": {
     "name": "Munib",
     "slug": "munib",
+    "owner": "sajdood",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -12,7 +16,8 @@
       "usesAppleSignIn": true,
       "config": {
         "usesNonExemptEncryption": false
-      }
+      },
+      "appleTeamId": "PU56752R6X"
     },
     "android": {
       "adaptiveIcon": {

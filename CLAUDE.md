@@ -73,6 +73,10 @@ Website: `website/` (index, privacy, terms, support; always light (Saj, 1 Nov 20
 
 Still to build: app icon and launch screen; a demo account for Apple's reviewer; App Store listing and screenshots; EAS build → TestFlight → App Store. Recommended: crash reporting (Sentry), a one-off human security review before launch.
 
+## TestFlight setup (9 Nov 2026)
+
+Expo account `sajdood` (owner in app.json), Apple Team ID `PU56752R6X` (`ios.appleTeamId`). `expo-updates` installed, `runtimeVersion` policy `appVersion`, eas.json channels development / preview / production. Still needed, on Saj's Mac once: `eas init` (creates the project and writes `extra.eas.projectId`), `eas update:configure`, then `eas build -p ios --profile production --auto-submit` (Apple login, certificates, App Store Connect record). After that, JS changes go out with `npx eas-cli@latest update --channel production`.
+
 ## Releasing an update (once on the App Store)
 
 1. Make the change, type-check, push.
