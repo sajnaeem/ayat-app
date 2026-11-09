@@ -81,7 +81,19 @@ function useEndlessFeed(mood: MoodId | null, mode: 'foryou' | 'order', jump: num
   const posts = useRef<{ list: Post[]; pi: number }>({ list: [], pi: 0 });
   useEffect(() => {
     if (mode !== 'foryou') return;
-    approvedPosts().then((l) => (posts.current = { list: postsForMood(l, mood), pi: 0 }));
+    approvedPosts().then((l) => {
+      posts.current = { list: postsForMood(l, mood), pi: 0 };
+      // The feed is usually built before posts arrive: swap every other upcoming single-card extra for a post.
+      setItems((prev) => {
+        let slot = 0;
+        return prev.map((it, idx) => {
+          if (idx < 4 || it.kind !== 'snip' || it.s.kind === 'story' || slot++ % 2 === 1) return it;
+          if (posts.current.pi >= posts.current.list.length) return it;
+          const post = posts.current.list[posts.current.pi++];
+          return { kind: 'post', key: `post-${post.id}-early`, i: it.i, p: post };
+        });
+      });
+    });
   }, [mood, mode]);
 
   const compose = (base: Item[], list: Verse[], r: number): Item[] => {
