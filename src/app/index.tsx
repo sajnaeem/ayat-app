@@ -18,6 +18,9 @@ import { useAccount } from '@/lib/account';
 import { dayKey, useProgress } from '@/lib/progress';
 import { askPermission, REMINDER_TIMES, ReminderData, scheduleReminders } from '@/lib/reminders';
 import { usePrefs } from '@/lib/store';
+import type { FeedVideo, Snippet } from '@/data/snippets';
+import { SNIPPET_EVERY, snippetOrder, VIDEO_EVERY, videoOrder } from '@/lib/extras';
+import { SnippetCard, VideoCard } from '@/components/FeedExtras';
 import { fonts, mix, Palette, usePalette } from '@/lib/theme';
 
 type VerseItem = { kind: 'verse'; key: string; v: Verse; i: number; ord?: boolean };
@@ -26,7 +29,10 @@ type OffItem = { kind: 'off'; key: string; i: number; s: number };
 type ContItem = { kind: 'cont'; key: string; i: number };
 /** In order: the opening of each surah. */
 type TitleItem = { kind: 'title'; key: string; i: number; s: number };
-type Item = VerseItem | OffItem | ContItem | TitleItem;
+/** For you only: a fact, myth or Arabic word, or one of Munib's short videos, to break up the ayat. */
+type SnipItem = { kind: 'snip'; key: string; i: number; s: Snippet };
+type VideoItem = { kind: 'video'; key: string; i: number; v: FeedVideo };
+type Item = VerseItem | OffItem | ContItem | TitleItem | SnipItem | VideoItem;
 const CONT_EVERY = 12;
 
 /** How long someone scrolls before the "time check" card appears. */
@@ -61,6 +67,10 @@ function useEndlessFeed(mood: MoodId | null, mode: 'foryou' | 'order', jump: num
   const live = useRef({ level, lang: prefs.lang, liked: Object.keys(prefs.likes), fresh: readSoFar.readings === 0 });
   live.current = { level, lang: prefs.lang, liked: Object.keys(prefs.likes), fresh: readSoFar.readings === 0 };
 
+  // Extras for this mood, in a fresh order each visit; each is shown once before any repeats.
+  const extras = useRef({ mood, snips: snippetOrder(mood), vids: videoOrder(mood), si: 0, vi: 0 });
+  if (extras.current.mood !== mood) extras.current = { mood, snips: snippetOrder(mood), vids: videoOrder(mood), si: 0, vi: 0 };
+
   const compose = (base: Item[], list: Verse[], r: number): Item[] => {
     const recent = new Set(base.slice(-14).flatMap((x) => (x.kind === 'verse' ? [x.v.k] : [])));
     let l = [...list.filter((v) => !recent.has(v.k)), ...list.filter((v) => recent.has(v.k))];
@@ -70,7 +80,10 @@ function useEndlessFeed(mood: MoodId | null, mode: 'foryou' | 'order', jump: num
     let verses = base.filter((x) => x.kind === 'verse').length;
     for (const v of l) {
       out.push({ kind: 'verse', key: `${r}-${v.k}`, v, i: out.length });
-      if (++verses % CONT_EVERY === 0) out.push({ kind: 'cont', key: `cont-${r}-${verses}`, i: out.length });
+      const n = ++verses, x = extras.current;
+      if (n % CONT_EVERY === 0) out.push({ kind: 'cont', key: `cont-${r}-${n}`, i: out.length });
+      else if (n % VIDEO_EVERY === 0 && x.vids.length) out.push({ kind: 'video', key: `vid-${r}-${n}`, i: out.length, v: x.vids[x.vi++ % x.vids.length] });
+      else if (n % SNIPPET_EVERY === 0 && x.snips.length) out.push({ kind: 'snip', key: `snip-${r}-${n}`, i: out.length, s: x.snips[x.si++ % x.snips.length] });
     }
     return out;
   };
@@ -499,6 +512,21 @@ export default function Feed() {
           renderItem={({ item, index }) => {
             const tone = pal.tones[item.i % pal.tones.length];
             if (item.kind === 'title') return <SurahStart pal={pal} tone={tone} height={height} s={item.s} />;
+            if (item.kind === 'snip') return <SnippetCard s={item.s} pal={pal} tone={tone} height={height} bottomInset={insets.bottom} />;
+            if (item.kind === 'video') {
+              return (
+                <VideoCard
+                  v={item.v}
+                  pal={pal}
+                  tone={tone}
+                  height={height}
+                  bottomInset={insets.bottom}
+                  active={index === active && sheet !== 'mood'}
+                  near={Math.abs(index - active) <= 1}
+                  autoplay={prefs.sound && !held}
+                />
+              );
+            }
             if (item.kind === 'cont') {
               const next = nextPlace(prefs.place);
               return (
