@@ -4,7 +4,7 @@ import Animated, { Easing, SharedValue, useAnimatedStyle, useReducedMotion, useS
 import { arabicNumber, chapterTranslator, LANGS, LangId, liveVerse, loadChapter, loadedChapter, MOODS, MoodId, translationFor, Verse } from '@/lib/quran';
 import { fonts, mix, Palette, Tone } from '@/lib/theme';
 import { Icon } from './Icon';
-import { TafsirSheet, WordPick, WordSheet } from './Study';
+import { AskSheet, TafsirSheet, WordPick, WordSheet } from './Study';
 import { Pattern } from './Pattern';
 
 type Props = {
@@ -134,6 +134,7 @@ export const VerseCard = memo(function VerseCard(props: Props) {
   const [memOpen, setMemOpen] = useState(false);
   const [wordPick, setWordPick] = useState<WordPick>(null);
   const [tafsirOpen, setTafsirOpen] = useState(false);
+  const [askOpen, setAskOpen] = useState(false);
   const [hideLevel, setHideLevel] = useState(0); // 0–4 quarters of the words hidden
   const [peeked, setPeeked] = useState<Set<number>>(new Set());
 
@@ -316,6 +317,10 @@ export const VerseCard = memo(function VerseCard(props: Props) {
                 <Text style={[styles.toolText, { color: tone.accent }]}>Keep reading</Text>
               </Pressable>
             )}
+            <Pressable onPress={() => setAskOpen(true)} style={[styles.tool, { borderColor: tone.accent, backgroundColor: mix(tone.bg, tone.accent, 0.08) }]} accessibilityRole="button" accessibilityLabel="Ask a question about this ayah">
+              <Icon name="ask" size={16} color={tone.accent} />
+              <Text style={[styles.toolText, { color: tone.accent }]}>Ask</Text>
+            </Pressable>
             <Pressable onPress={() => setMemOpen((o) => !o)} style={[styles.tool, { borderColor: memOpen ? tone.accent : line }]} accessibilityRole="button" accessibilityState={{ expanded: memOpen }}>
               <Text style={[styles.toolText, { color: memOpen ? tone.accent : text }]}>Memorise</Text>
             </Pressable>
@@ -402,6 +407,7 @@ export const VerseCard = memo(function VerseCard(props: Props) {
 
       {first && <Text style={[styles.hint, { color: muted, bottom: bottomInset + 6 }]}>Swipe up · tap to pause · hold a word for its meaning</Text>}
       <WordSheet pick={wordPick} lang={lang} pal={pal} onClose={() => setWordPick(null)} />
+      <AskSheet verseKey={askOpen ? `${v.s}:${playingAyah && v.ar.some(([, n]) => n === playingAyah) ? playingAyah : v.a}` : null} pal={pal} onClose={() => setAskOpen(false)} />
       <TafsirSheet verseKey={tafsirOpen ? `${v.s}:${playingAyah && v.ar.some(([, n]) => n === playingAyah) ? playingAyah : v.a}` : null} lang={lang} pal={pal} onClose={() => setTafsirOpen(false)} />
     </View>
   );

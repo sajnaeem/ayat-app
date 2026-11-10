@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fonts, Palette } from '@/lib/theme';
 import { Icon } from './Icon';
@@ -9,7 +9,7 @@ export function Sheet({ visible, onClose, title, pal, children }: { visible: boo
   const insets = useSafeAreaInsets();
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-      <View style={styles.wrap}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.wrap}>
         <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: pal.scrim }]} onPress={onClose} accessibilityLabel="Close" />
         <View style={[styles.sheet, { backgroundColor: pal.surface, borderColor: pal.line, paddingBottom: insets.bottom + 14 }]}>
           <View style={[styles.head, { borderBottomColor: pal.line }]}>
@@ -18,9 +18,9 @@ export function Sheet({ visible, onClose, title, pal, children }: { visible: boo
               <Icon name="close" size={16} color={pal.text} />
             </Pressable>
           </View>
-          <ScrollView contentContainerStyle={styles.body}>{children}</ScrollView>
+          <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">{children}</ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
