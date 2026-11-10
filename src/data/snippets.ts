@@ -253,6 +253,7 @@ export const VIDEOS: FeedVideo[] = [
   { id: 'attention', title: '47 seconds', file: 'attention', seconds: 52, moods: ['guidance', 'strength'], sources: 'Quran 103:1–3 · Recitation: Mishary Alafasy · Gloria Mark (2023) · Ofcom (2025)' },
   { id: 'firdaus', title: 'What if you reached al-Firdaus?', file: 'firdaus', seconds: 48, moods: ['strength', 'guidance'], sources: 'Quran 18:107–108 · Sahih al-Bukhari 2790, 6464 · Recitation: Mishary Alafasy' },
   { id: 'jannah', title: 'What is Jannah like?', file: 'jannah', seconds: 59, moods: ['grieving', 'strength'], sources: 'Quran 47:15, 56:25–33, 35:34–35, 43:71, 75:22–23, 32:17 · Sahih al-Bukhari 3244 · Recitation: Mishary Alafasy' },
+  { id: 'mercy', title: 'One part of a hundred', file: 'mercy', seconds: 57, moods: ['forgiveness', 'grieving', 'lonely'], sources: 'Sahih al-Bukhari 6000 · Sahih Muslim 2752–2753 · Quran 39:53 · Recitation: Mishary Alafasy' },
 ];
 
 /**
