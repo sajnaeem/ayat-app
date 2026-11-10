@@ -119,7 +119,7 @@ export function AskSheet({ verseKey, pal, onClose }: { verseKey: string | null; 
       setState({
         error:
           r.error === 'limit'
-            ? `You've asked ${r.perDay ?? 20} questions today. Come back tomorrow, in sha Allah.`
+            ? `You've asked your ${r.perDay ?? 5} questions for today. The three suggested questions still work, and you can ask more tomorrow, in sha Allah.`
             : r.error === 'off'
               ? 'Asking questions isn’t switched on yet. It will be soon.'
               : 'Couldn’t get an answer. Check your connection and try again.',

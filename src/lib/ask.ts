@@ -13,7 +13,7 @@ export async function askAyah(s: number, a: number, q: string): Promise<AskResul
   return { error: 'failed' };
 }
 
-/** Ideas shown before someone types their own question. */
+/** Ideas shown before someone types their own question. Must match STARTERS in supabase/functions/ask (their answers are cached). */
 export const ASK_STARTERS = ['What does this ayah mean?', 'What was happening when it was revealed?', 'How can I live by this today?'];
 
 /** Send a wrong or worrying answer to us (feedback table), only when the reader chooses to. */

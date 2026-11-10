@@ -21,3 +21,14 @@ begin
   return n <= max_per_day;
 end $$;
 revoke all on function public.ask_take(uuid, int) from public, anon, authenticated;
+
+-- Answers to the three starter questions are the same for everyone, so each is written once and kept.
+-- (Personal questions are never stored.) To have one rewritten, delete its row in Table Editor → ask_cache.
+create table if not exists public.ask_cache (
+  key text primary key,            -- "2:268#0": ayah and starter number
+  answer text not null,
+  model text not null,
+  created_at timestamptz not null default now()
+);
+alter table public.ask_cache enable row level security;
+-- No policies: only the edge function (service role) reads and writes it.

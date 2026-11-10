@@ -5,7 +5,9 @@
 //
 // The answer is written by Claude from two sources only: Tafsir Ibn Kathir for the ayah (through our "qf" function)
 // and the ayat around it (Saheeh International). It explains; it never gives rulings, and it says when to ask a scholar.
-// Questions and answers are not stored. A daily limit per person (ask_usage, see 008_ask.sql) keeps costs in check.
+// Personal questions and their answers are not stored. Answers to the three starter questions (the same for everyone)
+// are written once per ayah and kept in ask_cache, and served from there free and without counting towards the limit.
+// A daily limit per person (ask_usage, see 008_ask.sql) keeps costs in check.
 //
 // Secrets: ANTHROPIC_API_KEY (shared with "moderate"). Optional: ASK_MODEL, ASK_PER_DAY.
 // Deployed with JWT verification on: signed-in people only.
@@ -14,7 +16,9 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const KEY = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
 const MODEL = Deno.env.get('ASK_MODEL') ?? 'claude-sonnet-5-5';
-const PER_DAY = Number(Deno.env.get('ASK_PER_DAY') ?? 20);
+const PER_DAY = Number(Deno.env.get('ASK_PER_DAY') ?? 5);
+// Must match ASK_STARTERS in src/lib/ask.ts.
+const STARTERS = ['What does this ayah mean?', 'What was happening when it was revealed?', 'How can I live by this today?'];
 const URL_ = Deno.env.get('SUPABASE_URL')!;
 const ANON = Deno.env.get('SUPABASE_ANON_KEY')!;
 const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'authorization, x-client-info, apikey, content-type' };
@@ -26,6 +30,7 @@ You are given: the ayah, the ayat around it (Saheeh International), and Tafsir I
 
 How to answer:
 - Plain, warm, everyday English (or the language the question is written in). Under 180 words. Two to four short paragraphs. No headings, no bullet points, no markdown symbols.
+- If the question is one of the general starter questions, answer for any reader: don't assume anything about their life.
 - Start with what the ayah means and the context it was revealed in (what the surrounding ayat are about), then answer the question itself.
 - When someone relates the ayah to their own life, connect its meaning to their situation kindly and without judging or diagnosing them. Balance: don't make them feel accused, and don't water down the ayah.
 - Say "Ibn Kathir explains…" when you draw on his tafsir. Quote nothing you weren't given. Never invent hadith, quotes, references or occasions of revelation.
@@ -52,8 +57,15 @@ Deno.serve(async (req) => {
   if (!who?.user) return json({ error: 'sign in required' }, 401);
 
   const admin = createClient(URL_, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-  const { data: ok } = await admin.rpc('ask_take', { uid: who.user.id, max_per_day: PER_DAY });
-  if (!ok) return json({ error: 'limit', perDay: PER_DAY });
+  const starter = STARTERS.indexOf(question);
+  const cacheKey = starter >= 0 ? `${s}:${a}#${starter}` : null;
+  if (cacheKey) {
+    const { data: hit } = await admin.from('ask_cache').select('answer').eq('key', cacheKey).maybeSingle();
+    if (hit?.answer) return json({ answer: hit.answer, cached: true });
+  } else {
+    const { data: ok } = await admin.rpc('ask_take', { uid: who.user.id, max_per_day: PER_DAY });
+    if (!ok) return json({ error: 'limit', perDay: PER_DAY });
+  }
 
   // The ayah and the ayat around it.
   let surah = `Surah ${s}`;
@@ -92,5 +104,7 @@ Deno.serve(async (req) => {
   const out = await r.json();
   const answer = (out.content ?? []).filter((c: { type: string }) => c.type === 'text').map((c: { text: string }) => c.text).join('\n').replace(/\*\*?|^#+\s*/gm, '').trim();
   if (!answer) return json({ error: 'empty' }, 502);
+  // Keep starter answers only when the tafsir was there, so a temporary outage isn't saved for everyone.
+  if (cacheKey && tafsir) await admin.from('ask_cache').upsert({ key: cacheKey, answer, model: MODEL });
   return json({ answer, tafsir: !!tafsir });
 });
