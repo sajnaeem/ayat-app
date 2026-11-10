@@ -317,7 +317,17 @@ export default function You() {
                 <Text style={[styles.small, { color: pal.muted }]}>Report a problem or share an idea</Text>
               </View>
             </Pressable>
-            <Pressable onPress={() => acct.signOut()} style={[styles.saved, { borderColor: pal.line }]} accessibilityRole="button">
+            <Pressable
+              onPress={async () => {
+                await acct.signOut();
+                toast('Signed out');
+                // Back to the Quran tab, which works without an account.
+                if (router.canGoBack()) router.dismissAll();
+                else router.replace('/');
+              }}
+              style={[styles.saved, { borderColor: pal.line }]}
+              accessibilityRole="button"
+            >
               <Text style={[styles.savedText, { color: pal.text, fontFamily: fonts.uiSemi }]}>Sign out</Text>
             </Pressable>
             {!confirmDelete ? (

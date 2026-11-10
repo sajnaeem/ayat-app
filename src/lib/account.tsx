@@ -229,7 +229,9 @@ export function AccountProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     if (!supabase) return;
-    await supabase.auth.signOut();
+    // Signs out everywhere; if the phone is offline, at least sign out on this phone.
+    const { error } = await supabase.auth.signOut().catch((e) => ({ error: e }));
+    if (error) await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
     clearLocal();
   }, [clearLocal]);
 
