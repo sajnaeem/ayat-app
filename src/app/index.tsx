@@ -19,7 +19,7 @@ import { dayKey, useProgress } from '@/lib/progress';
 import { askPermission, REMINDER_TIMES, ReminderData, scheduleReminders } from '@/lib/reminders';
 import { usePrefs } from '@/lib/store';
 import type { FeedVideo, Snippet } from '@/data/snippets';
-import { SNIPPET_EVERY, snippetOrder, Timely, timelyCard, VIDEO_EVERY, videoOrder } from '@/lib/extras';
+import { freshTimelyCard, markTimelySeen, SNIPPET_EVERY, snippetOrder, Timely, VIDEO_EVERY, videoOrder } from '@/lib/extras';
 import { ProgressCard, SnippetCard, TimelyCard, VideoCard } from '@/components/FeedExtras';
 import { PostCard } from '@/components/PostCard';
 import { approvedPosts, myPostLikes, Post, postKey, postsForMood, reportPost, setPostLike } from '@/lib/posts';
@@ -108,8 +108,10 @@ function useEndlessFeed(mood: MoodId | null, mode: 'foryou' | 'order', jump: num
       const n = ++verses, x = extras.current;
       // Once per feed: a card for this time of day (early on), and later how far the reader has come.
       if (n >= 2 && !out.some((it) => it.kind === 'time')) {
-        const t = timelyCard();
+        // Shown once per time window per day (remembered on the phone), so rebuilding the feed doesn't repeat it.
+        const t = freshTimelyCard();
         if (t) {
+          markTimelySeen(t);
           out.push({ kind: 'time', key: `time-${t.id}-${r}`, i: out.length, t });
           continue;
         }

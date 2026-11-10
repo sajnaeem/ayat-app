@@ -62,6 +62,32 @@ function hijri(d: Date): { m: number; day: number } | null {
   }
 }
 
+const dayNumber = (d: Date) => Math.floor((d.getTime() - d.getTimezoneOffset() * 60000) / 86400000);
+
+/* The time-of-day card shows once per time window per day, not every time the feed is rebuilt
+   (changing mood, coming back to the app). Remembered on this phone only. */
+const SEEN_KEY = 'munib.timely.v1';
+const seenId = (t: Timely, d: Date) => `${t.id}:${dayNumber(d)}`;
+function seenList(): string[] {
+  try {
+    return JSON.parse(globalThis.localStorage?.getItem(SEEN_KEY) ?? '[]');
+  } catch {
+    return [];
+  }
+}
+/** The card for now, unless it has already been shown in this time window today. */
+export function freshTimelyCard(d = new Date()): Timely | null {
+  const t = timelyCard(d);
+  return t && !seenList().includes(seenId(t, d)) ? t : null;
+}
+export function markTimelySeen(t: Timely, d = new Date()): void {
+  try {
+    globalThis.localStorage?.setItem(SEEN_KEY, JSON.stringify([...seenList(), seenId(t, d)].slice(-20)));
+  } catch {
+    /* only a nicety */
+  }
+}
+
 export function timelyCard(d = new Date()): Timely | null {
   const h = hijri(d);
   const hour = d.getHours();
@@ -84,7 +110,14 @@ export function timelyCard(d = new Date()): Timely | null {
     return { id: 'morning', eyebrow: 'GOOD MORNING', title: 'Begin the day with this.', ar: 'أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ', tl: 'Aṣbaḥnā wa aṣbaḥal-mulku lillāh, wal-ḥamdu lillāh', meaning: 'We have entered the morning, and all sovereignty belongs to Allah, and all praise is for Allah.', body: '', source: 'Sahih Muslim 2723' };
   }
   if (hour >= 11 && hour < 16) {
-    return { id: 'midday', eyebrow: 'MIDDAY', title: 'One minute for Allah, in the middle of your day.', body: 'The Prophet ﷺ said: “The deeds most beloved to Allah are those done regularly, even if they are small.”', source: 'Sahih al-Bukhari 6464' };
+    // A different reminder each day, so midday doesn't repeat.
+    const MIDDAY: Timely[] = [
+      { id: 'midday', eyebrow: 'MIDDAY', title: 'One minute for Allah, in the middle of your day.', body: 'The Prophet ﷺ said: “The deeds most beloved to Allah are those done regularly, even if they are small.”', source: 'Sahih al-Bukhari 6464' },
+      { id: 'midday', eyebrow: 'MIDDAY', title: 'Two phrases, light on the tongue.', body: 'The Prophet ﷺ said: “Two words are light on the tongue, heavy on the scale, and beloved to the Most Merciful: SubhanAllahi wa bihamdihi, SubhanAllahil-ʿAdhim.”', source: 'Sahih al-Bukhari 6406 · Sahih Muslim 2694' },
+      { id: 'midday', eyebrow: 'MIDDAY', title: 'Pause, and ask Allah’s forgiveness.', body: 'The Prophet ﷺ said: “By Allah, I seek Allah’s forgiveness and turn to Him in repentance more than seventy times a day.” Say Astaghfirullah a few times before you carry on.', source: 'Sahih al-Bukhari 6307' },
+      { id: 'midday', eyebrow: 'MIDDAY', title: 'A hundred times, and the slate is wiped.', body: 'The Prophet ﷺ said: “Whoever says SubhanAllahi wa bihamdihi a hundred times in a day, his sins are wiped away, even if they are like the foam of the sea.”', source: 'Sahih al-Bukhari 6405 · Sahih Muslim 2691' },
+    ];
+    return MIDDAY[dayNumber(d) % MIDDAY.length];
   }
   if (hour >= 16 && hour < 20) {
     return { id: 'evening', eyebrow: 'GOOD EVENING', title: 'As the day ends, say this.', ar: 'أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ', tl: 'Amsaynā wa amsal-mulku lillāh, wal-ḥamdu lillāh', meaning: 'We have entered the evening, and all sovereignty belongs to Allah, and all praise is for Allah.', body: '', source: 'Sahih Muslim 2723' };
