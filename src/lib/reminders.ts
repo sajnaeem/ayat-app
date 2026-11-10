@@ -11,7 +11,7 @@ import { LangId, SURAHS, VERSES } from './quran';
  * "we've missed you" and then nothing more until they come back. On Fridays the reminder is Surah al-Kahf.
  */
 
-export type ReminderData = { to: 'mood' } | { to: 'surah'; s: number; a?: number };
+export type ReminderData = { to: 'mood' } | { to: 'surah'; s: number; a?: number } | { to: 'mosque' };
 
 export const REMINDER_TIMES = [
   { label: 'Morning', sub: '7:00 am', hour: 7, minute: 0 },
@@ -89,10 +89,17 @@ function messageFor(day: number, lang: LangId, progress: Progress): { title: str
   return { title: 'Munib', body: GENTLE[day % GENTLE.length], data: { to: 'mood' } };
 }
 
+/** Cancels the scheduled notifications whose identifier matches. */
+export async function cancelWhere(match: (id: string) => boolean) {
+  const all = await Notifications.getAllScheduledNotificationsAsync();
+  await Promise.all(all.filter((n) => match(n.identifier)).map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)));
+}
+
 /** Cancels pending reminders and schedules the next week's. Safe to call every time the app opens. */
 export async function scheduleReminders(opts: { on: boolean; hour: number; minute: number; friday: boolean; lang: LangId; progress: Progress }) {
   if (Platform.OS === 'web') return;
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  // Only this daily check-in is replaced here; prayer alerts (identifiers starting "prayer-") are planned in mosque.ts.
+  await cancelWhere((id) => !id.startsWith('prayer-'));
   if (!opts.on || !(await hasPermission())) return;
 
   const now = new Date();
@@ -104,6 +111,7 @@ export async function scheduleReminders(opts: { on: boolean; hour: number; minut
     else if (opts.friday && at.getDay() === 5) content = { title: "It's Jumuʿah", body: 'Read Surah al-Kahf today?', data: { to: 'surah', s: 18, a: 1 } };
     else content = messageFor(at.getDate() + at.getMonth() * 31, opts.lang, opts.progress);
     await Notifications.scheduleNotificationAsync({
+      identifier: `daily-${d}`,
       content: { title: content.title, body: content.body, data: content.data as unknown as Record<string, unknown> },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: at },
     });

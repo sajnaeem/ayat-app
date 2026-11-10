@@ -16,6 +16,7 @@ import { ayahAudio, prefetchAudio, wordAt } from '@/lib/audio';
 import { ayahKeys, feedRound, interleave, ladderCards, LEVELS, loadChapter, orderCards, MOODS, MoodId, revealedIn, SUPPORT, SURAHS, translationFor, Verse } from '@/lib/quran';
 import { useAccount } from '@/lib/account';
 import { dayKey, useProgress } from '@/lib/progress';
+import { refreshMosque } from '@/lib/mosque';
 import { askPermission, REMINDER_TIMES, ReminderData, scheduleReminders } from '@/lib/reminders';
 import { usePrefs } from '@/lib/store';
 import type { FeedVideo, Snippet } from '@/data/snippets';
@@ -525,6 +526,17 @@ export default function Feed() {
     const sub = AppState.addEventListener('change', (st) => st === 'active' && plan());
     return () => sub.remove();
   }, [prefs.reminders, prefs.lang]);
+  // Prayer alerts for my mosque: fresh times and the next week's alerts every time Munib opens.
+  const mosqueId = prefs.mosque?.id;
+  const alertsRef = useRef({ alerts: prefs.prayerAlerts, jumuah: prefs.jumuah });
+  alertsRef.current = { alerts: prefs.prayerAlerts, jumuah: prefs.jumuah };
+  useEffect(() => {
+    if (!mosqueId) return;
+    const go = () => refreshMosque({ id: mosqueId, ...alertsRef.current }).catch(() => {});
+    go();
+    const sub = AppState.addEventListener('change', (st) => st === 'active' && go());
+    return () => sub.remove();
+  }, [mosqueId]);
 
   // Offer reminders once, after someone has read a few cards and is having a good moment.
   useEffect(() => {
@@ -551,6 +563,7 @@ export default function Feed() {
     handled.current = id;
     const data = lastResponse.notification.request.content.data as unknown as ReminderData | undefined;
     if (data?.to === 'surah') openSurah(data.s, data.a ?? 1);
+    else if (data?.to === 'mosque') router.push('/mosque');
     else setSheet('mood');
     Notifications.clearLastNotificationResponseAsync().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps

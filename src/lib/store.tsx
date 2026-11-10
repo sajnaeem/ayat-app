@@ -30,6 +30,12 @@ type Prefs = {
   feedMode: 'foryou' | 'order';
   /** Changes whenever someone asks to read from a particular ayah, so the Quran tab rebuilds from there. */
   jump: number;
+  /** My mosque (kept on this phone only: it says roughly where someone lives). */
+  mosque: { id: string; name: string; url: string } | null;
+  /** Prayer alerts: minutes before jama'ah for each prayer, or null for off. */
+  prayerAlerts: Record<'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha', number | null>;
+  /** Which Friday jama'ah to be reminded of, when the mosque has more than one. */
+  jumuah: number;
 };
 
 const DEFAULTS: Prefs = {
@@ -46,6 +52,9 @@ const DEFAULTS: Prefs = {
   place: null,
   feedMode: 'foryou',
   jump: 0,
+  mosque: null,
+  prayerAlerts: { fajr: 10, dhuhr: 10, asr: 10, maghrib: 10, isha: 10 },
+  jumuah: 0,
 };
 
 const KEY = 'ayat.prefs.v1';

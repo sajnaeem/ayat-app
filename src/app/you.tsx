@@ -187,6 +187,15 @@ export default function You() {
           </>
         )}
 
+        <Text style={[styles.h3, { color: pal.muted }]}>MY MOSQUE</Text>
+        <Pressable onPress={() => router.push('/mosque')} style={[styles.saved, { borderColor: pal.line }]} accessibilityRole="button">
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={[styles.savedText, { color: pal.text }]}>{prefs.mosque ? prefs.mosque.name : 'Prayer times and jama’ah alerts'}</Text>
+            <Text style={[styles.small, { color: pal.muted }]}>{prefs.mosque ? 'Alerts before each jama’ah' : 'Add your mosque’s website'}</Text>
+          </View>
+          <Icon name="chevron" size={16} color={pal.muted} />
+        </Pressable>
+
         <Text style={[styles.h3, { color: pal.muted }]}>DAILY REMINDER</Text>
         <View style={styles.grid}>
           <Option
