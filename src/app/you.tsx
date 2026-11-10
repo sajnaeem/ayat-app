@@ -378,7 +378,9 @@ function Stat({ pal, n, label }: { pal: Palette; n: number; label: string }) {
   return (
     <View style={[styles.stat, { borderColor: pal.line }]}>
       <Text style={[styles.statN, { color: pal.text }]}>{n}</Text>
-      <Text style={[styles.statL, { color: pal.muted }]}>{label}</Text>
+      <Text style={[styles.statL, { color: pal.muted }]} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>
+        {label}
+      </Text>
     </View>
   );
 }
@@ -404,7 +406,7 @@ const styles = StyleSheet.create({
   small: { fontFamily: fonts.ui, fontSize: 13, lineHeight: 18 },
   bar: { height: 6, borderRadius: 3, overflow: 'hidden' },
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  stat: { flexBasis: '22%', flexGrow: 1, minWidth: 72, borderWidth: 1, borderRadius: 10, padding: 10, gap: 2 },
+  stat: { flexBasis: '22%', flexGrow: 1, minWidth: 72, borderWidth: 1, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 8, gap: 2 },
   statN: { fontFamily: fonts.uiBold, fontSize: 24, letterSpacing: -0.5, fontVariant: ['tabular-nums'] },
   statL: { fontFamily: fonts.uiSemi, fontSize: 11 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },

@@ -950,9 +950,11 @@ function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palett
       </View>
       <View style={styles.topRight}>
         {p.mode === 'foryou' && (
-          <Pressable onPress={p.onMood} style={[pill, { maxWidth: 88 }]} accessibilityRole="button" accessibilityLabel="Change what's on your heart">
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Icon name="heart" size={13} color={pal.accent} strokeWidth={2} />
+          <Pressable onPress={p.onMood} style={[pill, { maxWidth: 88, flexShrink: 1, overflow: 'hidden' }]} accessibilityRole="button" accessibilityLabel="Change what's on your heart">
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1, maxWidth: '100%' }}>
+              <View style={{ flexShrink: 0 }}>
+                <Icon name="heart" size={13} color={pal.accent} strokeWidth={2} />
+              </View>
               <Text style={[styles.pillText, { color: pal.text, flexShrink: 1 }]} numberOfLines={1}>
                 {p.moodLabel}
               </Text>
@@ -981,8 +983,8 @@ const styles = StyleSheet.create({
   contBar: { height: 6, borderRadius: 3, overflow: 'hidden' },
   top: { position: 'absolute', left: 0, right: 0, top: 0, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   brand: { fontFamily: fonts.uiBold, fontSize: 24, letterSpacing: -0.5 },
-  topRight: { flexDirection: 'row', gap: 6, alignItems: 'center' },
-  tabs: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
+  topRight: { flexDirection: 'row', gap: 6, alignItems: 'center', flexShrink: 1, marginLeft: 10 },
+  tabs: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', flexShrink: 0 },
   tab: { fontFamily: fonts.uiBold, fontSize: 16, letterSpacing: -0.3 },
   tabLine: { height: 2.5, borderRadius: 2, marginTop: 3, width: 18 },
   pill: { minHeight: 36, minWidth: 36, paddingHorizontal: 10, borderWidth: 1, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },

@@ -1,6 +1,6 @@
 import { memo, ReactNode, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { Easing, SharedValue, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, FadeIn, FadeOut, SharedValue, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { arabicNumber, chapterTranslator, LANGS, LangId, liveVerse, loadChapter, loadedChapter, MOODS, MoodId, translationFor, Verse } from '@/lib/quran';
 import { fonts, mix, Palette, Tone } from '@/lib/theme';
 import { Icon } from './Icon';
@@ -135,6 +135,21 @@ export const VerseCard = memo(function VerseCard(props: Props) {
   const [wordPick, setWordPick] = useState<WordPick>(null);
   const [tafsirOpen, setTafsirOpen] = useState(false);
   const [askOpen, setAskOpen] = useState(false);
+  // The big play sign shows briefly when the reader pauses on this card, then fades so it never sits over the ayah.
+  // (The Listen button on the side keeps showing the paused state.)
+  const [pauseFlash, setPauseFlash] = useState(false);
+  const wasPaused = useRef(props.paused);
+  useEffect(() => {
+    const now = !!props.paused;
+    if (now && !wasPaused.current && active) {
+      setPauseFlash(true);
+      const t = setTimeout(() => setPauseFlash(false), 900);
+      wasPaused.current = now;
+      return () => clearTimeout(t);
+    }
+    if (!now) setPauseFlash(false);
+    wasPaused.current = now;
+  }, [props.paused, active]);
   const [hideLevel, setHideLevel] = useState(0); // 0–4 quarters of the words hidden
   const [peeked, setPeeked] = useState<Set<number>>(new Set());
 
@@ -238,12 +253,12 @@ export const VerseCard = memo(function VerseCard(props: Props) {
     // Any touch on the card brings the faded controls back.
     <View onTouchStart={props.onTap} style={[styles.card, { height, backgroundColor: tone.bg, paddingTop: topInset + 64, paddingBottom: bottomInset + 24 }]}>
       <Pattern color={tone.accent} top={topInset} />
-      {props.paused && (
-        <View pointerEvents="none" style={styles.pausedWrap} accessibilityLiveRegion="polite" accessibilityLabel="Paused">
+      {pauseFlash && (
+        <Animated.View entering={FadeIn.duration(120)} exiting={FadeOut.duration(400)} pointerEvents="none" style={styles.pausedWrap} accessibilityLiveRegion="polite" accessibilityLabel="Paused">
           <View style={[styles.pausedDot, { backgroundColor: mix(tone.bg, text, 0.55) }]}>
             <Icon name="play" size={30} color={tone.bg} fill strokeWidth={2} />
           </View>
-        </View>
+        </Animated.View>
       )}
       <ScrollView
         style={styles.scroll}
