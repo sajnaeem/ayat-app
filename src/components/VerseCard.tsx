@@ -321,7 +321,7 @@ export const VerseCard = memo(function VerseCard(props: Props) {
             <Text style={[styles.tr, { color: text, fontSize: trSize, lineHeight: trSize * (rtlTr ? 2.1 : 1.5), textAlign: rtlTr ? 'right' : 'left', writingDirection: rtlTr ? 'rtl' : 'ltr' }]}>
               {tr ? tr.map((t, j) => (tr.length > 1 ? `(${v.a + j}) ${t}` : t)).join(' ') : 'Loading translation…'}
             </Text>
-            <Text style={[styles.by, { color: muted }]}>{loaded ? chapterTranslator(v.s, lang) : L.by}</Text>
+            <Text style={[styles.by, { color: muted }]}>{loaded ? chapterTranslator(v.s, lang) : (L.bundledBy ?? L.by)}</Text>
           </Reveal>
 
           <Reveal p={p} start={ae + 700}>

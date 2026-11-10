@@ -38,10 +38,12 @@ export const SURAHS = surahsJson as [string, string, string, number, 'makkah' | 
 /** "Revealed in Makkah" / "Revealed in Madinah" for a surah. */
 export const revealedIn = (s: number) => (SURAHS[s - 1]?.[4] === 'madinah' ? 'Madinah' : 'Makkah');
 
-export const LANGS: { id: LangId; name: string; native: string; by: string }[] = [
+/** `by`: the translation readers normally see (Quran Foundation). `bundledBy`: the one in the app's own files and the
+ *  offline fallback, when it differs (Bengali: QF has Taisirul Quran, the quran-json dataset has Muhiuddin Khan). */
+export const LANGS: { id: LangId; name: string; native: string; by: string; bundledBy?: string }[] = [
   { id: 'en', name: 'English', native: '', by: 'Saheeh International' },
   { id: 'ur', name: 'Urdu', native: 'اردو', by: "Abul A'la Maududi" },
-  { id: 'bn', name: 'Bengali', native: 'বাংলা', by: 'Muhiuddin Khan' },
+  { id: 'bn', name: 'Bengali', native: 'বাংলা', by: 'Taisirul Quran', bundledBy: 'Muhiuddin Khan' },
   { id: 'id', name: 'Indonesian', native: 'Bahasa Indonesia', by: 'Indonesian Ministry of Religious Affairs' },
   { id: 'tr', name: 'Turkish', native: 'Türkçe', by: 'Diyanet İşleri' },
   { id: 'fr', name: 'French', native: 'Français', by: 'Muhammad Hamidullah' },
@@ -156,7 +158,10 @@ async function fromDataset(s: number, lang: LangId): Promise<{ by: string; list:
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   const d: { verses: { id: number; text: string; translation: string; transliteration: string }[] } = await r.json();
   return {
-    by: LANGS.find((l) => l.id === lang)?.by ?? '',
+    by: (() => {
+      const l = LANGS.find((x) => x.id === lang);
+      return l?.bundledBy ?? l?.by ?? '';
+    })(),
     list: d.verses.map((v) => ({ n: v.id, ar: v.text, tl: cleanTransliteration(v.transliteration), tr: v.translation })),
   };
 }

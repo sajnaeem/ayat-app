@@ -39,7 +39,12 @@ type ProgressItem = { kind: 'progress'; key: string; i: number };
 /** For you only: an approved post from the community. */
 type PostItem = { kind: 'post'; key: string; i: number; p: Post };
 type VideoItem = { kind: 'video'; key: string; i: number; v: FeedVideo };
-type Item = VerseItem | OffItem | ContItem | TitleItem | SnipItem | VideoItem | TimeItem | ProgressItem | PostItem;
+/** For you without an account: now and then, a gentle invitation to create one (never a wall). */
+type JoinItem = { kind: 'join'; key: string; i: number };
+type Item = VerseItem | OffItem | ContItem | TitleItem | SnipItem | VideoItem | TimeItem | ProgressItem | PostItem | JoinItem;
+/** Guests see the invitation after this many For you ayat, then every JOIN_EVERY after. */
+const JOIN_FIRST = 8;
+const JOIN_EVERY = 24;
 const CONT_EVERY = 12;
 
 /** How long someone scrolls before the "time check" card appears. */
@@ -53,7 +58,7 @@ const withTimeout = <T,>(p: Promise<T>, ms: number, fallback: T) => Promise.race
  * The feed: rounds of curated ayat, forever, with the attention ladder's longer cards mixed in.
  * Never shows the same card twice in a row, and keeps recent cards from coming straight back.
  */
-function useEndlessFeed(mood: MoodId | null, mode: 'foryou' | 'order', jump: number) {
+function useEndlessFeed(mood: MoodId | null, mode: 'foryou' | 'order', jump: number, guest = false) {
   const prefs = usePrefs();
   // In order: which surah to load next, and where to start (read when the feed is rebuilt).
   const placeRef = useRef(prefs.place);
@@ -106,6 +111,10 @@ function useEndlessFeed(mood: MoodId | null, mode: 'foryou' | 'order', jump: num
     for (const v of l) {
       out.push({ kind: 'verse', key: `${r}-${v.k}`, v, i: out.length });
       const n = ++verses, x = extras.current;
+      if (guest && mode === 'foryou' && n >= JOIN_FIRST && (n - JOIN_FIRST) % JOIN_EVERY === 0) {
+        out.push({ kind: 'join', key: `join-${r}-${n}`, i: out.length });
+        continue;
+      }
       // Once per feed: a card for this time of day (early on), and later how far the reader has come.
       if (n >= 2 && !out.some((it) => it.kind === 'time')) {
         // Shown once per time window per day (remembered on the phone), so rebuilding the feed doesn't repeat it.
@@ -223,8 +232,9 @@ export default function Feed() {
   const acctEarly = useAccount();
   // Without an account, people can read the Quran tab; For you, reflections and You ask them to sign in.
   const guest = acctEarly.status === 'signedOut';
-  const mode: 'foryou' | 'order' = guest ? 'order' : prefs.feedMode;
-  const [sheet, setSheet] = useState<null | 'mood' | 'context' | 'remind' | 'support'>(prefs.onboarded || guest ? null : 'mood');
+  // Since 10 Nov 2026 guests can try For you too (pick a mood, see ayat that speak to it) before being asked to sign up.
+  const mode: 'foryou' | 'order' = prefs.feedMode;
+  const [sheet, setSheet] = useState<null | 'mood' | 'context' | 'remind' | 'support'>(prefs.onboarded ? null : 'mood');
   const [remindAt, setRemindAt] = useState(2);
   const [contextVerse, setContextVerse] = useState<Verse | null>(null);
   const [resting, setResting] = useState(false);
@@ -279,15 +289,11 @@ export default function Feed() {
     ]);
   };
 
-  const { items, setItems, reset, more, refreshAhead, orderFailed } = useEndlessFeed(prefs.mood, mode, mode === 'order' ? prefs.jump : 0);
+  const { items, setItems, reset, more, refreshAhead, orderFailed } = useEndlessFeed(prefs.mood, mode, mode === 'order' ? prefs.jump : 0, guest);
 
   /** For you (curated, by mood) or In order (the whole Quran, from where you left off). */
   const switchMode = (m: 'foryou' | 'order') => {
     if (m === mode) return;
-    if (guest) {
-      router.push({ pathname: '/signin', params: { why: 'foryou' } });
-      return;
-    }
     if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {});
     prefs.set({ feedMode: m });
   };
@@ -640,6 +646,9 @@ export default function Feed() {
                 />
               );
             }
+            if (item.kind === 'join') {
+              return <JoinCard pal={pal} tone={tone} height={height} onJoin={() => router.push({ pathname: '/signin', params: { why: 'keep' } })} />;
+            }
             if (item.kind === 'cont') {
               const next = nextPlace(prefs.place);
               return (
@@ -765,7 +774,7 @@ export default function Feed() {
               {MOODS.filter((m) => m.group === group).map((m) => {
                 const on = prefs.mood === m.id;
                 return (
-                  <Pressable key={m.id} onPress={() => { prefs.set({ mood: m.id, onboarded: true }); setSheet(null); }} style={[styles.opt, { borderColor: on ? pal.accent : pal.line, borderWidth: on ? 2 : 1 }]} accessibilityRole="button" accessibilityState={{ selected: on }}>
+                  <Pressable key={m.id} onPress={() => { prefs.set({ mood: m.id, onboarded: true, feedMode: 'foryou' }); setSheet(null); }} style={[styles.opt, { borderColor: on ? pal.accent : pal.line, borderWidth: on ? 2 : 1 }]} accessibilityRole="button" accessibilityState={{ selected: on }}>
                     <Text style={[styles.optTitle, { color: pal.text }]}>{m.label}</Text>
                     <Text style={[styles.optSub, { color: pal.muted }]}>{m.sub}</Text>
                   </Pressable>
@@ -868,6 +877,24 @@ function nextPlace(place: { s: number; a: number } | null) {
   if (!place) return { s: 1, a: 1 };
   if (place.a < SURAHS[place.s - 1][3]) return { s: place.s, a: place.a + 1 };
   return { s: place.s === 114 ? 1 : place.s + 1, a: 1 };
+}
+
+/** For you without an account: an invitation, not a wall. Swiping past it simply carries on. */
+function JoinCard(p: { pal: Palette; tone: { bg: string; accent: string }; height: number; onJoin: () => void }) {
+  const { pal, tone } = p;
+  return (
+    <View style={[styles.off, { height: p.height, backgroundColor: tone.bg }]}>
+      <Text style={[styles.offEyebrow, { color: tone.accent }]}>KEEP YOUR FEED</Text>
+      <Text style={[styles.offTitle, { color: pal.text }]}>Make Munib yours.</Text>
+      <Text style={[styles.offBody, { color: mix(tone.bg, pal.text, 0.75) }]}>
+        A free account keeps the ayat you save, remembers how far you’ve read, and lets you ask about any ayah and share reflections.
+      </Text>
+      <Pressable onPress={p.onJoin} style={[styles.primary, { backgroundColor: pal.text }]} accessibilityRole="button">
+        <Text style={[styles.primaryText, { color: tone.bg }]}>Create a free account</Text>
+      </Pressable>
+      <Text style={[styles.optSub, { color: mix(tone.bg, pal.text, 0.6) }]}>Or swipe up to keep reading.</Text>
+    </View>
+  );
 }
 
 function ContinueCard(p: { pal: Palette; tone: { bg: string; accent: string }; height: number; next: { s: number; a: number }; started: boolean; read: number; onRead: () => void }) {
