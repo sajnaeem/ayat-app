@@ -8,9 +8,11 @@ import type { MoodId } from '@/lib/quran';
  * `moods`: shown first when the reader has picked one of these moods. No moods = for everyone.
  */
 export type Snippet =
-  | { id: string; kind: 'fact'; title: string; body: string; source: string; moods?: MoodId[] }
+  /** `eyebrow` replaces "DID YOU KNOW?" (e.g. "A GENTLE REMINDER"). */
+  | { id: string; kind: 'fact'; title: string; body: string; source: string; eyebrow?: string; moods?: MoodId[] }
   | { id: string; kind: 'myth'; myth: string; fact: string; source: string; moods?: MoodId[] }
-  | { id: string; kind: 'word'; ar: string; tl: string; meaning: string; body: string; source: string; moods?: MoodId[] }
+  /** `eyebrow` replaces "WORD" (e.g. "WHAT DOES IT MEAN?" for everyday Islamic terms). */
+  | { id: string; kind: 'word'; ar: string; tl: string; meaning: string; body: string; source: string; eyebrow?: string; moods?: MoodId[] }
   /** A dua to say: Quranic ones use the Mushaf text; hadith ones are typed in and need checking by someone with Arabic. */
   | { id: string; kind: 'dua'; title: string; ar: string; tl: string; meaning: string; source: string; moods?: MoodId[] }
   /** One of the names of Allah, with an ayah (or hadith) where it appears. */
@@ -19,12 +21,14 @@ export type Snippet =
   | { id: string; kind: 'try'; title: string; body: string; source: string; moods?: MoodId[] }
   /** A question with one clear, well-sourced answer. */
   | { id: string; kind: 'quiz'; q: string; options: string[]; answer: number; why: string; source: string; moods?: MoodId[] }
-  /** A prophet's story told over three cards in a row. */
-  | { id: string; kind: 'story'; who: string; parts: [StoryPart, StoryPart, StoryPart]; moods?: MoodId[] }
+  /** A prophet's story, or a short series (the five pillars…), told over several cards in a row. `title` replaces "THE STORY OF …". */
+  | { id: string; kind: 'story'; who: string; title?: string; parts: StoryPart[]; moods?: MoodId[] }
+  /** A letter of the Arabic alphabet: how to say it, and a word from a short ayah that uses it (tap to hear the ayah). */
+  | { id: string; kind: 'letter'; n: number; letter: string; name: string; sound: string; word: string; wordTl: string; meaning: string; s: number; a: number; ayah: string; moods?: MoodId[] }
   /** One short ayah recited by three reciters, one after another. */
   | { id: string; kind: 'reciters'; s: number; a: number; ar: string; en: string; moods?: MoodId[] };
 
-export type StoryPart = { text: string; source: string };
+export type StoryPart = { heading?: string; text: string; source: string };
 
 export const SNIPPETS: Snippet[] = [
   // Facts
@@ -147,6 +151,93 @@ export const SNIPPETS: Snippet[] = [
     { text: 'Allah said: “O fire, be coolness and safety upon Ibrahim.”', source: 'Quran 21:69' },
   ] },
 
+  // For new Muslims (10 Nov 2026). Series are told over several cards in a row.
+  { id: 'x-pillars', kind: 'story', who: 'The five pillars', title: 'THE FIVE PILLARS OF ISLAM', moods: ['newmuslim', 'guidance'], parts: [
+    { heading: 'Shahada · the declaration', text: '“There is no god but Allah, and Muhammad is the Messenger of Allah.” Believing this and saying it is how a person becomes Muslim. It is the first of five pillars Islam is built on.', source: 'Sahih al-Bukhari 8 · Sahih Muslim 16' },
+    { heading: 'Salah · prayer', text: 'Five prayers a day: Fajr at dawn, Dhuhr after midday, Asr in the afternoon, Maghrib at sunset and Isha at night. A few minutes each, facing the Kaaba in Makkah. “Indeed, prayer prohibits immorality and wrongdoing.”', source: 'Quran 29:45' },
+    { heading: 'Zakat · giving', text: 'Once a year, a Muslim with savings above a set minimum gives a small share, usually 2.5%, to people in need. Zakat means purification: “Take from their wealth a charity by which you purify them.”', source: 'Quran 9:103 · 9:60' },
+    { heading: 'Sawm · fasting', text: 'In Ramadan, Muslims fast from dawn until sunset: no food or drink, and extra care with words and deeds. “Fasting has been prescribed for you… that you may become mindful of Allah.”', source: 'Quran 2:183' },
+    { heading: 'Hajj · pilgrimage', text: 'Once in a lifetime, for those who are able, Muslims travel to Makkah for Hajj, joining millions from every nation who stand together as equals before Allah.', source: 'Quran 3:97' },
+  ] },
+  { id: 'x-iman', kind: 'story', who: 'The six articles of faith', title: 'THE SIX ARTICLES OF FAITH', moods: ['newmuslim', 'guidance'], parts: [
+    { heading: 'Allah', text: 'Iman, faith, has six parts. The first is belief in Allah: one God, with no partner and nothing like Him. “Say, He is Allah, who is One.”', source: 'Sahih Muslim 8 · Quran 112:1–4' },
+    { heading: 'The angels', text: 'Angels are created by Allah from light, and they obey Him. Jibril is the angel who brought the Quran to the Prophet ﷺ.', source: 'Sahih Muslim 2996 · Quran 2:97' },
+    { heading: 'The books', text: 'Allah sent revealed books: the Torah to Musa, the Psalms to Dawud, the Gospel to ʿIsa, and the Quran to Muhammad ﷺ, the last of them.', source: 'Quran 3:3–4 · 4:163' },
+    { heading: 'The messengers', text: 'Allah sent messengers to every nation, among them Adam, Nuh, Ibrahim, Musa and ʿIsa. Muslims believe in them all, and Muhammad ﷺ is the final one.', source: 'Quran 16:36 · 2:136 · 33:40' },
+    { heading: 'The Last Day', text: 'This life will end, and everyone will be brought back to account for what they did. “Whoever does an atom’s weight of good will see it.”', source: 'Quran 99:7–8' },
+    { heading: 'Qadr · Allah’s decree', text: 'Nothing happens outside Allah’s knowledge and will, the easy and the hard. Knowing this is a comfort, “so that you not despair over what has eluded you, nor exult over what He has given you.”', source: 'Sahih Muslim 8 · Quran 54:49 · 57:22–23' },
+  ] },
+  { id: 'x-prophet', kind: 'story', who: 'The Prophet Muhammad ﷺ', title: 'THE LIFE OF THE PROPHET', moods: ['newmuslim'], parts: [
+    { text: 'Muhammad ﷺ was born in Makkah around 570 CE. He lost his father before he was born and his mother as a young child, and grew up known as al-Amin, the trustworthy.', source: 'Quran 93:6 · Ibn Hisham, as-Sirah' },
+    { text: 'At forty, in the cave of Hira, the angel Jibril brought him the first revelation: “Read in the name of your Lord who created.”', source: 'Sahih al-Bukhari 3 · Quran 96:1' },
+    { text: 'For thirteen years he called the people of Makkah to worship Allah alone. Many believed, and many of them were persecuted for it.', source: 'Ibn Hisham, as-Sirah' },
+    { text: 'In 622 CE he migrated to Madinah. This journey, the Hijrah, is where the Islamic calendar begins.', source: 'Quran 9:40' },
+    { text: 'He returned to Makkah in peace, forgave those who had fought him, and passed away in Madinah in 632 CE, aged 63. Allah calls him “a mercy to the worlds.”', source: 'Sahih al-Bukhari 3536 · Quran 21:107' },
+  ] },
+  { id: 'x-steps', kind: 'story', who: 'Your first steps', title: 'YOUR FIRST STEPS', moods: ['newmuslim'], parts: [
+    { heading: 'Wudu · washing for prayer', text: 'Before praying, Muslims wash in a set way called wudu: hands, mouth and nose, face, arms to the elbows, wiping the head, then the feet. The Quran describes its heart.', source: 'Quran 5:6' },
+    { heading: 'Salah · how prayer looks', text: 'Prayer is standing, bowing, prostrating and sitting, while reciting al-Fatihah and remembering Allah. The Prophet ﷺ said: “Pray as you have seen me pray.”', source: 'Sahih al-Bukhari 631' },
+    { heading: 'Learn it with others', text: 'Nobody learns this from a card. Your local mosque will be glad to show you, step by step. Take it one prayer at a time: “Make things easy, and do not make them difficult.”', source: 'Sahih al-Bukhari 69' },
+  ] },
+
+  // A gentle reminder (for anyone who feels new, behind or overwhelmed)
+  { id: 'g-wipe', kind: 'fact', eyebrow: 'A GENTLE REMINDER', title: 'Becoming Muslim wipes the slate clean.', body: 'ʿAmr ibn al-ʿAs was worried about his past when he accepted Islam. The Prophet ﷺ told him: “Do you not know that Islam wipes out what came before it?”', source: 'Sahih Muslim 121', moods: ['newmuslim', 'forgiveness'] },
+  { id: 'g-gradual', kind: 'fact', eyebrow: 'A GENTLE REMINDER', title: 'Even the Quran began gently.', body: 'ʿAisha explained that the first surahs spoke of Paradise and the Fire. Rules came later, once hearts were settled: “If the first thing revealed had been ‘Do not drink alcohol’, they would have said ‘We will never give it up.’”', source: 'Sahih al-Bukhari 4993', moods: ['newmuslim', 'strength'] },
+  { id: 'g-easy', kind: 'fact', eyebrow: 'A GENTLE REMINDER', title: 'The religion is easy.', body: 'The Prophet ﷺ said: “The religion is easy… so do what is right, get as close to it as you can, and be glad.”', source: 'Sahih al-Bukhari 39', moods: ['newmuslim', 'guidance'] },
+  { id: 'g-capacity', kind: 'fact', eyebrow: 'A GENTLE REMINDER', title: 'You won’t be asked for more than you can carry.', body: '“Allah does not charge a soul except with that within its capacity.”', source: 'Quran 2:286', moods: ['newmuslim', 'anxious', 'strength'] },
+
+  // What does it mean? Everyday Islamic words and phrases
+  { id: 'e-ayah', kind: 'word', eyebrow: 'WHAT DOES IT MEAN?', ar: 'آيَة', tl: 'āyah', meaning: 'a verse; literally, a sign', body: 'The Quran has 6,236 ayat. The same word is used for Allah’s signs in nature: “Of His signs are the night and the day, and the sun and the moon.”', source: 'Quran 41:37', moods: ['newmuslim'] },
+  { id: 'e-surah', kind: 'word', eyebrow: 'WHAT DOES IT MEAN?', ar: 'سُورَة', tl: 'sūrah', meaning: 'a chapter', body: 'The Quran has 114 surahs, from al-Fatihah, the Opening, to an-Nas. The longest, al-Baqarah, has 286 ayat; the shortest, al-Kawthar, has three.', source: 'Quran 2 · Quran 108', moods: ['newmuslim'] },
+  { id: 'e-hadith', kind: 'word', eyebrow: 'WHAT DOES IT MEAN?', ar: 'حَدِيث', tl: 'ḥadīth', meaning: 'a report', body: 'A record of what the Prophet ﷺ said, did or approved, passed on through a chain of named narrators. Sahih al-Bukhari and Sahih Muslim gather the most reliable.', source: 'The collections of al-Bukhari and Muslim', moods: ['newmuslim'] },
+  { id: 'e-sunnah', kind: 'word', eyebrow: 'WHAT DOES IT MEAN?', ar: 'سُنَّة', tl: 'sunnah', meaning: 'the way', body: 'The Prophet’s ﷺ way of living and worshipping, which Muslims follow. “There has certainly been for you in the Messenger of Allah an excellent example.”', source: 'Quran 33:21', moods: ['newmuslim'] },
+  { id: 'e-salah', kind: 'word', eyebrow: 'WHAT DOES IT MEAN?', ar: 'صَلَاة', tl: 'ṣalāh', meaning: 'prayer', body: 'The five daily prayers. The Prophet ﷺ said prayer is the first deed a person will be asked about on the Day of Judgement.', source: 'Jamiʿ at-Tirmidhi 413', moods: ['newmuslim'] },
+  { id: 'e-dua', kind: 'word', eyebrow: 'WHAT DOES IT MEAN?', ar: 'دُعَاء', tl: 'duʿāʾ', meaning: 'calling on Allah', body: 'Any personal prayer, in any language, at any time. “Call upon Me; I will respond to you.”', source: 'Quran 40:60', moods: ['newmuslim'] },
+  { id: 'e-deen', kind: 'word', eyebrow: 'WHAT DOES IT MEAN?', ar: 'دِين', tl: 'dīn', meaning: 'a way of life', body: 'Usually translated as religion, but it means a whole way of living. “This day I have perfected for you your deen.”', source: 'Quran 5:3', moods: ['newmuslim'] },
+  { id: 'e-iman', kind: 'word', eyebrow: 'WHAT DOES IT MEAN?', ar: 'إِيمَان', tl: 'īmān', meaning: 'faith', body: 'Belief in the heart, shown in words and actions. Its six parts are belief in Allah, the angels, the books, the messengers, the Last Day and qadr.', source: 'Sahih Muslim 8', moods: ['newmuslim'] },
+  { id: 'e-tawhid', kind: 'word', eyebrow: 'WHAT DOES IT MEAN?', ar: 'تَوْحِيد', tl: 'tawḥīd', meaning: 'oneness', body: 'Believing that Allah is One, with no partner: the heart of Islam. “Say, He is Allah, who is One.”', source: 'Quran 112:1', moods: ['newmuslim'] },
+  { id: 'e-ummah', kind: 'word', eyebrow: 'WHAT DOES IT MEAN?', ar: 'أُمَّة', tl: 'ummah', meaning: 'community', body: 'The worldwide family of Muslims, from every nation and colour. “You are the best community brought forth for mankind.”', source: 'Quran 3:110', moods: ['newmuslim'] },
+  { id: 'e-halal', kind: 'word', eyebrow: 'WHAT DOES IT MEAN?', ar: 'حَلَال', tl: 'ḥalāl', meaning: 'permitted', body: 'Anything Allah allows, from food to work. Its opposite is ḥarām, forbidden. “Eat of what is lawful and good on the earth.”', source: 'Quran 2:168', moods: ['newmuslim'] },
+  { id: 'e-inshaallah', kind: 'word', eyebrow: 'WHAT DOES IT MEAN?', ar: 'إِنْ شَاءَ ٱللَّٰه', tl: 'in shāʾ Allāh', meaning: 'if Allah wills', body: 'Said about anything you plan to do. “Never say of anything, ‘I will do that tomorrow,’ except ‘if Allah wills.’”', source: 'Quran 18:23–24', moods: ['newmuslim'] },
+  { id: 'e-mashaallah', kind: 'word', eyebrow: 'WHAT DOES IT MEAN?', ar: 'مَا شَاءَ ٱللَّٰه', tl: 'mā shāʾ Allāh', meaning: 'what Allah has willed', body: 'Said when you admire something, remembering that it came from Him.', source: 'Quran 18:39', moods: ['newmuslim'] },
+  { id: 'e-alhamdulillah', kind: 'word', eyebrow: 'WHAT DOES IT MEAN?', ar: 'ٱلْحَمْدُ لِلَّٰه', tl: 'al-ḥamdu lillāh', meaning: 'all praise is for Allah', body: 'The first words of al-Fatihah after the Bismillah, and a Muslim’s thanks for anything good. The Prophet ﷺ said it fills the scale.', source: 'Quran 1:2 · Sahih Muslim 223', moods: ['newmuslim', 'grateful'] },
+  { id: 'e-jazakallah', kind: 'word', eyebrow: 'WHAT DOES IT MEAN?', ar: 'جَزَاكَ ٱللَّٰهُ خَيْرًا', tl: 'jazāk Allāhu khayran', meaning: 'may Allah reward you with good', body: 'A Muslim’s thank you. The Prophet ﷺ said that whoever says it to someone who did them a favour has praised them as fully as they can.', source: 'Jamiʿ at-Tirmidhi 2035', moods: ['newmuslim'] },
+
+  // More myths
+  { id: 'm-arab', kind: 'myth', myth: 'Most Muslims are Arab.', fact: 'Only around one in five Muslims is Arab, and the country with the most Muslims is Indonesia. “We made you peoples and tribes that you may know one another.”', source: 'Quran 49:13', moods: ['newmuslim'] },
+  { id: 'm-isa', kind: 'myth', myth: 'Muslims don’t believe in Jesus.', fact: 'ʿIsa (Jesus) is one of the greatest prophets in Islam, and Muslims believe in his miraculous birth to Maryam. The Quran tells his story with deep respect.', source: 'Quran 19:16–34 · 3:45', moods: ['newmuslim'] },
+  { id: 'm-perfect', kind: 'myth', myth: 'You have to be a perfect Muslim before you start.', fact: 'The Prophet ﷺ said: “Every child of Adam makes mistakes, and the best of those who make mistakes are those who repent.”', source: 'Jamiʿ at-Tirmidhi 2499', moods: ['newmuslim', 'forgiveness'] },
+
+  // The Arabic alphabet: one letter per card, with a word from a short ayah (words taken from the quran-json text).
+  { id: 'l-alif', kind: 'letter', n: 1, letter: 'ا', name: 'alif', sound: "A long “aa”, as in “father”. It also carries the hamza, a short catch in the voice, as at the start of “uh-oh”.", word: 'أَحَدٌ', wordTl: 'aḥad', meaning: "One", s: 112, a: 1, ayah: 'قُلۡ هُوَ ٱللَّهُ أَحَدٌ' },
+  { id: 'l-ba', kind: 'letter', n: 2, letter: 'ب', name: 'bāʾ', sound: "“b”, as in “book”.", word: 'بِسۡمِ', wordTl: 'bismi', meaning: "in the name of", s: 1, a: 1, ayah: 'بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ' },
+  { id: 'l-ta', kind: 'letter', n: 3, letter: 'ت', name: 'tāʾ', sound: "A light “t”, with the tip of the tongue just behind the top teeth.", word: 'وَٱلتِّينِ', wordTl: 'wat-tīn', meaning: "by the fig", s: 95, a: 1, ayah: 'وَٱلتِّينِ وَٱلزَّيۡتُونِ' },
+  { id: 'l-tha', kind: 'letter', n: 4, letter: 'ث', name: 'thāʾ', sound: "“th”, as in “think”, with the tongue between the teeth.", word: 'ٱلۡكَوۡثَرَ', wordTl: 'al-kawthar', meaning: "al-Kawthar, abundance", s: 108, a: 1, ayah: 'إِنَّآ أَعۡطَيۡنَٰكَ ٱلۡكَوۡثَرَ' },
+  { id: 'l-jim', kind: 'letter', n: 5, letter: 'ج', name: 'jīm', sound: "“j”, as in “jam”.", word: 'جَآءَ', wordTl: 'jāʾa', meaning: "comes", s: 110, a: 1, ayah: 'إِذَا جَآءَ نَصۡرُ ٱللَّهِ وَٱلۡفَتۡحُ' },
+  { id: 'l-hha', kind: 'letter', n: 6, letter: 'ح', name: 'ḥāʾ', sound: "A breathy “h” from the middle of the throat, like breathing on glasses to clean them.", word: 'ٱلۡحَمۡدُ', wordTl: 'al-ḥamdu', meaning: "all praise", s: 1, a: 2, ayah: 'ٱلۡحَمۡدُ لِلَّهِ رَبِّ ٱلۡعَٰلَمِينَ' },
+  { id: 'l-kha', kind: 'letter', n: 7, letter: 'خ', name: 'khāʾ', sound: "“kh”, like the “ch” in the Scottish “loch”.", word: 'خَيۡرٞ', wordTl: 'khayr', meaning: "better", s: 97, a: 3, ayah: 'لَيۡلَةُ ٱلۡقَدۡرِ خَيۡرٞ مِّنۡ أَلۡفِ شَهۡرٖ' },
+  { id: 'l-dal', kind: 'letter', n: 8, letter: 'د', name: 'dāl', sound: "“d”, with the tongue just behind the top teeth.", word: 'ٱلصَّمَدُ', wordTl: 'aṣ-ṣamad', meaning: "the Eternal Refuge", s: 112, a: 2, ayah: 'ٱللَّهُ ٱلصَّمَدُ' },
+  { id: 'l-dhal', kind: 'letter', n: 9, letter: 'ذ', name: 'dhāl', sound: "“th”, as in “this”.", word: 'ذَٰلِكَ', wordTl: 'dhālika', meaning: "that", s: 2, a: 2, ayah: 'ذَٰلِكَ ٱلۡكِتَٰبُ لَا رَيۡبَۛ فِيهِۛ هُدٗى لِّلۡمُتَّقِينَ' },
+  { id: 'l-ra', kind: 'letter', n: 10, letter: 'ر', name: 'rāʾ', sound: "A rolled “r”, with a light tap of the tongue.", word: 'رَبِّ', wordTl: 'rabbi', meaning: "Lord of", s: 1, a: 2, ayah: 'ٱلۡحَمۡدُ لِلَّهِ رَبِّ ٱلۡعَٰلَمِينَ' },
+  { id: 'l-zay', kind: 'letter', n: 11, letter: 'ز', name: 'zāy', sound: "“z”, as in “zoo”.", word: 'زُلۡزِلَتِ', wordTl: 'zulzilat', meaning: "is shaken", s: 99, a: 1, ayah: 'إِذَا زُلۡزِلَتِ ٱلۡأَرۡضُ زِلۡزَالَهَا' },
+  { id: 'l-sin', kind: 'letter', n: 12, letter: 'س', name: 'sīn', sound: "“s”, as in “sun”.", word: 'ٱلنَّاسِ', wordTl: 'an-nās', meaning: "mankind", s: 114, a: 1, ayah: 'قُلۡ أَعُوذُ بِرَبِّ ٱلنَّاسِ' },
+  { id: 'l-shin', kind: 'letter', n: 13, letter: 'ش', name: 'shīn', sound: "“sh”, as in “shop”.", word: 'شَرِّ', wordTl: 'sharri', meaning: "the evil of", s: 113, a: 2, ayah: 'مِن شَرِّ مَا خَلَقَ' },
+  { id: 'l-sad', kind: 'letter', n: 14, letter: 'ص', name: 'ṣād', sound: "A heavy “s”, with the back of the tongue raised, so the sound is full and deep.", word: 'ٱلصِّرَٰطَ', wordTl: 'aṣ-ṣirāṭ', meaning: "the path", s: 1, a: 6, ayah: 'ٱهۡدِنَا ٱلصِّرَٰطَ ٱلۡمُسۡتَقِيمَ' },
+  { id: 'l-dad', kind: 'letter', n: 15, letter: 'ض', name: 'ḍād', sound: "A heavy “d”, made with the sides of the tongue. It is so particular to Arabic that Arabic is called “the language of ḍād”.", word: 'وَٱلضُّحَىٰ', wordTl: 'waḍ-ḍuḥā', meaning: "by the morning brightness", s: 93, a: 1, ayah: 'وَٱلضُّحَىٰ' },
+  { id: 'l-tta', kind: 'letter', n: 16, letter: 'ط', name: 'ṭāʾ', sound: "A heavy “t”, with the back of the tongue raised.", word: 'وَٱلطَّارِقِ', wordTl: 'waṭ-ṭāriq', meaning: "by the night-comer", s: 86, a: 1, ayah: 'وَٱلسَّمَآءِ وَٱلطَّارِقِ' },
+  { id: 'l-zza', kind: 'letter', n: 17, letter: 'ظ', name: 'ẓāʾ', sound: "A heavy “th” as in “this”, with the back of the tongue raised.", word: 'ظَهۡرَكَ', wordTl: 'ẓahrak', meaning: "your back", s: 94, a: 3, ayah: 'ٱلَّذِيٓ أَنقَضَ ظَهۡرَكَ' },
+  { id: 'l-ayn', kind: 'letter', n: 18, letter: 'ع', name: 'ʿayn', sound: "A squeezed sound from the middle of the throat. English has nothing like it: listen and copy.", word: 'وَٱلۡعَصۡرِ', wordTl: 'wal-ʿaṣr', meaning: "by time", s: 103, a: 1, ayah: 'وَٱلۡعَصۡرِ' },
+  { id: 'l-ghayn', kind: 'letter', n: 19, letter: 'غ', name: 'ghayn', sound: "A soft gargle at the back of the throat, like a French “r”.", word: 'غَاسِقٍ', wordTl: 'ghāsiq', meaning: "darkness", s: 113, a: 3, ayah: 'وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ' },
+  { id: 'l-fa', kind: 'letter', n: 20, letter: 'ف', name: 'fāʾ', sound: "“f”, as in “fish”.", word: 'ٱلۡفَلَقِ', wordTl: 'al-falaq', meaning: "the daybreak", s: 113, a: 1, ayah: 'قُلۡ أَعُوذُ بِرَبِّ ٱلۡفَلَقِ' },
+  { id: 'l-qaf', kind: 'letter', n: 21, letter: 'ق', name: 'qāf', sound: "A deep “q”, from the very back of the mouth, further back than “k”.", word: 'قُلۡ', wordTl: 'qul', meaning: "say", s: 112, a: 1, ayah: 'قُلۡ هُوَ ٱللَّهُ أَحَدٌ' },
+  { id: 'l-kaf', kind: 'letter', n: 22, letter: 'ك', name: 'kāf', sound: "“k”, as in “kite”.", word: 'كَيۡفَ', wordTl: 'kayfa', meaning: "how", s: 105, a: 1, ayah: 'أَلَمۡ تَرَ كَيۡفَ فَعَلَ رَبُّكَ بِأَصۡحَٰبِ ٱلۡفِيلِ' },
+  { id: 'l-lam', kind: 'letter', n: 23, letter: 'ل', name: 'lām', sound: "“l”, as in “light”. In the name Allah it is usually full and heavy.", word: 'ٱللَّهِ', wordTl: 'Allāh', meaning: "Allah", s: 1, a: 1, ayah: 'بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ' },
+  { id: 'l-mim', kind: 'letter', n: 24, letter: 'م', name: 'mīm', sound: "“m”, as in “moon”.", word: 'مَٰلِكِ', wordTl: 'māliki', meaning: "Master of", s: 1, a: 4, ayah: 'مَٰلِكِ يَوۡمِ ٱلدِّينِ' },
+  { id: 'l-nun', kind: 'letter', n: 25, letter: 'ن', name: 'nūn', sound: "“n”, as in “noon”.", word: 'نَسۡتَعِينُ', wordTl: 'nastaʿīn', meaning: "we ask for help", s: 1, a: 5, ayah: 'إِيَّاكَ نَعۡبُدُ وَإِيَّاكَ نَسۡتَعِينُ' },
+  { id: 'l-ha', kind: 'letter', n: 26, letter: 'ه', name: 'hāʾ', sound: "A soft “h”, as in “hello”.", word: 'هُوَ', wordTl: 'huwa', meaning: "He", s: 112, a: 1, ayah: 'قُلۡ هُوَ ٱللَّهُ أَحَدٌ' },
+  { id: 'l-waw', kind: 'letter', n: 27, letter: 'و', name: 'wāw', sound: "“w”, as in “water”, or a long “oo”.", word: 'ٱلۡوَسۡوَاسِ', wordTl: 'al-waswās', meaning: "the whisperer", s: 114, a: 4, ayah: 'مِن شَرِّ ٱلۡوَسۡوَاسِ ٱلۡخَنَّاسِ' },
+  { id: 'l-ya', kind: 'letter', n: 28, letter: 'ي', name: 'yāʾ', sound: "“y”, as in “yes”, or a long “ee”.", word: 'يَوۡمِ', wordTl: 'yawmi', meaning: "the Day of", s: 1, a: 4, ayah: 'مَٰلِكِ يَوۡمِ ٱلدِّينِ' },
+
   // Hear it three ways
   { id: 'r-94-5', kind: 'reciters', s: 94, a: 5, ar: 'فَإِنَّ مَعَ ٱلۡعُسۡرِ يُسۡرًا', en: 'For indeed, with hardship will be ease.', moods: ['anxious', 'strength'] },
   { id: 'r-55-13', kind: 'reciters', s: 55, a: 13, ar: 'فَبِأَيِّ ءَالَآءِ رَبِّكُمَا تُكَذِّبَانِ', en: 'So which of the favours of your Lord would you deny?', moods: ['grateful'] },
@@ -172,4 +263,7 @@ export const NEWCOMER = new Set([
   'iqra', 'twentyfive', 'slowly', 'fatihah17', 'ikhlas', 'm-allah', 'm-compulsion', 'm-kaaba', 'm-written', 'm-arabic', 'm-aisha',
   'w-rahmah', 'w-tawbah', 'n-rahman', 'q-count', 'q-first', 'q-city', 'd-atina', 'd-ilm', 't-salam', 't-smile', 'r-112-1', 's-ibrahim',
   'attention', 'jannah',
+  'x-pillars', 'x-iman', 'x-prophet', 'x-steps', 'g-wipe', 'g-gradual', 'g-easy', 'g-capacity', 'm-arab', 'm-isa', 'm-perfect',
+  'e-ayah', 'e-surah', 'e-hadith', 'e-sunnah', 'e-salah', 'e-dua', 'e-deen', 'e-iman', 'e-tawhid', 'e-ummah', 'e-halal', 'e-inshaallah', 'e-mashaallah', 'e-alhamdulillah', 'e-jazakallah',
+  'l-alif', 'l-ba',
 ]);

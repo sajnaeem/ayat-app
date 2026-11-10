@@ -97,7 +97,29 @@ export function timelyCard(d = new Date()): Timely | null {
   if (h?.m === 9) {
     return { id: 'ramadan', eyebrow: 'RAMADAN', title: 'This is the month the Quran was revealed.', body: '“The month of Ramadan is that in which was revealed the Quran, a guidance for the people.” A little every day this month adds up.', source: 'Quran 2:185', action: { label: 'Continue the Quran', s: 0, a: 0 } };
   }
-  if (h?.m === 12 && h.day <= 10) {
+  // Key dates (Umm al-Qura calendar; local moon sighting may differ by a day).
+  if (h?.m === 10 && h.day === 1) {
+    return { id: 'eidfitr', eyebrow: 'EID AL-FITR', title: 'Eid Mubarak!', body: 'Today marks the end of Ramadan. The Prophet ﷺ would not go out on the morning of Eid al-Fitr until he had eaten some dates.', source: 'Sahih al-Bukhari 953' };
+  }
+  if (h?.m === 10) {
+    return { id: 'shawwal', eyebrow: 'SHAWWAL', title: 'Six days of fasting, a lifetime of reward.', body: 'The Prophet ﷺ said: “Whoever fasts Ramadan and follows it with six days of Shawwal, it is as if he fasted for a lifetime.”', source: 'Sahih Muslim 1164' };
+  }
+  if (h?.m === 12 && h.day === 9) {
+    return { id: 'arafah', eyebrow: 'THE DAY OF ARAFAH', title: 'The best of all days for dua.', body: 'Pilgrims stand on the plain of Arafah today. For everyone else, the Prophet ﷺ said that fasting this day wipes away the sins of the year before and the year after.', source: 'Sahih Muslim 1162 · Jamiʿ at-Tirmidhi 3585' };
+  }
+  if (h?.m === 12 && h.day === 10) {
+    return { id: 'eidadha', eyebrow: 'EID AL-ADHA', title: 'Eid Mubarak!', body: 'Today Muslims remember Ibrahim’s readiness to give everything for Allah, and share the meat of their sacrifice with family, friends and people in need. “So pray to your Lord and sacrifice.”', source: 'Quran 37:102–107 · 108:2' };
+  }
+  if (h?.m === 12 && h.day >= 11 && h.day <= 13) {
+    return { id: 'tashriq', eyebrow: 'THE DAYS AFTER EID', title: 'Days of eating, drinking and remembering Allah.', body: 'That is how the Prophet ﷺ described the three days after Eid al-Adha. Fill them with takbir: Allahu Akbar.', source: 'Sahih Muslim 1141' };
+  }
+  if (h?.m === 1 && h.day >= 8 && h.day <= 10) {
+    return { id: 'ashura', eyebrow: 'ASHURA', title: 'The day Allah saved Musa.', body: 'On the 10th of Muharram, Allah saved Musa and his people from Pharaoh. The Prophet ﷺ fasted it and said its fast wipes away the sins of the year before. He also meant to fast the 9th with it.', source: 'Sahih al-Bukhari 2004 · Sahih Muslim 1162 · 1134' };
+  }
+  if (h?.m === 1 && h.day <= 7) {
+    return { id: 'newyear', eyebrow: 'A NEW ISLAMIC YEAR', title: 'The Islamic year begins with Muharram.', body: 'The calendar counts from the Hijrah, when the Prophet ﷺ moved from Makkah to Madinah. Muharram is one of the four sacred months, and the best fasting after Ramadan is in this month.', source: 'Quran 9:36 · Sahih Muslim 1163' };
+  }
+  if (h?.m === 12 && h.day <= 8) {
     return { id: 'dhulhijjah', eyebrow: 'THE BEST TEN DAYS', title: 'No days are better for good deeds than these.', body: 'The Prophet ﷺ said there are no days in which good deeds are more beloved to Allah than the first ten days of Dhul Hijjah.', source: 'Sahih al-Bukhari 969' };
   }
   if (d.getDay() === 5 && hour >= 6 && hour < 21) {

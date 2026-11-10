@@ -128,7 +128,7 @@ function useEndlessFeed(mood: MoodId | null, mode: 'foryou' | 'order', jump: num
       } else if (n % SNIPPET_EVERY === 0 && x.snips.length) {
         const s = x.snips[x.si++ % x.snips.length];
         // A story is told over three cards in a row.
-        for (let part = 0; part < (s.kind === 'story' ? 3 : 1); part++) out.push({ kind: 'snip', key: `snip-${r}-${n}-${part}`, i: out.length, s, part });
+        for (let part = 0; part < (s.kind === 'story' ? s.parts.length : 1); part++) out.push({ kind: 'snip', key: `snip-${r}-${n}-${part}`, i: out.length, s, part });
       }
     }
     return out;

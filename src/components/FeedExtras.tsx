@@ -50,7 +50,7 @@ export function SnippetCard(p: CardProps & { s: Snippet; part?: number; active: 
     case 'name':
       return (
         <View style={frame} accessible accessibilityLabel={`${s.kind === 'name' ? 'Name of Allah' : 'Word'}: ${s.tl}, ${s.meaning}. ${s.body}`}>
-          {eyebrow(s.kind === 'name' ? 'NAMES OF ALLAH' : 'WORD')}
+          {eyebrow(s.kind === 'name' ? 'NAMES OF ALLAH' : (s.eyebrow ?? 'WORD'))}
           <Text style={[styles.ar, { color: pal.text }]}>{s.ar}</Text>
           <Text style={[styles.tl, { color: tone.accent }]}>
             {s.tl} · <Text style={{ color: pal.text }}>{s.meaning}</Text>
@@ -120,12 +120,13 @@ export function SnippetCard(p: CardProps & { s: Snippet; part?: number; active: 
       const i = p.part ?? 0;
       const part = s.parts[i];
       return (
-        <View style={frame} accessible accessibilityLabel={`The story of ${s.who}, part ${i + 1} of 3. ${part.text}`}>
-          {eyebrow(`THE STORY OF ${s.who.toUpperCase()} · ${i + 1} OF 3`)}
-          <Text style={[styles.story, { color: pal.text }]}>{part.text}</Text>
+        <View style={frame} accessible accessibilityLabel={`${s.title ? s.who : `The story of ${s.who}`}, part ${i + 1} of ${s.parts.length}. ${part.heading ? `${part.heading}. ` : ''}${part.text}`}>
+          {eyebrow(`${s.title ?? `THE STORY OF ${s.who.toUpperCase()}`} · ${i + 1} OF ${s.parts.length}`)}
+          {!!part.heading && <Text style={[styles.title, { color: pal.text }]}>{part.heading}</Text>}
+          <Text style={[part.heading ? styles.body : styles.story, { color: part.heading ? soft : pal.text }]}>{part.text}</Text>
           {source(part.source)}
           <View style={styles.dots}>
-            {[0, 1, 2].map((d) => (
+            {s.parts.map((_, d) => (
               <View key={d} style={[styles.dot, { backgroundColor: d === i ? tone.accent : mix(tone.bg, pal.text, 0.18) }]} />
             ))}
           </View>
@@ -134,16 +135,84 @@ export function SnippetCard(p: CardProps & { s: Snippet; part?: number; active: 
     }
     case 'reciters':
       return <RecitersCard {...p} s={s} />;
+    case 'letter':
+      return <LetterCard {...p} s={s} />;
     default:
       return (
-        <View style={frame} accessible accessibilityLabel={`Did you know? ${s.title} ${s.body}`}>
-          {eyebrow('DID YOU KNOW?')}
+        <View style={frame} accessible accessibilityLabel={`${s.eyebrow ? 'A gentle reminder' : 'Did you know?'} ${s.title} ${s.body}`}>
+          {eyebrow(s.eyebrow ?? 'DID YOU KNOW?')}
           <Text style={[styles.title, { color: pal.text }]}>{s.title}</Text>
           <Text style={[styles.body, { color: soft }]}>{s.body}</Text>
           {source(s.source)}
         </View>
       );
   }
+}
+
+/** One letter of the Arabic alphabet: how to say it, then a word from a short ayah that uses it. Tap to hear the ayah. */
+function LetterCard(p: CardProps & { s: Extract<Snippet, { kind: 'letter' }>; active: boolean }) {
+  const { s, pal, tone, height, bottomInset, active } = p;
+  const player = useAudioPlayer(null);
+  const [playing, setPlaying] = useState(false);
+  const soft = mix(tone.bg, pal.text, 0.75);
+  const faint = mix(tone.bg, pal.text, 0.55);
+
+  useEffect(() => {
+    const sub = player.addListener('playbackStatusUpdate', (st) => {
+      if (st.didJustFinish) setPlaying(false);
+    });
+    return () => sub.remove();
+  }, [player]);
+  useEffect(() => {
+    if (!active) {
+      player.pause();
+      setPlaying(false);
+    }
+  }, [active, player]);
+
+  const listen = async () => {
+    if (playing) {
+      player.pause();
+      setPlaying(false);
+      return;
+    }
+    setPlaying(true);
+    // Al-Husary: slow and clear, the classic recitation for learners.
+    const a = await ayahAudio('husary', s.s, s.a);
+    player.replace(a.url);
+    player.play();
+  };
+
+  return (
+    <View style={[styles.card, { height, backgroundColor: tone.bg, paddingBottom: bottomInset + 40 }]}>
+      <Text style={[styles.eyebrow, { color: tone.accent }]}>THE ARABIC LETTERS · {s.n} OF 28</Text>
+      <View style={styles.letterRow}>
+        <Text style={[styles.letter, { color: pal.text }]}>{s.letter}</Text>
+        <View style={{ flex: 1, gap: 4 }}>
+          <Text style={[styles.tl, { color: tone.accent }]}>{s.name}</Text>
+          <Text style={[styles.body, { color: soft }]}>{s.sound}</Text>
+        </View>
+      </View>
+      <View style={[styles.letterBox, { borderColor: mix(tone.bg, tone.accent, 0.35) }]}>
+        <Text style={[styles.eyebrow, { color: faint }]}>IN THE QURAN · {s.s}:{s.a}</Text>
+        <Text style={[styles.letterAyah, { color: soft }]}>
+          {s.ayah.split(' ').map((w, i, all) => (
+            <Text key={i} style={w === s.word ? { color: tone.accent } : undefined}>
+              {w}
+              {i < all.length - 1 ? ' ' : ''}
+            </Text>
+          ))}
+        </Text>
+        <Text style={[styles.body, { color: pal.text }]}>
+          <Text style={{ fontFamily: fonts.readItalic, color: tone.accent }}>{s.wordTl}</Text> · {s.meaning}
+        </Text>
+        <Pressable onPress={listen} style={[styles.pill, { borderColor: tone.accent, flexDirection: 'row', alignItems: 'center', gap: 8 }]} accessibilityRole="button" accessibilityLabel={playing ? 'Stop' : `Hear ${s.s}:${s.a} recited`}>
+          <Icon name={playing ? 'pause' : 'play'} size={16} color={tone.accent} fill={!playing} />
+          <Text style={[styles.pillText, { color: tone.accent }]}>{playing ? 'Playing…' : 'Hear it in the ayah'}</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
 }
 
 const THREE: ReciterId[] = ['alafasy', 'sudais', 'husary'];
@@ -325,6 +394,10 @@ const styles = StyleSheet.create({
   source: { fontFamily: fonts.ui, fontSize: 12, lineHeight: 17, marginTop: 4 },
   ar: { fontFamily: fonts.arabic, fontSize: 72, lineHeight: 130, textAlign: 'right' },
   tl: { fontFamily: fonts.readItalic, fontSize: 22, lineHeight: 30 },
+  letterRow: { flexDirection: 'row', alignItems: 'center', gap: 20 },
+  letter: { fontFamily: fonts.arabic, fontSize: 96, lineHeight: 150, minWidth: 90, textAlign: 'center' },
+  letterBox: { borderWidth: 1, borderRadius: 14, padding: 16, gap: 10 },
+  letterAyah: { fontFamily: fonts.arabic, fontSize: 30, lineHeight: 58, textAlign: 'right', writingDirection: 'rtl' },
   pill: { alignSelf: 'flex-start', borderWidth: 1.5, borderRadius: 999, paddingHorizontal: 18, paddingVertical: 10, marginTop: 8 },
   pillText: { fontFamily: fonts.uiBold, fontSize: 15 },
   subtitle: { fontFamily: fonts.uiBold, fontSize: 22, lineHeight: 28, letterSpacing: -0.3 },
