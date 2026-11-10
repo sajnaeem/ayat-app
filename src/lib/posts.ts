@@ -20,9 +20,20 @@ export type Post = {
   review_note: string | null;
   created_at: string;
   handle: string;
+  /** The AI first pass (supabase/functions/moderate): ok, check or reject, with a summary and what to look at. */
+  ai_verdict: 'ok' | 'check' | 'reject' | null;
+  ai_summary: string | null;
+  ai_notes: string | null;
 };
 
-const FIELDS = 'id, user_id, kind, body, source, moods, media_path, status, review_note, created_at, profiles(handle)';
+const FIELDS = 'id, user_id, kind, body, source, moods, media_path, status, review_note, created_at, ai_verdict, ai_summary, ai_notes, profiles(handle)';
+
+/** Ask the AI to check a post. Fire and forget: if it fails, the post simply waits for a person. */
+export async function aiCheck(id: string, force = false): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.functions.invoke('moderate', { body: { post: id, force } });
+  if (error) throw error;
+}
 const shape = (rows: any[]): Post[] => rows.map((r) => ({ ...r, moods: r.moods ?? [], handle: r.profiles?.handle ?? 'Someone' }));
 
 /** The key used for a post's likes and comments (they share the ayat tables). */
@@ -46,18 +57,23 @@ export async function createPost(p: {
     const up = await supabase.storage.from('posts').upload(media_path, body, { contentType: p.media.mime });
     if (up.error) throw up.error;
   }
-  const { error } = await supabase.from('posts').insert({
-    user_id: p.userId,
-    kind: p.kind,
-    body: p.body.trim(),
-    source: p.source?.trim() || null,
-    moods: p.moods,
-    media_path,
-  });
+  const { data, error } = await supabase
+    .from('posts')
+    .insert({
+      user_id: p.userId,
+      kind: p.kind,
+      body: p.body.trim(),
+      source: p.source?.trim() || null,
+      moods: p.moods,
+      media_path,
+    })
+    .select('id')
+    .single();
   if (error) {
     if (media_path) supabase.storage.from('posts').remove([media_path]).then(() => {});
     throw error;
   }
+  if (data?.id) aiCheck(data.id).catch(() => {});
 }
 
 /** Approved posts for the For you feed, newest first. */
@@ -73,11 +89,12 @@ export async function myPosts(userId: string): Promise<Post[]> {
   return shape(data ?? []);
 }
 
-/** For reviewers: everything waiting, oldest first. */
+/** For reviewers: everything waiting. The AI's "check" posts first, then ones it hasn't checked, then "looks fine"; oldest first within each. */
 export async function reviewQueue(): Promise<Post[]> {
   if (!supabase) return [];
   const { data } = await supabase.from('posts').select(FIELDS).eq('status', 'pending').order('created_at', { ascending: true }).limit(100);
-  return shape(data ?? []);
+  const rank = (p: Post) => (p.ai_verdict === 'check' ? 0 : p.ai_verdict === 'ok' ? 2 : 1);
+  return shape(data ?? []).sort((a, b) => rank(a) - rank(b));
 }
 
 export async function amReviewer(userId: string): Promise<boolean> {

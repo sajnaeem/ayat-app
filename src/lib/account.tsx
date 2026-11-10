@@ -235,11 +235,16 @@ export function AccountProvider({ children }: { children: ReactNode }) {
 
   const deleteAccount = useCallback(async () => {
     if (!supabase) return;
+    // Photos and videos from your posts go first (the database removes the posts themselves).
+    if (userId) {
+      const { data: files } = await supabase.storage.from('posts').list(userId, { limit: 1000 });
+      if (files?.length) await supabase.storage.from('posts').remove(files.map((f) => `${userId}/${f.name}`));
+    }
     const { error } = await supabase.rpc('delete_my_account');
     if (error) throw error;
     await supabase.auth.signOut();
     clearLocal();
-  }, [clearLocal]);
+  }, [clearLocal, userId]);
 
   // Likes: send additions and removals as they happen.
   useEffect(() => {
