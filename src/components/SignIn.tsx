@@ -47,14 +47,20 @@ export function SignIn({ onClose, reason }: { onClose?: () => void; reason?: str
     if (Platform.OS === 'ios') AppleAuthentication.isAvailableAsync().then(setAppleOk, () => {});
   }, []);
 
+  // Shown on the screen itself: a toast can sit hidden behind this sign-in sheet.
+  const [problem, setProblem] = useState('');
   const run = async (fn: () => Promise<void>) => {
     if (busy) return;
     setBusy(true);
+    setProblem('');
     try {
       await fn();
     } catch (e) {
       const m = authMessage(e);
-      if (m) toast(m);
+      if (m) {
+        setProblem(m);
+        toast(m);
+      }
     } finally {
       setBusy(false);
     }
@@ -175,8 +181,9 @@ export function SignIn({ onClose, reason }: { onClose?: () => void; reason?: str
               style={[primary, { opacity: !email.includes('@') || password.length < (newAccount ? 8 : 1) ? 0.4 : 1 }]}
               accessibilityRole="button"
             >
-              <Text style={[styles.btnText, { color: pal.bg }]}>{newAccount ? 'Create account' : 'Log in'}</Text>
+              {busy ? <ActivityIndicator color={pal.bg} /> : <Text style={[styles.btnText, { color: pal.bg }]}>{newAccount ? 'Create account' : 'Log in'}</Text>}
             </Pressable>
+            {!!problem && <Text style={{ fontFamily: fonts.ui, fontSize: 14, lineHeight: 20, color: '#E07A68', textAlign: 'center' }}>{problem}</Text>}
           </View>
         )}
 
