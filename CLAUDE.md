@@ -54,7 +54,7 @@ supabase/           schema.sql, 002_accounts.sql, 003_feedback.sql, 004_safety.s
 
 - SQL files run: `schema.sql`, `002_accounts.sql`, `003_feedback.sql`, `004_safety.sql` (verified 31 Oct 2026: all tables exist with RLS on).
 - Saj has committed (in the guidelines) to reviewing reports within 24 hours: Table Editor → reports / reflections.
-- Auth: anonymous **off**; Email on with **Confirm email off** for the beta (built-in email sender is rate-limited); Apple on with Client IDs `host.exp.Exponent,app.munib`; redirect URLs `munib://**`, `exp://**`.
+- Auth: anonymous **off**; Email on with **Confirm email off** for the beta (built-in email sender is rate-limited); Apple on with Client IDs `app.munib,host.exp.Exponent` (app.munib was missing until 10 Nov 2026, which broke Apple sign-in in the TestFlight build with "Unacceptable audience"; Saj fixed it in the dashboard); redirect URLs `munib://**`, `exp://**`.
 - Moderation: 3 reports from different people hide a reflection. Review in Table Editor → reflections (`hidden = true`). Feedback is in Table Editor → feedback; screenshots in Storage → feedback.
 
 ## Working rules
