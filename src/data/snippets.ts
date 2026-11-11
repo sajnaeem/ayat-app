@@ -255,7 +255,7 @@ export const VIDEOS: FeedVideo[] = [
   { id: 'jannah', title: 'What is Jannah like?', file: 'jannah', seconds: 59, moods: ['grieving', 'strength'], sources: 'Quran 47:15, 56:25–33, 35:34–35, 43:71, 75:22–23, 32:17 · Sahih al-Bukhari 3244 · Recitation: Mishary Alafasy' },
   { id: 'mercy', title: 'One part of a hundred', file: 'mercy', seconds: 57, moods: ['forgiveness', 'grieving', 'lonely'], sources: 'Sahih al-Bukhari 6000 · Sahih Muslim 2752–2753 · Quran 39:53 · Recitation: Mishary Alafasy' },
   { id: 'first-step', title: 'Don’t even go near it', file: 'first-step', seconds: 56, moods: ['temptation', 'forgiveness'], sources: 'Quran 17:32, 24:30–31, 25:70 · Recitation: Mishary Alafasy · Voiceover: AI voice' },
-  { id: 'threads', title: 'Nobody will ever know', file: 'threads', seconds: 59, moods: ['temptation', 'forgiveness'], sources: 'Quran 40:19, 24:30, 39:53 · Recitation: Mishary Alafasy · Voiceover: AI voice' },
+  { id: 'hand', title: 'The hand will speak', file: 'hand', seconds: 57, moods: ['temptation', 'forgiveness'], sources: 'Quran 36:65, 39:53 · Recitation: Mishary Alafasy · Voiceover: AI voice' },
 ];
 
 /**
