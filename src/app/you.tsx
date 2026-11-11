@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GuidelinesSheet } from '@/components/Guidelines';
 import { Icon, IconName } from '@/components/Icon';
 import { Sheet } from '@/components/Sheet';
-import { NameMeaning } from '@/components/NameMeaning';
+import { Avatar } from '@/components/Avatar';
 import { useToast } from '@/components/Toast';
 import { useAccount } from '@/lib/account';
 import { RECITERS } from '@/lib/audio';
@@ -13,6 +13,7 @@ import { dayKey, surahDone, useProgress } from '@/lib/progress';
 import { LANGS, LEVELS, SURAHS, VERSES } from '@/lib/quran';
 import { askPermission, REMINDER_TIMES } from '@/lib/reminders';
 import { usePrefs } from '@/lib/store';
+import { profileCard, Profile } from '@/lib/profiles';
 import { amReviewer, deletePost, myPosts, Post, reviewQueue } from '@/lib/posts';
 import { fonts, mix, Palette, usePalette } from '@/lib/theme';
 import Constants from 'expo-constants';
@@ -30,7 +31,6 @@ export default function You() {
   const { progress, level } = useProgress();
   const acct = useAccount();
   const toast = useToast();
-  const [name, setName] = useState(acct.handle ?? '');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [pick, setPick] = useState<'reminder' | 'lang' | 'reciter' | null>(null);
@@ -44,14 +44,15 @@ export default function You() {
       toast("Couldn't load. Check your connection and try again");
     }).finally(() => setBlockedLoading(false));
   };
-  useEffect(() => setName(acct.handle ?? ''), [acct.handle]);
   // Your posts and their review status; for reviewers, how many posts are waiting.
   const [posts, setPosts] = useState<Post[] | null>(null);
   const [waiting, setWaiting] = useState<number | null>(null);
+  const [me, setMe] = useState<Profile | null>(null);
   useFocusEffect(
     useCallback(() => {
       if (!acct.userId) return;
       myPosts(acct.userId).then(setPosts, () => setPosts([]));
+      profileCard(acct.userId).then(setMe, () => {});
       amReviewer(acct.userId).then((yes) => (yes ? reviewQueue().then((q) => setWaiting(q.length)) : setWaiting(null)));
     }, [acct.userId]),
   );
@@ -62,15 +63,6 @@ export default function You() {
       toast('Post deleted');
     } catch {
       toast("Couldn't delete. Try again");
-    }
-  };
-  const saveName = async () => {
-    if (name.trim().length < 2) return toast('Choose a display name of at least 2 letters');
-    try {
-      await acct.setHandle(name);
-      toast('Name saved');
-    } catch {
-      toast("Couldn't save — check your connection and try again");
     }
   };
 
@@ -111,6 +103,16 @@ export default function You() {
       </View>
 
       <ScrollView contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + 40 }]}>
+        {acct.online && !!acct.userId && (
+          <Pressable onPress={() => router.push(`/profile/${acct.userId}`)} style={({ pressed }) => [styles.card, styles.me, { backgroundColor: pal.surface, opacity: pressed ? 0.7 : 1 }]} accessibilityRole="button">
+            <Avatar id={acct.userId} name={acct.handle ?? '?'} size={52} />
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={[styles.big, { color: pal.text, marginTop: 0, fontSize: 20 }]}>{acct.handle ?? 'Your profile'}</Text>
+              <Text style={[styles.sub, { color: pal.muted }]}>{me ? `${me.followers} ${me.followers === 1 ? 'follower' : 'followers'} · ${me.following} following · ${me.posts} ${me.posts === 1 ? 'post' : 'posts'}` : 'View your profile'}</Text>
+            </View>
+            <Icon name="chevron" size={18} color={pal.muted} />
+          </Pressable>
+        )}
         {/* Progress */}
         <View style={[styles.card, styles.pad, { backgroundColor: pal.surface }]}>
           <Text style={[styles.eyebrow, { color: pal.accent }]}>LEVEL {level}</Text>
@@ -218,27 +220,6 @@ export default function You() {
               })}
               {waiting !== null && <Row pal={pal} icon="shield" title="Review posts" value={`${waiting} waiting`} valueColor={waiting ? pal.accent : undefined} onPress={() => router.push('/review')} divider />}
             </Group>
-
-            {/* Profile */}
-            <Section pal={pal} title="Display name" />
-            <View style={[styles.card, styles.pad, { backgroundColor: pal.surface, gap: 12 }]}>
-              <View style={styles.nameRow}>
-                <TextInput
-                  value={name}
-                  onChangeText={setName}
-                  placeholder="Shown on your reflections"
-                  placeholderTextColor={pal.muted}
-                  maxLength={32}
-                  style={[styles.input, { color: pal.text, backgroundColor: pal.bg }]}
-                  accessibilityLabel="Display name"
-                />
-                <Pressable onPress={saveName} style={[styles.save, { backgroundColor: pal.accent }]} accessibilityRole="button">
-                  <Text style={[styles.saveText, { color: pal.onAccent }]}>Save</Text>
-                </Pressable>
-              </View>
-              {!!acct.handle && <NameMeaning name={acct.handle} pal={pal} onOpenAyah={(s, a) => openKey(`${s}:${a}`)} />}
-              <Text style={[styles.sub, { color: pal.muted }]}>Your likes, saves and progress are backed up to your account automatically.</Text>
-            </View>
 
             {/* Account */}
             <Section pal={pal} title="Account" />
@@ -453,6 +434,7 @@ const styles = StyleSheet.create({
   pad: { padding: 16, gap: 10 },
   eyebrow: { fontFamily: fonts.uiBold, fontSize: 12, letterSpacing: 1.2 },
   big: { fontFamily: fonts.uiBold, fontSize: 24, letterSpacing: -0.4, marginTop: -4 },
+  me: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16 },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 10 },
   sub: { fontFamily: fonts.ui, fontSize: 13.5, lineHeight: 19 },
   bar: { height: 8, borderRadius: 4, overflow: 'hidden' },

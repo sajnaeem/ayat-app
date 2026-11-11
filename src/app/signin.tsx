@@ -7,6 +7,7 @@ const REASONS: Record<string, string> = {
   reflect: 'Create a free account to read and share reflections.',
   ask: 'Create a free account to ask questions about any ayah.',
   mosque: 'Create a free account to add your mosque and get alerts before each jama’ah.',
+  profile: 'Create a free account to see people’s profiles and follow those who post.',
   keep: 'Create a free account to keep your saved ayat and your place, and to ask about any ayah.',
 };
 

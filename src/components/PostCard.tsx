@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { mediaUrl, Post } from '@/lib/posts';
 import { fonts, mix, Palette, Tone } from '@/lib/theme';
+import { Avatar } from './Avatar';
 import { Icon } from './Icon';
 
 /** A post's photo or video, loaded through a short-lived signed link. */
@@ -56,6 +57,8 @@ export function PostCard(p: {
   onLike: () => void;
   onComment: () => void;
   onMore: () => void;
+  /** Opens the poster's profile. */
+  onAuthor?: () => void;
 }) {
   const { post, pal, tone, height, bottomInset } = p;
   const hasMedia = post.kind !== 'text';
@@ -65,7 +68,11 @@ export function PostCard(p: {
       {hasMedia && <PostMedia post={post} active={p.active} autoplay={p.autoplay} style={StyleSheet.absoluteFill} />}
       <View style={[styles.textWrap, hasMedia && styles.overMedia]}>
         <Text style={[styles.eyebrow, { color: hasMedia ? '#9FD9BF' : tone.accent }]}>FROM THE COMMUNITY</Text>
-        <Text style={[styles.handle, { color: hasMedia ? '#fff' : pal.text }]}>{post.handle}</Text>
+        <Pressable onPress={p.onAuthor} disabled={!p.onAuthor} style={styles.author} accessibilityRole="button" accessibilityLabel={`${post.handle}'s profile`} hitSlop={6}>
+          <Avatar id={post.user_id} name={post.handle} size={34} />
+          <Text style={[styles.handle, { color: hasMedia ? '#fff' : pal.text }]}>{post.handle}</Text>
+          {!!p.onAuthor && <Icon name="chevron" size={14} color={hasMedia ? '#fff' : pal.muted} />}
+        </Pressable>
         <Text style={[hasMedia ? styles.caption : styles.body, { color: hasMedia ? '#fff' : pal.text }]} numberOfLines={hasMedia ? 4 : 14}>
           {post.body}
         </Text>
@@ -95,6 +102,7 @@ const styles = StyleSheet.create({
   overMedia: { marginTop: 'auto', marginBottom: 0, backgroundColor: 'rgba(0,0,0,0.35)', marginHorizontal: -24, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 12 },
   eyebrow: { fontFamily: fonts.uiBold, fontSize: 12, letterSpacing: 1.4 },
   handle: { fontFamily: fonts.uiBold, fontSize: 17 },
+  author: { flexDirection: 'row', alignItems: 'center', gap: 10, alignSelf: 'flex-start' },
   body: { fontFamily: fonts.read, fontSize: 20, lineHeight: 30 },
   caption: { fontFamily: fonts.ui, fontSize: 15, lineHeight: 21 },
   source: { fontFamily: fonts.ui, fontSize: 12, lineHeight: 17 },

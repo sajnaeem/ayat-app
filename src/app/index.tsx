@@ -23,6 +23,7 @@ import type { FeedVideo, Snippet } from '@/data/snippets';
 import { freshTimelyCard, markTimelySeen, SNIPPET_EVERY, snippetOrder, Timely, VIDEO_EVERY, videoOrder } from '@/lib/extras';
 import { ProgressCard, SnippetCard, TimelyCard, VideoCard } from '@/components/FeedExtras';
 import { PostCard } from '@/components/PostCard';
+import { followingIds } from '@/lib/profiles';
 import { approvedPosts, myPostLikes, Post, postKey, postsForMood, reportPost, setPostLike } from '@/lib/posts';
 import { fonts, mix, Palette, usePalette } from '@/lib/theme';
 
@@ -61,6 +62,7 @@ const withTimeout = <T,>(p: Promise<T>, ms: number, fallback: T) => Promise.race
  */
 function useEndlessFeed(mood: MoodId | null, mode: 'foryou' | 'order', jump: number, guest = false) {
   const prefs = usePrefs();
+  const me = useAccount().userId;
   // In order: which surah to load next, and where to start (read when the feed is rebuilt).
   const placeRef = useRef(prefs.place);
   placeRef.current = prefs.place;
@@ -87,8 +89,10 @@ function useEndlessFeed(mood: MoodId | null, mode: 'foryou' | 'order', jump: num
   const posts = useRef<{ list: Post[]; pi: number }>({ list: [], pi: 0 });
   useEffect(() => {
     if (mode !== 'foryou') return;
-    approvedPosts().then((l) => {
-      posts.current = { list: postsForMood(l, mood), pi: 0 };
+    Promise.all([approvedPosts(), me ? followingIds(me).catch(() => new Set<string>()) : Promise.resolve(new Set<string>())]).then(([l, fol]) => {
+      // People you follow come first, then this mood's posts, then the rest.
+      const ordered = postsForMood(l, mood);
+      posts.current = { list: [...ordered.filter((x) => fol.has(x.user_id)), ...ordered.filter((x) => !fol.has(x.user_id))], pi: 0 };
       // The feed is usually built before posts arrive: swap every other upcoming single-card extra for a post.
       setItems((prev) => {
         let slot = 0;
@@ -100,7 +104,7 @@ function useEndlessFeed(mood: MoodId | null, mode: 'foryou' | 'order', jump: num
         });
       });
     });
-  }, [mood, mode]);
+  }, [mood, mode, me]);
 
   const compose = (base: Item[], list: Verse[], r: number): Item[] => {
     const recent = new Set(base.slice(-14).flatMap((x) => (x.kind === 'verse' ? [x.v.k] : [])));
@@ -641,6 +645,7 @@ export default function Feed() {
                   onLike={() => likePost(item.p)}
                   onComment={() => setReflectPost(item.p)}
                   onMore={() => postOptions(item.p)}
+                  onAuthor={() => (acct.userId ? router.push(`/profile/${item.p.user_id}`) : router.push({ pathname: '/signin', params: { why: 'profile' } }))}
                 />
               );
             }
