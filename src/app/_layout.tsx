@@ -15,6 +15,7 @@ import { AccountProvider, useAccount } from '@/lib/account';
 import { ProgressProvider } from '@/lib/progress';
 import { PrefsProvider, usePrefs } from '@/lib/store';
 import { usePalette } from '@/lib/theme';
+import { useLiveUpdates } from '@/lib/updates';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -22,6 +23,7 @@ function Root() {
   const pal = usePalette();
   const { ready } = usePrefs();
   const acct = useAccount();
+  useLiveUpdates();
   const [fontsLoaded, fontError] = useFonts({
     NotoNaskhArabic_400Regular,
     Literata_400Regular,
