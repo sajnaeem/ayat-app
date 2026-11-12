@@ -78,7 +78,7 @@ export function SnippetCard(p: CardProps & { s: Snippet; part?: number; active: 
         <View style={frame} accessible accessibilityLabel={`${s.who} said: ${s.text}. ${s.source}`}>
           {eyebrow('WORDS OF THE SCHOLARS')}
           <Text style={[styles.quoteMark, { color: tone.accent }]}>“</Text>
-          <Text style={[styles.quote, { color: pal.text }]}>{s.text}</Text>
+          <Text style={[styles.quote, { color: pal.text }, s.text.length > 200 && { fontSize: 20, lineHeight: 30 }]}>{s.text}</Text>
           <View style={[styles.quoteBy, { borderLeftColor: tone.accent }]}>
             <Text style={[styles.subtitle, { color: pal.text, fontSize: 18 }]}>
               {s.who}
