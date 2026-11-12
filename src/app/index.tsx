@@ -800,6 +800,11 @@ export default function Feed() {
         chrome={chrome}
         chromeOn={chromeOn}
         pal={pal}
+        onDark={(() => {
+          // Videos and photo/video posts sit on a dark ground: switch the top bar to light text so it stays readable.
+          const it = items[active];
+          return !pal.dark && !!it && (it.kind === 'video' || (it.kind === 'post' && it.p.kind !== 'text'));
+        })()}
         top={insets.top}
         moodLabel={moodLabel}
         mode={mode}
@@ -1005,8 +1010,9 @@ function OffRamp(p: { pal: Palette; tone: { bg: string; accent: string }; height
   );
 }
 
-function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palette; top: number; moodLabel: string; mode: 'foryou' | 'order'; onMode: (m: 'foryou' | 'order') => void; showTl: boolean; onMood: () => void; onTl: () => void; onRead: () => void; onYou: () => void }) {
-  const { pal } = p;
+function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palette; onDark?: boolean; top: number; moodLabel: string; mode: 'foryou' | 'order'; onMode: (m: 'foryou' | 'order') => void; showTl: boolean; onMood: () => void; onTl: () => void; onRead: () => void; onYou: () => void }) {
+  // On a dark card (a video, a photo post) switch to light text and dark see-through buttons, with a shadow under the tab names.
+  const pal: Palette = p.onDark ? { ...p.pal, text: '#FFFFFF', muted: 'rgba(255,255,255,0.72)', surface: 'rgba(20,24,22,0.55)', line: 'rgba(255,255,255,0.28)', bg: '#121A16', accent: '#7FE0B5' } : p.pal;
   const pill = [styles.pill, { borderColor: pal.line, backgroundColor: pal.surface }];
   const fade = useAnimatedStyle(() => ({ opacity: p.chrome.value }));
   return (
@@ -1021,7 +1027,7 @@ function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palett
           const on = p.mode === m;
           return (
             <Pressable key={m} onPress={() => p.onMode(m)} hitSlop={6} accessibilityRole="tab" accessibilityState={{ selected: on }} accessibilityLabel={m === 'order' ? 'The whole Quran, in order' : 'For you'}>
-              <Text style={[styles.tab, { color: on ? pal.text : pal.muted }]}>{label}</Text>
+              <Text style={[styles.tab, { color: on ? pal.text : pal.muted }, p.onDark && styles.tabShadow]}>{label}</Text>
               <View style={[styles.tabLine, { backgroundColor: on ? pal.accent : 'transparent' }]} />
             </Pressable>
           );
@@ -1065,6 +1071,7 @@ const styles = StyleSheet.create({
   topRight: { flexDirection: 'row', gap: 6, alignItems: 'center', flexShrink: 1, marginLeft: 10 },
   tabs: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', flexShrink: 0 },
   tab: { fontFamily: fonts.uiBold, fontSize: 16, letterSpacing: -0.3 },
+  tabShadow: { textShadowColor: 'rgba(0,0,0,0.6)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 6 },
   tabLine: { height: 2.5, borderRadius: 2, marginTop: 3, width: 18 },
   pill: { minHeight: 36, minWidth: 36, paddingHorizontal: 10, borderWidth: 1, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   pillText: { fontFamily: fonts.uiSemi, fontSize: 13 },
