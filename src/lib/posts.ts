@@ -24,6 +24,8 @@ export type Post = {
   ai_verdict: 'ok' | 'check' | 'reject' | null;
   ai_summary: string | null;
   ai_notes: string | null;
+  /** Set when this post reached you because someone you follow reposted it. */
+  repostedBy?: { id: string; handle: string };
 };
 
 const FIELDS = 'id, user_id, kind, body, source, moods, media_path, status, review_note, created_at, ai_verdict, ai_summary, ai_notes, profiles(handle)';

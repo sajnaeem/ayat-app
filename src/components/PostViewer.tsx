@@ -3,6 +3,7 @@ import { Alert, FlatList, Modal, Pressable, StyleSheet, useWindowDimensions, Vie
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAccount } from '@/lib/account';
 import { deletePost, myPostLikes, Post, postKey, reportPost, setPostLike } from '@/lib/posts';
+import { myReposts, setRepost } from '@/lib/profiles';
 import { mix, usePalette } from '@/lib/theme';
 import { Icon } from './Icon';
 import { PostCard } from './PostCard';
@@ -22,9 +23,27 @@ export function PostViewer({ posts, start, mine, onClose, onDeleted, onAuthor }:
   useEffect(() => {
     if (start !== null) setActive(start);
   }, [start]);
+  const [shared, setShared] = useState<Set<string>>(new Set());
   useEffect(() => {
-    if (acct.userId && start !== null) myPostLikes(acct.userId).then(setLiked, () => {});
+    if (acct.userId && start !== null) {
+      myPostLikes(acct.userId).then(setLiked, () => {});
+      myReposts(acct.userId).then(setShared, () => {});
+    }
   }, [acct.userId, start]);
+  const repost = (p: Post) => {
+    if (!acct.userId) return;
+    const on = !shared.has(p.id);
+    const flip = (add: boolean) =>
+      setShared((s) => {
+        const n = new Set(s);
+        if (add) n.add(p.id);
+        else n.delete(p.id);
+        return n;
+      });
+    flip(on);
+    toast(on ? 'Reposted to your profile and followers' : 'Repost removed');
+    setRepost(acct.userId, p.id, on).catch(() => (flip(!on), toast("Couldn't repost. Try again")));
+  };
 
   const like = (p: Post) => {
     if (!acct.userId || p.status !== 'approved') return;
@@ -75,6 +94,8 @@ export function PostViewer({ posts, start, mine, onClose, onDeleted, onAuthor }:
                 onLike={() => like(item)}
                 onComment={() => (item.status === 'approved' ? setComment(item) : toast('Comments open once the post is live'))}
                 onMore={() => more(item)}
+                reposted={shared.has(item.id)}
+                onRepost={acct.userId && item.user_id !== acct.userId && item.status === 'approved' ? () => repost(item) : undefined}
                 onAuthor={onAuthor ? () => onAuthor(item) : undefined}
               />
             )}

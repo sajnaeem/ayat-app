@@ -11,7 +11,7 @@ import { useToast } from '@/components/Toast';
 import { useAccount } from '@/lib/account';
 import { checkReflection } from '@/lib/moderation';
 import { mediaUrl, Post } from '@/lib/posts';
-import { follow, myPeople, Person, postsBy, Profile, profileCard, removeFollower, saveBio } from '@/lib/profiles';
+import { follow, myPeople, Person, postsBy, Profile, profileCard, removeFollower, repostsBy, saveBio } from '@/lib/profiles';
 import { fonts, Palette, usePalette } from '@/lib/theme';
 
 /**
@@ -31,6 +31,9 @@ export default function ProfileScreen() {
 
   const [prof, setProf] = useState<Profile | null | undefined>(undefined);
   const [posts, setPosts] = useState<Post[] | null>(null);
+  const [reposted, setReposted] = useState<Post[] | null>(null);
+  const [view, setView] = useState<'posts' | 'reposts'>('posts');
+  const shown = view === 'posts' ? posts : reposted;
   const [open, setOpen] = useState<number | null>(null);
   const [people, setPeople] = useState<{ which: 'followers' | 'following'; list: Person[] | null } | null>(null);
   const [editing, setEditing] = useState(false);
@@ -40,6 +43,7 @@ export default function ProfileScreen() {
     if (!id) return;
     profileCard(id).then(setProf, () => setProf(null));
     postsBy(id, mine).then(setPosts, () => setPosts([]));
+    repostsBy(id).then(setReposted, () => setReposted([]));
   }, [id, mine]);
   useFocusEffect(load);
 
@@ -139,35 +143,63 @@ export default function ProfileScreen() {
             </View>
           )}
 
-          <View style={[styles.gridHead, { borderTopColor: pal.line }]}>
-            <Icon name="book" size={18} color={pal.text} />
-            <Text style={[styles.gridTitle, { color: pal.text }]}>Posts</Text>
+          <View style={[styles.gridTabs, { borderTopColor: pal.line }]}>
+            {(
+              [
+                ['posts', 'book', 'Posts'],
+                ['reposts', 'repost', 'Reposts'],
+              ] as const
+            ).map(([v, icon, label]) => (
+              <Pressable key={v} onPress={() => setView(v)} style={[styles.gridTab, { borderBottomColor: view === v ? pal.text : 'transparent' }]} accessibilityRole="tab" accessibilityState={{ selected: view === v }}>
+                <Icon name={icon} size={18} color={view === v ? pal.text : pal.muted} />
+                <Text style={[styles.gridTitle, { color: view === v ? pal.text : pal.muted }]}>{label}</Text>
+              </Pressable>
+            ))}
           </View>
-          {posts === null ? (
+          {shown === null ? (
             <ActivityIndicator color={pal.accent} style={{ marginTop: 20 }} />
-          ) : posts.length === 0 ? (
+          ) : shown.length === 0 ? (
             <View style={styles.none}>
-              <Text style={[styles.noneTitle, { color: pal.text }]}>{mine ? 'Share your first post' : 'No posts yet'}</Text>
-              <Text style={[styles.noneSub, { color: pal.muted }]}>
-                {mine ? 'A benefit, a reminder or a short video. Every post is checked before it goes live.' : `When ${prof.handle} shares something, it will show here.`}
-              </Text>
+              {view === 'posts' ? (
+                <>
+                  <Text style={[styles.noneTitle, { color: pal.text }]}>{mine ? 'Share your first post' : 'No posts yet'}</Text>
+                  <Text style={[styles.noneSub, { color: pal.muted }]}>
+                    {mine ? 'A benefit, a reminder or a short video. Every post is checked before it goes live.' : `When ${prof.handle} shares something, it will show here.`}
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Text style={[styles.noneTitle, { color: pal.text }]}>No reposts yet</Text>
+                  <Text style={[styles.noneSub, { color: pal.muted }]}>
+                    {mine ? 'Tap Repost on a post you love to share it here and with your followers.' : `Posts ${prof.handle} reposts will show here.`}
+                  </Text>
+                </>
+              )}
             </View>
           ) : (
             <View style={[styles.grid, { gap }]}>
-              {posts.map((p, i) => (
-                <Tile key={p.id} post={p} pal={pal} size={tile} mine={mine} onPress={() => setOpen(i)} />
+              {shown.map((p, i) => (
+                <Tile key={p.id} post={p} pal={pal} size={tile} mine={mine && view === 'posts'} onPress={() => setOpen(i)} />
               ))}
             </View>
           )}
         </ScrollView>
       )}
 
-      {posts && (
+      {shown && (
         <PostViewer
-          posts={posts}
+          posts={shown}
           start={open}
-          mine={mine}
-          onClose={() => setOpen(null)}
+          mine={mine && view === 'posts'}
+          onClose={() => {
+            setOpen(null);
+            if (view === 'reposts' && id) repostsBy(id).then(setReposted, () => {});
+          }}
+          onAuthor={(p) => {
+            if (p.user_id === id) return setOpen(null);
+            setOpen(null);
+            router.push(`/profile/${p.user_id}`);
+          }}
           onDeleted={(p) => {
             setPosts((l) => l?.filter((x) => x.id !== p.id) ?? null);
             setOpen(null);
@@ -346,7 +378,8 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', gap: 8, marginTop: 14 },
   btn: { flex: 1, borderRadius: 10, paddingVertical: 11, alignItems: 'center' },
   btnText: { fontFamily: fonts.uiBold, fontSize: 15 },
-  gridHead: { flexDirection: 'row', alignItems: 'center', gap: 8, borderTopWidth: StyleSheet.hairlineWidth, marginTop: 18, paddingTop: 14, paddingBottom: 10 },
+  gridTabs: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, marginTop: 18, marginBottom: 10 },
+  gridTab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderBottomWidth: 2 },
   gridTitle: { fontFamily: fonts.uiBold, fontSize: 15 },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
   tile: { borderRadius: 6, overflow: 'hidden', padding: 8, justifyContent: 'flex-start' },

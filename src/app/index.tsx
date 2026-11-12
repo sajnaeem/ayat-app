@@ -23,7 +23,7 @@ import type { FeedVideo, Snippet } from '@/data/snippets';
 import { freshTimelyCard, markTimelySeen, SNIPPET_EVERY, snippetOrder, Timely, VIDEO_EVERY, videoOrder } from '@/lib/extras';
 import { ProgressCard, SnippetCard, TimelyCard, VideoCard } from '@/components/FeedExtras';
 import { PostCard } from '@/components/PostCard';
-import { followingIds } from '@/lib/profiles';
+import { followingIds, followingReposts, myReposts, setRepost } from '@/lib/profiles';
 import { approvedPosts, myPostLikes, Post, postKey, postsForMood, reportPost, setPostLike } from '@/lib/posts';
 import { fonts, mix, Palette, usePalette } from '@/lib/theme';
 
@@ -89,10 +89,17 @@ function useEndlessFeed(mood: MoodId | null, mode: 'foryou' | 'order', jump: num
   const posts = useRef<{ list: Post[]; pi: number }>({ list: [], pi: 0 });
   useEffect(() => {
     if (mode !== 'foryou') return;
-    Promise.all([approvedPosts(), me ? followingIds(me).catch(() => new Set<string>()) : Promise.resolve(new Set<string>())]).then(([l, fol]) => {
-      // People you follow come first, then this mood's posts, then the rest.
+    (async () => {
+      const [l, fol] = await Promise.all([approvedPosts(), me ? followingIds(me).catch(() => new Set<string>()) : Promise.resolve(new Set<string>())]);
+      const re = fol.size ? await followingReposts([...fol]).catch(() => [] as Post[]) : [];
+      return [l, fol, re] as const;
+    })().then(([l, fol, re]) => {
+      // People you follow come first, then what they've reposted, then this mood's posts, then the rest. Each post once.
       const ordered = postsForMood(l, mood);
-      posts.current = { list: [...ordered.filter((x) => fol.has(x.user_id)), ...ordered.filter((x) => !fol.has(x.user_id))], pi: 0 };
+      const theirs = ordered.filter((x) => fol.has(x.user_id));
+      const shared = re.filter((x) => x.user_id !== me && !fol.has(x.user_id));
+      const taken = new Set([...theirs, ...shared].map((x) => x.id));
+      posts.current = { list: [...theirs, ...shared, ...ordered.filter((x) => !taken.has(x.id))], pi: 0 };
       // The feed is usually built before posts arrive: swap every other upcoming single-card extra for a post.
       setItems((prev) => {
         let slot = 0;
@@ -284,6 +291,31 @@ export default function Feed() {
       return n;
     });
     setPostLike(acct.userId, p.id, on).catch(() => {});
+  };
+  const [reposts, setReposts] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    if (acct.userId) myReposts(acct.userId).then(setReposts, () => {});
+  }, [acct.userId]);
+  const repost = (p: Post) => {
+    if (!acct.userId) return;
+    const on = !reposts.has(p.id);
+    setReposts((s) => {
+      const n = new Set(s);
+      if (on) n.add(p.id);
+      else n.delete(p.id);
+      return n;
+    });
+    if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {});
+    toast(on ? 'Reposted to your profile and followers' : 'Repost removed');
+    setRepost(acct.userId, p.id, on).catch(() => {
+      setReposts((s) => {
+        const n = new Set(s);
+        if (on) n.delete(p.id);
+        else n.add(p.id);
+        return n;
+      });
+      toast("Couldn't repost. Try again");
+    });
   };
   const postOptions = (p: Post) => {
     if (!acct.userId) return;
@@ -645,6 +677,8 @@ export default function Feed() {
                   onLike={() => likePost(item.p)}
                   onComment={() => setReflectPost(item.p)}
                   onMore={() => postOptions(item.p)}
+                  reposted={reposts.has(item.p.id)}
+                  onRepost={acct.userId && item.p.user_id !== acct.userId ? () => repost(item.p) : undefined}
                   onAuthor={() => (acct.userId ? router.push(`/profile/${item.p.user_id}`) : router.push({ pathname: '/signin', params: { why: 'profile' } }))}
                 />
               );

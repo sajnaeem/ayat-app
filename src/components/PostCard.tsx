@@ -55,6 +55,9 @@ export function PostCard(p: {
   autoplay: boolean;
   liked: boolean;
   onLike: () => void;
+  /** Your repost of this post; leave out where reposting doesn't apply (your own posts). */
+  reposted?: boolean;
+  onRepost?: () => void;
   onComment: () => void;
   onMore: () => void;
   /** Opens the poster's profile. */
@@ -67,7 +70,14 @@ export function PostCard(p: {
     <View style={[styles.card, { height, backgroundColor: hasMedia ? '#0E1411' : tone.bg, paddingBottom: bottomInset + 24 }]}>
       {hasMedia && <PostMedia post={post} active={p.active} autoplay={p.autoplay} style={StyleSheet.absoluteFill} />}
       <View style={[styles.textWrap, hasMedia && styles.overMedia]}>
-        <Text style={[styles.eyebrow, { color: hasMedia ? '#9FD9BF' : tone.accent }]}>FROM THE COMMUNITY</Text>
+        {post.repostedBy ? (
+          <View style={styles.reposted}>
+            <Icon name="repost" size={14} color={hasMedia ? '#9FD9BF' : tone.accent} strokeWidth={2} />
+            <Text style={[styles.eyebrow, { color: hasMedia ? '#9FD9BF' : tone.accent, letterSpacing: 0.4 }]}>{post.repostedBy.handle} reposted</Text>
+          </View>
+        ) : (
+          <Text style={[styles.eyebrow, { color: hasMedia ? '#9FD9BF' : tone.accent }]}>FROM THE COMMUNITY</Text>
+        )}
         <Pressable onPress={p.onAuthor} disabled={!p.onAuthor} style={styles.author} accessibilityRole="button" accessibilityLabel={`${post.handle}'s profile`} hitSlop={6}>
           <Avatar id={post.user_id} name={post.handle} size={34} />
           <Text style={[styles.handle, { color: hasMedia ? '#fff' : pal.text }]}>{post.handle}</Text>
@@ -81,17 +91,19 @@ export function PostCard(p: {
       <View style={[styles.rail, { bottom: bottomInset + 90 }]}>
         <RailButton label="Like" icon="heart" fill={p.liked} color={hasMedia ? '#fff' : pal.text} onPress={p.onLike} />
         <RailButton label="Reflect" icon="chat" color={hasMedia ? '#fff' : pal.text} onPress={p.onComment} />
+        {p.onRepost && <RailButton label={p.reposted ? 'Reposted' : 'Repost'} icon="repost" on={p.reposted} color={hasMedia ? '#fff' : pal.text} onColor={hasMedia ? '#7FE0B5' : tone.accent} onPress={p.onRepost} />}
         <RailButton label="Report" icon="flag" color={hasMedia ? '#fff' : pal.text} onPress={p.onMore} />
       </View>
     </View>
   );
 }
 
-function RailButton({ label, icon, color, fill, onPress }: { label: string; icon: 'heart' | 'chat' | 'flag'; color: string; fill?: boolean; onPress: () => void }) {
+function RailButton({ label, icon, color, fill, on, onColor, onPress }: { label: string; icon: 'heart' | 'chat' | 'flag' | 'repost'; color: string; fill?: boolean; on?: boolean; onColor?: string; onPress: () => void }) {
+  const c = on && onColor ? onColor : color;
   return (
-    <Pressable onPress={onPress} hitSlop={8} accessibilityRole="button" accessibilityLabel={label} style={styles.railBtn}>
-      <Icon name={icon} size={26} color={fill ? '#E0525E' : color} fill={fill} />
-      <Text style={[styles.railText, { color }]}>{label}</Text>
+    <Pressable onPress={onPress} hitSlop={8} accessibilityRole="button" accessibilityLabel={label} accessibilityState={on !== undefined ? { selected: on } : undefined} style={styles.railBtn}>
+      <Icon name={icon} size={26} color={fill ? '#E0525E' : c} fill={fill} strokeWidth={on ? 2.3 : 1.7} />
+      <Text style={[styles.railText, { color: c }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -102,6 +114,7 @@ const styles = StyleSheet.create({
   overMedia: { marginTop: 'auto', marginBottom: 0, backgroundColor: 'rgba(0,0,0,0.35)', marginHorizontal: -24, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 12 },
   eyebrow: { fontFamily: fonts.uiBold, fontSize: 12, letterSpacing: 1.4 },
   handle: { fontFamily: fonts.uiBold, fontSize: 17 },
+  reposted: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   author: { flexDirection: 'row', alignItems: 'center', gap: 10, alignSelf: 'flex-start' },
   body: { fontFamily: fonts.read, fontSize: 20, lineHeight: 30 },
   caption: { fontFamily: fonts.ui, fontSize: 15, lineHeight: 21 },

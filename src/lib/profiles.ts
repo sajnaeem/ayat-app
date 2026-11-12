@@ -95,3 +95,45 @@ export async function searchPosts(q: string): Promise<Post[]> {
   if (error) throw error;
   return shape(data ?? []);
 }
+
+/** Repost or undo a repost (only someone else's live post; see supabase/012_reposts.sql). */
+export async function setRepost(me: string, postId: string, on: boolean): Promise<void> {
+  if (!supabase) throw new Error('offline');
+  const { error } = on
+    ? await supabase.from('reposts').insert({ user_id: me, post_id: postId })
+    : await supabase.from('reposts').delete().eq('user_id', me).eq('post_id', postId);
+  if (error && error.code !== '23505') throw error;
+}
+
+/** The posts you've reposted, to show the button as on. */
+export async function myReposts(me: string): Promise<Set<string>> {
+  if (!supabase) return new Set();
+  const { data } = await supabase.from('reposts').select('post_id').eq('user_id', me).limit(1000);
+  return new Set((data ?? []).map((r) => r.post_id));
+}
+
+/** What someone has reposted, newest first. Posts that are no longer live drop out. */
+export async function repostsBy(id: string): Promise<Post[]> {
+  if (!supabase) return [];
+  const { data } = await supabase.from('reposts').select(`created_at, post:posts(${FIELDS})`).eq('user_id', id).order('created_at', { ascending: false }).limit(60);
+  return shape((data ?? []).map((r: any) => r.post).filter(Boolean));
+}
+
+/** Recent reposts by people you follow, each marked with who reposted it (once per post). */
+export async function followingReposts(ids: string[]): Promise<Post[]> {
+  if (!supabase || !ids.length) return [];
+  const { data } = await supabase
+    .from('reposts')
+    .select(`created_at, user_id, who:profiles!reposts_user_id_fkey(handle), post:posts(${FIELDS})`)
+    .in('user_id', ids.slice(0, 500))
+    .order('created_at', { ascending: false })
+    .limit(60);
+  const seen = new Set<string>();
+  const out: Post[] = [];
+  for (const r of (data ?? []) as any[]) {
+    if (!r.post || seen.has(r.post.id)) continue;
+    seen.add(r.post.id);
+    out.push({ ...shape([r.post])[0], repostedBy: { id: r.user_id, handle: r.who?.handle ?? 'Someone' } });
+  }
+  return out;
+}
