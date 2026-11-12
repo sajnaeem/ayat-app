@@ -68,3 +68,30 @@ export async function saveBio(me: string, bio: string): Promise<void> {
   const { error } = await supabase.from('profiles').update({ bio: bio.trim() || null }).eq('id', me);
   if (error) throw error;
 }
+
+export type PersonHit = { id: string; handle: string; bio: string | null; followers: number; i_follow: boolean };
+
+/** People whose display name contains the search (needs an account, at least 2 letters). */
+export async function searchPeople(q: string): Promise<PersonHit[]> {
+  if (!supabase || q.trim().length < 2) return [];
+  const { data, error } = await supabase.rpc('search_people', { q: q.trim() });
+  if (error) throw error;
+  return (data as PersonHit[]) ?? [];
+}
+
+/** Live posts whose text or source contains the search, newest first. */
+export async function searchPosts(q: string): Promise<Post[]> {
+  // Characters that would change the meaning of the filter are dropped rather than escaped.
+  const t = q.trim().replace(/[%_*,()\\]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!supabase || t.length < 2) return [];
+  const { data, error } = await supabase
+    .from('posts')
+    .select(FIELDS)
+    .eq('status', 'approved')
+    .eq('hidden', false)
+    .or(`body.ilike.%${t}%,source.ilike.%${t}%`)
+    .order('created_at', { ascending: false })
+    .limit(30);
+  if (error) throw error;
+  return shape(data ?? []);
+}

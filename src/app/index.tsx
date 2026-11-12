@@ -775,7 +775,7 @@ export default function Feed() {
         onTl={() => prefs.set({ showTl: !prefs.showTl })}
         onRead={() => {
           stop();
-          router.push('/read');
+          router.push('/search');
         }}
         onYou={() => {
           stop();
@@ -1006,8 +1006,8 @@ function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palett
             </View>
           </Pressable>
         )}
-        <Pressable onPress={p.onRead} style={pill} accessibilityRole="button" accessibilityLabel="All surahs">
-          <Icon name="book" size={17} color={pal.text} />
+        <Pressable onPress={p.onRead} style={pill} accessibilityRole="button" accessibilityLabel="Search surahs, ayat, people and posts">
+          <Icon name="search" size={17} color={pal.text} />
         </Pressable>
         <Pressable onPress={p.onTl} style={[pill, p.showTl && { borderColor: pal.accent }]} accessibilityRole="switch" accessibilityState={{ checked: p.showTl }} accessibilityLabel="Show transliteration">
           <Text style={[styles.aa, { color: p.showTl ? pal.accent : pal.text }]}>Aa</Text>

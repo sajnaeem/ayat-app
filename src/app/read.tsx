@@ -6,19 +6,8 @@ import { Icon } from '@/components/Icon';
 import { surahDone, useProgress } from '@/lib/progress';
 import { usePrefs } from '@/lib/store';
 import { arabicNumber, revealedIn, SURAHS } from '@/lib/quran';
+import { fold } from '@/lib/fold';
 import { fonts, mix, usePalette } from '@/lib/theme';
-
-/** Folds spellings together so "yaseen", "Ya-Sin" and "yasin" all match, and "kahf" finds "Al-Kahf". */
-const fold = (t: string) =>
-  t
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]/g, '')
-    .replace(/ee/g, 'i')
-    .replace(/oo/g, 'u')
-    .replace(/aa/g, 'a')
-    .replace(/^(al|an|ar|as|at|ad|adh|ash|az)(?=[a-z]{3})/, '');
 
 const POPULAR = [18, 36, 67, 55, 56, 1, 112];
 

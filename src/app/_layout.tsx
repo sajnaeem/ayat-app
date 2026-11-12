@@ -76,6 +76,7 @@ function Root() {
         <Stack.Screen name="review" options={{ presentation: 'modal' }} />
         <Stack.Screen name="mosque" options={{ presentation: 'modal' }} />
         <Stack.Screen name="profile/[id]" />
+        <Stack.Screen name="search" options={{ presentation: 'modal' }} />
       </Stack>
     </>
   );
