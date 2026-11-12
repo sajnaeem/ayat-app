@@ -73,6 +73,22 @@ export function SnippetCard(p: CardProps & { s: Snippet; part?: number; active: 
         </View>
       );
     }
+    case 'quote':
+      return (
+        <View style={frame} accessible accessibilityLabel={`${s.who} said: ${s.text}. ${s.source}`}>
+          {eyebrow('WORDS OF THE SCHOLARS')}
+          <Text style={[styles.quoteMark, { color: tone.accent }]}>“</Text>
+          <Text style={[styles.quote, { color: pal.text }]}>{s.text}</Text>
+          <View style={[styles.quoteBy, { borderLeftColor: tone.accent }]}>
+            <Text style={[styles.subtitle, { color: pal.text, fontSize: 18 }]}>
+              {s.who}
+              {s.honorific ? <Text style={{ fontFamily: fonts.arabic, fontSize: 16, color: soft }}>{`  ${s.honorific}`}</Text> : null}
+            </Text>
+            <Text style={[styles.source, { color: soft, marginTop: 2, fontSize: 13 }]}>{s.about}</Text>
+          </View>
+          {source(s.source)}
+        </View>
+      );
     case 'try':
       return (
         <View style={frame} accessible accessibilityLabel={`Try this today: ${s.title} ${s.body}`}>
@@ -404,6 +420,9 @@ const styles = StyleSheet.create({
   duaAr: { fontFamily: fonts.arabic, fontSize: 26, lineHeight: 52, textAlign: 'right', writingDirection: 'rtl' },
   duaTl: { fontFamily: fonts.readItalic, fontSize: 15, lineHeight: 22 },
   story: { fontFamily: fonts.read, fontSize: 24, lineHeight: 35 },
+  quoteMark: { fontFamily: fonts.read, fontSize: 80, lineHeight: 80, marginBottom: -36 },
+  quote: { fontFamily: fonts.read, fontSize: 23, lineHeight: 34 },
+  quoteBy: { borderLeftWidth: 3, paddingLeft: 12, gap: 2, marginTop: 4 },
   dots: { flexDirection: 'row', gap: 6, marginTop: 8 },
   dot: { width: 8, height: 8, borderRadius: 4 },
   option: { borderWidth: 1.5, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 13 },

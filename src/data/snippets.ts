@@ -25,6 +25,11 @@ export type Snippet =
   | { id: string; kind: 'story'; who: string; title?: string; parts: StoryPart[]; moods?: MoodId[] }
   /** A letter of the Arabic alphabet: how to say it, and a word from a short ayah that uses it (tap to hear the ayah). */
   | { id: string; kind: 'letter'; n: number; letter: string; name: string; sound: string; word: string; wordTl: string; meaning: string; s: number; a: number; ayah: string; moods?: MoodId[] }
+  /**
+   * Words of the scholars: a short saying with who said it, who they were, and the book it comes from.
+   * Only add quotes with a book reference, checked against the book (social media accounts often paraphrase).
+   */
+  | { id: string; kind: 'quote'; who: string; honorific?: string; about: string; text: string; source: string; check?: boolean; moods?: MoodId[] }
   /** One short ayah recited by three reciters, one after another. */
   | { id: string; kind: 'reciters'; s: number; a: number; ar: string; en: string; moods?: MoodId[] };
 
@@ -43,6 +48,19 @@ export const SNIPPETS: Snippet[] = [
   { id: 'musa', kind: 'fact', title: 'Musa is named in the Quran more than any other prophet.', body: 'His story, from a baby in a basket on the river to standing before Pharaoh, is told across many surahs.', source: 'Quran 20 · Quran 28', moods: ['strength'] },
   { id: 'twentyfive', kind: 'fact', title: '25 prophets are named in the Quran.', body: 'From Adam to Muhammad ﷺ, including Ibrahim, Musa and ʿIsa. The Quran says there were others it does not name.', source: 'Quran 40:78' },
   { id: 'near', kind: 'fact', title: 'Allah is with you when you remember Him.', body: 'In a hadith qudsi, Allah says: “I am as My servant thinks of Me, and I am with him when he remembers Me.”', source: 'Sahih al-Bukhari 7405', moods: ['lonely', 'anxious'] },
+
+  // Words of the scholars
+  {
+    id: 'q-ibnqayyim-shadows',
+    kind: 'quote',
+    who: 'Ibn al-Qayyim',
+    honorific: 'رحمه الله',
+    about: 'Scholar of 14th-century Damascus, known for his writing on the heart',
+    text: 'One of the signs of someone who truly knows Allah is that they don’t grieve over what they lose, nor become overly happy with what they gain. This is because they see everything as temporary and fading away, like shadows.',
+    source: 'Madarij al-Salikin 3/318',
+    check: true,
+    moods: ['money', 'strength'],
+  },
 
   // Myths
   { id: 'm-arabic', kind: 'myth', myth: 'You need to know Arabic before the Quran is for you.', fact: 'The Prophet ﷺ said that someone who reads the Quran and finds it hard gets two rewards.', source: 'Sahih al-Bukhari 4937 · Sahih Muslim 798', moods: ['guidance', 'strength'] },
