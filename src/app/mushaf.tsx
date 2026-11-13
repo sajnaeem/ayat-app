@@ -254,12 +254,20 @@ const PageView = memo(function PageView({
   const wordLines = useMemo(() => (data?.lines ?? []).filter((l): l is Extract<MLine, { t: 'w' }> => l.t === 'w'), [data]);
 
   // Measure each line at a base size, then size the page so the widest line just fits.
-  const measured = wordLines.length > 0 && wordLines.every((l) => widths[l.n]);
-  const widest = measured ? Math.max(...wordLines.map((l) => widths[l.n])) : 0;
+  // Safety net: if measuring hasn't finished within 2 seconds, show the page with what we have.
+  const [late, setLate] = useState(false);
+  useEffect(() => {
+    if (!data || glyphs === null) return;
+    const t = setTimeout(() => setLate(true), 2000);
+    return () => clearTimeout(t);
+  }, [data, glyphs]);
+  // Widths are measured once the page font is settled (glyphs never changes after that), so they always match it.
+  const known = wordLines.map((l) => widths[l.n]).filter((w): w is number => w > 0);
+  const measured = (wordLines.length > 0 && known.length === wordLines.length) || (late && wordLines.length > 0);
+  const widest = known.length ? Math.max(...known) : avail * (BASE / 22);
   const size = measured ? Math.min(BASE * (avail / widest), lineH * (glyphs ? 0.62 : 0.5)) : BASE;
   const gap = glyphs ? 0 : 0.25;
 
-  useEffect(() => setWidths({}), [glyphs]);
 
   if (failed) {
     return (
@@ -310,7 +318,7 @@ const PageView = memo(function PageView({
           {wordLines.map((l, i) => (
             <View key={l.n} style={{ flexDirection: 'row-reverse', alignSelf: 'flex-start' }} onLayout={(e: LayoutChangeEvent) => {
               const w = e.nativeEvent.layout.width;
-              setWidths((m) => (m[l.n] ? m : { ...m, [l.n]: w }));
+              if (w > 0) setWidths((m) => (m[l.n] ? m : { ...m, [l.n]: w }));
             }}>
               {words(l, i, true)}
             </View>
@@ -336,7 +344,7 @@ const PageView = memo(function PageView({
             );
           }
           if (l.t !== 'w') return <View key={l.n} style={{ height: lineH }} />;
-          const short = measured && widths[l.n] < widest * 0.72;
+          const short = !!widths[l.n] && widths[l.n] < widest * 0.72;
           return (
             <View key={l.n} style={{ height: lineH, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: centred || short ? 'center' : 'space-between' }}>
               {words(l, i, false)}
