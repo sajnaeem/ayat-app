@@ -11,6 +11,17 @@ function placeBefore(s: number, a: number): { s: number; a: number } | null {
   return null;
 }
 
+export type Journey = 'returning' | 'new' | 'exploring' | 'growing';
+/** First-open questions (src/components/Journey.tsx). Kept on the phone only. */
+export type JourneyAnswers = {
+  journey: Journey;
+  arabic: 'none' | 'letters' | 'slow' | 'fluent';
+  reading: 'rarely' | 'ramadan' | 'weekly' | 'daily';
+  goals: string[];
+  minutes: number;
+  at: number;
+};
+
 export type Prefs = {
   onboarded: boolean;
   mood: MoodId | null;
@@ -52,6 +63,11 @@ export type Prefs = {
   explained: string[];
   /** How Munib looks: bold (dark with bright colour, the default), light (the original Quiet Modern) or follow the phone. */
   look: 'bold' | 'light' | 'auto';
+  /** Answers to the first-open questions, if given. */
+  journey: JourneyAnswers | null;
+  journeySkipped: boolean;
+  /** Ayat a day the reader aimed for (from the journey questions); 0 = none. */
+  dailyGoal: number;
   /** General prayer times, worked out on the phone from where you are (stored on the phone only). */
   prayer: { method: string; asr: 'standard' | 'hanafi'; loc: { lat: number; lon: number; label: string; at: number } | null; alerts: Record<'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha', boolean> };
 };
@@ -90,6 +106,9 @@ const DEFAULTS: Prefs = {
   feedHide: [],
   explained: [],
   look: 'bold',
+  journey: null,
+  journeySkipped: false,
+  dailyGoal: 0,
   prayer: { method: 'MoonsightingCommittee', asr: 'standard', loc: null, alerts: { fajr: false, dhuhr: false, asr: false, maghrib: false, isha: false } },
 };
 

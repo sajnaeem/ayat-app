@@ -129,6 +129,11 @@ export default function You() {
             {total.toLocaleString('en-GB')} <Text style={[styles.sub, { color: hp.muted }]}>of 6,236 ayat</Text>
           </Text>
           <Bar pal={hp} pct={Math.min(1, total / 6236)} />
+          {prefs.dailyGoal > 0 && (
+            <Text style={[styles.sub, { color: hp.muted, marginTop: 8 }]}>
+              Today: {Math.min(progress.days[dayKey()] ?? 0, 9999)} of your {prefs.dailyGoal} ayat{(progress.days[dayKey()] ?? 0) >= prefs.dailyGoal ? '  ·  done, alhamdulillah' : ''}
+            </Text>
+          )}
           <View style={[styles.stats, { borderTopColor: hp.line }]}>
             <Stat pal={hp} n={week} label="This week" />
             <Stat pal={hp} n={total} label="Ayat read" />
@@ -183,7 +188,8 @@ export default function You() {
         {/* Reading settings */}
         <Section pal={pal} title="Learn" />
         <Group pal={pal}>
-          <Row pal={pal} icon="info" title="Words and practices explained" sub="Dhikr, dua, salah, the Qibla and more, in plain English" onPress={() => router.push('/explain')} />
+          <Row pal={pal} icon="sliders" title="Your journey" sub={prefs.journey ? 'Retake the questions to reshape Munib' : 'Five questions so Munib fits where you are'} onPress={() => router.push('/journey')} />
+          <Row pal={pal} icon="info" title="Words and practices explained" sub="Dhikr, dua, salah, the Qibla and more, in plain English" onPress={() => router.push('/explain')} divider />
         </Group>
 
         <Section pal={pal} title="Reading" />

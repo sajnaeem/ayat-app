@@ -9,6 +9,7 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, AppState, Platform, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { JourneyFlow } from '@/components/Journey';
 import { ChooseName } from '@/components/SignIn';
 import { ToastProvider } from '@/components/Toast';
 import { AccountProvider, useAccount } from '@/lib/account';
@@ -22,7 +23,8 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function Root() {
   const pal = usePalette();
-  const { ready } = usePrefs();
+  const prefs = usePrefs();
+  const { ready } = prefs;
   const acct = useAccount();
   useLiveUpdates();
   const [fontsLoaded, fontError] = useFonts({
@@ -62,6 +64,8 @@ function Root() {
       </View>
     );
   else if (acct.status === 'signedIn' && !acct.handle) gate = <ChooseName />;
+  // First open: a few questions about where someone is on their journey (existing readers can take them from You).
+  else if (!prefs.onboarded && !prefs.journey && !prefs.journeySkipped) gate = <JourneyFlow onDone={() => {}} />;
   if (gate)
     return (
       <>
@@ -98,6 +102,7 @@ function Root() {
         <Stack.Screen name="nearby" options={{ presentation: 'modal' }} />
         <Stack.Screen name="dua-requests" options={{ presentation: 'modal' }} />
         <Stack.Screen name="explain" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="journey" options={{ presentation: 'modal' }} />
         <Stack.Screen name="learn/[s]" />
       </Stack>
     </>
