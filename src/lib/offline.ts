@@ -95,7 +95,8 @@ async function fileList(r: ReciterId, s: number): Promise<Remote[]> {
   if (!supabase) throw new Error('offline');
   const { data, error } = await supabase.functions.invoke('qf', { body: { offline: RECITATION[r], s } });
   if (error) throw error;
-  const files: Remote[] = data?.files ?? [];
+  // Some reciters' timings arrive as text; keep them as numbers.
+  const files: Remote[] = (data?.files ?? []).map((f: Remote) => ({ ...f, w: (f.w ?? []).map((g) => g.map(Number) as [number, number, number]) }));
   if (!files.length) throw new Error('no audio');
   return files;
 }

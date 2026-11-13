@@ -305,3 +305,21 @@ end $$;
 -- The invite preview is also read by the website's /k/<code> page, without an account.
 revoke execute on function public.khatm_preview(text) from public;
 grant execute on function public.khatm_preview(text) to anon, authenticated;
+
+-- When someone leaves or deletes their account, a khatm they started passes to the longest-standing
+-- member, and a khatm with nobody left is removed.
+create or replace function public.khatm_member_gone() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare next_owner uuid;
+begin
+  if not exists (select 1 from public.khatm_members where khatm_id = old.khatm_id) then
+    delete from public.khatms where id = old.khatm_id;
+  elsif (select created_by is null or created_by = old.user_id from public.khatms where id = old.khatm_id) then
+    select user_id into next_owner from public.khatm_members where khatm_id = old.khatm_id order by joined_at limit 1;
+    update public.khatms set created_by = next_owner where id = old.khatm_id;
+  end if;
+  return null;
+end $$;
+revoke execute on function public.khatm_member_gone() from public, anon, authenticated;
+drop trigger if exists khatm_member_gone on public.khatm_members;
+create trigger khatm_member_gone after delete on public.khatm_members for each row execute function public.khatm_member_gone();

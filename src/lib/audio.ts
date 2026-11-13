@@ -49,7 +49,7 @@ function loadSurahAudio(reciter: ReciterId, s: number): Promise<Map<number, Ayah
         const n = Number(f.verse_key.split(':')[1]);
         const words = (f.segments ?? [])
           .filter((g) => Array.isArray(g) && g.length >= 4)
-          .map((g) => [g[1], g[2], g[3]] as [number, number, number]);
+          .map((g) => [Number(g[1]), Number(g[2]), Number(g[3])] as [number, number, number]);
         m.set(n, { url: absolute(f.url), words });
       }
       return m;
