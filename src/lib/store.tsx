@@ -36,6 +36,8 @@ type Prefs = {
   prayerAlerts: Record<'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha', number | null>;
   /** Which Friday jama'ah to be reminded of, when the mosque has more than one. */
   jumuah: number;
+  /** The last page open in page view (1–604). */
+  mushafPage: number | null;
 };
 
 const DEFAULTS: Prefs = {
@@ -55,6 +57,7 @@ const DEFAULTS: Prefs = {
   mosque: null,
   prayerAlerts: { fajr: 10, dhuhr: 10, asr: 10, maghrib: 10, isha: 10 },
   jumuah: 0,
+  mushafPage: null,
 };
 
 const KEY = 'ayat.prefs.v1';

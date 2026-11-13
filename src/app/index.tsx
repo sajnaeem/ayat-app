@@ -26,6 +26,9 @@ import { PostCard } from '@/components/PostCard';
 import { followingIds, followingReposts, myReposts, setRepost } from '@/lib/profiles';
 import { approvedPosts, myPostLikes, Post, postKey, postsForMood, reportPost, setPostLike } from '@/lib/posts';
 import { fonts, mix, Palette, usePalette } from '@/lib/theme';
+import { noteQuranRead, syncMyParts } from '@/lib/together';
+import { recheckDownloads } from '@/lib/offline';
+import { pageOf } from '@/data/mushaf';
 
 type VerseItem = { kind: 'verse'; key: string; v: Verse; i: number; ord?: boolean };
 type OffItem = { kind: 'off'; key: string; i: number; s: number };
@@ -280,6 +283,7 @@ export default function Feed() {
   const [postLikes, setPostLikes] = useState<Set<string>>(new Set());
   useEffect(() => {
     if (acct.userId) myPostLikes(acct.userId).then(setPostLikes, () => {});
+    if (acct.userId) syncMyParts();
   }, [acct.userId]);
   const likePost = (p: Post) => {
     if (!acct.userId) return;
@@ -517,7 +521,11 @@ export default function Feed() {
       if (counted.current.has(it.key)) return;
       counted.current.add(it.key);
       announce(prog.markRead(ayahKeys(it.v), 1));
-      if (it.ord) prefs.set({ place: { s: it.v.s, a: it.v.b } });
+      if (it.ord) {
+        prefs.set({ place: { s: it.v.s, a: it.v.b } });
+        // Counts towards any juz this person is reading in a khatm (Read together).
+        noteQuranRead(ayahKeys(it.v)).then((ev) => ev.finished.forEach((f) => toast(`MashaAllah, juz ${f.juz} is finished for “${f.title}”`)));
+      }
     }, DWELL_MS);
 
     const now = Date.now();
@@ -573,6 +581,16 @@ export default function Feed() {
     const sub = AppState.addEventListener('change', (st) => st === 'active' && go());
     return () => sub.remove();
   }, [mosqueId]);
+
+  // Downloaded recitations: re-checked against the synced list at least weekly (Quran Foundation terms).
+  useEffect(() => {
+    const t = setTimeout(() => recheckDownloads().catch(() => {}), 5000);
+    const sub = AppState.addEventListener('change', (st) => st === 'active' && recheckDownloads().catch(() => {}));
+    return () => {
+      clearTimeout(t);
+      sub.remove();
+    };
+  }, []);
 
   // Offer reminders once, after someone has read a few cards and is having a good moment.
   useEffect(() => {
@@ -816,6 +834,12 @@ export default function Feed() {
           stop();
           router.push('/search');
         }}
+        onPages={() => {
+          stop();
+          const it = items[active];
+          const at = it && it.kind === 'verse' && it.ord ? { s: it.v.s, a: it.v.a } : prefs.place ?? { s: 1, a: 1 };
+          router.push({ pathname: '/mushaf', params: { page: String(pageOf(at.s, at.a)) } });
+        }}
         onYou={() => {
           stop();
           router.push(guest ? { pathname: '/signin', params: { why: 'you' } } : '/you');
@@ -1010,7 +1034,7 @@ function OffRamp(p: { pal: Palette; tone: { bg: string; accent: string }; height
   );
 }
 
-function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palette; onDark?: boolean; top: number; moodLabel: string; mode: 'foryou' | 'order'; onMode: (m: 'foryou' | 'order') => void; showTl: boolean; onMood: () => void; onTl: () => void; onRead: () => void; onYou: () => void }) {
+function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palette; onDark?: boolean; top: number; moodLabel: string; mode: 'foryou' | 'order'; onMode: (m: 'foryou' | 'order') => void; showTl: boolean; onMood: () => void; onTl: () => void; onRead: () => void; onPages: () => void; onYou: () => void }) {
   // On a dark card (a video, a photo post) switch to light text and dark see-through buttons, with a shadow under the tab names.
   const pal: Palette = p.onDark ? { ...p.pal, text: '#FFFFFF', muted: 'rgba(255,255,255,0.72)', surface: 'rgba(20,24,22,0.55)', line: 'rgba(255,255,255,0.28)', bg: '#121A16', accent: '#7FE0B5' } : p.pal;
   const pill = [styles.pill, { borderColor: pal.line, backgroundColor: pal.surface }];
@@ -1044,6 +1068,11 @@ function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palett
                 {p.moodLabel}
               </Text>
             </View>
+          </Pressable>
+        )}
+        {p.mode === 'order' && (
+          <Pressable onPress={p.onPages} style={pill} accessibilityRole="button" accessibilityLabel="Page view: read the Quran as printed pages">
+            <Icon name="book" size={17} color={pal.text} />
           </Pressable>
         )}
         <Pressable onPress={p.onRead} style={pill} accessibilityRole="button" accessibilityLabel="Search surahs, ayat, people and posts">

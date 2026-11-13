@@ -1,3 +1,4 @@
+import { offlineAyah } from './offline';
 import { supabase } from './supabase';
 
 export type ReciterId = 'alafasy' | 'sudais' | 'husary' | 'minshawi';
@@ -64,6 +65,9 @@ function loadSurahAudio(reciter: ReciterId, s: number): Promise<Map<number, Ayah
  * otherwise EveryAyah without timings, so recitation never stalls.
  */
 export async function ayahAudio(reciter: ReciterId, s: number, n: number, waitMs = 1500): Promise<AyahAudio> {
+  // Downloaded for offline listening? Play it from the phone.
+  const local = offlineAyah(reciter, s, n);
+  if (local) return local;
   const fallback: AyahAudio = { url: ayahAudioUrl(reciter, s, n), words: [] };
   try {
     const m = await Promise.race([loadSurahAudio(reciter, s), new Promise<null>((r) => setTimeout(() => r(null), waitMs))]);

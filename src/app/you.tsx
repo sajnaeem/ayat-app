@@ -147,6 +147,14 @@ export default function You() {
           )}
         </View>
 
+        {/* Quran: reading together, page view, offline audio */}
+        <Section pal={pal} title="The Quran" />
+        <Group pal={pal}>
+          <Row pal={pal} icon="people" title="Read together" sub="Finish the Quran as a family, a juz each" onPress={() => router.push('/together')} highlight />
+          <Row pal={pal} icon="book" title="Page view" sub="The printed mushaf, page by page" onPress={() => router.push('/mushaf')} divider />
+          <Row pal={pal} icon="download" title="Listen offline" sub="Download recitations for no signal" onPress={() => router.push('/downloads')} divider />
+        </Group>
+
         {/* My mosque */}
         <Section pal={pal} title="My mosque" />
         <Group pal={pal}>
