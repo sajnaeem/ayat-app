@@ -49,7 +49,12 @@
           }
         }
       ],
-      "expo-audio",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Munib uses the microphone only when you choose to practise reciting, so you can hear yourself and check your words."
+        }
+      ],
       "expo-sqlite",
       "expo-web-browser",
       "expo-apple-authentication",
