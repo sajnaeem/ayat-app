@@ -150,7 +150,7 @@ export default function You() {
         </Group>
 
         {/* My mosque */}
-        <Section pal={pal} title="My mosque" />
+        <Section pal={pal} title="Prayer" />
         <Group pal={pal}>
           <Row
             pal={pal}
@@ -160,6 +160,7 @@ export default function You() {
             onPress={() => router.push('/mosque')}
             highlight={!prefs.mosque}
           />
+          <Row pal={pal} icon="compass" title="Qibla" sub="Which way to face, from where you are" onPress={() => router.push('/qibla')} divider />
         </Group>
 
         {/* Saved */}

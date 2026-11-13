@@ -3,7 +3,7 @@
     "name": "Munib",
     "slug": "munib",
     "owner": "sajdood",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -69,7 +69,17 @@
         }
       ],
       "expo-sharing",
-      "expo-video"
+      "expo-video",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Munib uses your location on your phone only, to point you towards the Qibla. It isn't sent anywhere.",
+          "locationAlwaysAndWhenInUsePermission": false,
+          "locationAlwaysPermission": false,
+          "motionUsagePermission": false,
+          "isIosBackgroundLocationEnabled": false
+        }
+      ]
     ],
     "scheme": "munib",
     "experiments": {
