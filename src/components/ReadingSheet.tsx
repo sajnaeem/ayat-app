@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Sheet } from './Sheet';
 import { Prefs, SPEEDS, TEXT_SIZES, usePrefs } from '@/lib/store';
+import { feedSummary } from '@/lib/feedTopics';
 import { fonts, mix, Palette } from '@/lib/theme';
 
 export const AUTO_PACES: { id: Prefs['autoScroll']; label: string }[] = [
@@ -11,7 +12,7 @@ export const AUTO_PACES: { id: Prefs['autoScroll']; label: string }[] = [
 ];
 
 /** The "Aa" button on the feed: how the Quran looks and moves, all in one place. */
-export function ReadingSheet({ visible, onClose, pal }: { visible: boolean; onClose: () => void; pal: Palette }) {
+export function ReadingSheet({ visible, onClose, pal, onTopics }: { visible: boolean; onClose: () => void; pal: Palette; onTopics?: () => void }) {
   const prefs = usePrefs();
   return (
     <Sheet visible={visible} onClose={onClose} title="Reading" pal={pal}>
@@ -25,6 +26,15 @@ export function ReadingSheet({ visible, onClose, pal }: { visible: boolean; onCl
             While the recitation plays, the next card comes when the reciter finishes. With the sound paused, cards move on at your reading pace. Tap the Auto button on the Quran tab to pause it.
           </Text>
         </View>
+        {!!onTopics && (
+          <Pressable onPress={onTopics} accessibilityRole="button" style={[styles.topics, { backgroundColor: mix(pal.bg, pal.text, 0.06) }]}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={[styles.label, { color: pal.text }]}>Your For you page</Text>
+              <Text style={[styles.note, { color: pal.muted }]}>{feedSummary(prefs.feedHide)} · choose what shows between the ayat</Text>
+            </View>
+            <Text style={[styles.label, { color: pal.muted }]}>›</Text>
+          </Pressable>
+        )}
       </View>
     </Sheet>
   );
@@ -56,6 +66,7 @@ function Seg<T extends string | number | boolean>({ pal, label, items, value, on
 }
 
 const styles = StyleSheet.create({
+  topics: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: 14 },
   label: { fontFamily: fonts.uiSemi, fontSize: 15 },
   note: { fontFamily: fonts.ui, fontSize: 12.5, lineHeight: 17 },
   seg: { flexDirection: 'row', borderRadius: 12, padding: 3 },

@@ -15,6 +15,8 @@ import { dayKey, surahDone, useProgress } from '@/lib/progress';
 import { LANGS, SURAHS, VERSES } from '@/lib/quran';
 import { askPermission, REMINDER_TIMES } from '@/lib/reminders';
 import { AUTO_PACES } from '@/components/ReadingSheet';
+import { FeedTopicsSheet } from '@/components/FeedTopicsSheet';
+import { feedSummary } from '@/lib/feedTopics';
 import { SPEEDS, TEXT_SIZES, textScale, usePrefs } from '@/lib/store';
 import { profileCard, Profile } from '@/lib/profiles';
 import { amReviewer, deletePost, myPosts, Post, reviewQueue } from '@/lib/posts';
@@ -36,7 +38,7 @@ export default function You() {
   const toast = useToast();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showRules, setShowRules] = useState(false);
-  const [pick, setPick] = useState<'reminder' | 'lang' | 'reciter' | 'speed' | 'size' | 'auto' | null>(null);
+  const [pick, setPick] = useState<'reminder' | 'lang' | 'reciter' | 'speed' | 'size' | 'auto' | 'topics' | null>(null);
   const [blocked, setBlocked] = useState<{ id: string; handle: string }[] | null>(null);
   const [blockedLoading, setBlockedLoading] = useState(false);
   const openBlocked = () => {
@@ -186,6 +188,7 @@ export default function You() {
           <Row pal={pal} icon="speed" title="Recitation speed" value={speedLabel(prefs.speed ?? 1)} onPress={() => setPick('speed')} divider />
           <Row pal={pal} icon="text" title="Text size" value={TEXT_SIZES.find((t) => t.id === (prefs.textSize ?? 'medium'))?.label} onPress={() => setPick('size')} divider />
           <Row pal={pal} icon="play" title="Auto scroll" value={AUTO_PACES.find((x) => x.id === (prefs.autoScroll ?? 'off'))?.label} onPress={() => setPick('auto')} divider />
+          <Row pal={pal} icon="sliders" title="Your For you page" value={feedSummary(prefs.feedHide)} onPress={() => setPick('topics')} divider />
         </Group>
 
         {acct.online && (
@@ -331,6 +334,7 @@ export default function You() {
           <Choice key={l.id} pal={pal} on={prefs.lang === l.id} title={l.native ? `${l.name}  ${l.native}` : l.name} sub={l.by} onPress={() => prefs.set({ lang: l.id })} />
         ))}
       </Sheet>
+      <FeedTopicsSheet visible={pick === 'topics'} onClose={() => setPick(null)} pal={pal} />
       <Sheet visible={pick === 'auto'} onClose={() => setPick(null)} title="Auto scroll" pal={pal}>
         {AUTO_PACES.map((x) => (
           <Choice

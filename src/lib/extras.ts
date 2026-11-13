@@ -1,3 +1,4 @@
+import { topicOf } from './feedTopics';
 import { NEWCOMER, SNIPPETS, Snippet, VIDEOS, FeedVideo } from '@/data/snippets';
 import type { MoodId } from '@/lib/quran';
 import { SITE } from '@/lib/site';
@@ -34,8 +35,9 @@ function byMood<T extends { id: string; moods?: MoodId[] }>(all: T[], mood: Mood
   return [...shuffle(mine, salt), ...shuffle(everyone, salt + 1), ...shuffle(others, salt + 2)];
 }
 
-export const snippetOrder = (mood: MoodId | null): Snippet[] => byMood(SNIPPETS, mood, 11);
-export const videoOrder = (mood: MoodId | null): FeedVideo[] => byMood(VIDEOS, mood, 23);
+export const snippetOrder = (mood: MoodId | null, hide: string[] = []): Snippet[] =>
+  byMood(hide.length ? SNIPPETS.filter((s) => !hide.includes(topicOf(s))) : SNIPPETS, mood, 11);
+export const videoOrder = (mood: MoodId | null, hide: string[] = []): FeedVideo[] => (hide.includes('videos') ? [] : byMood(VIDEOS, mood, 23));
 
 /** A card for this moment, worked out from the phone's clock and calendar alone (nothing about the person). */
 export type Timely = {

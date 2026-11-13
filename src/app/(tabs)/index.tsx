@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
 import { ReflectionsSheet } from '@/components/Reflections';
 import { ShareSheet } from '@/components/ShareCard';
+import { FeedTopicsSheet } from '@/components/FeedTopicsSheet';
 import { ReadingSheet } from '@/components/ReadingSheet';
 import { Sheet } from '@/components/Sheet';
 import { useToast } from '@/components/Toast';
@@ -88,12 +89,21 @@ function useEndlessFeed(mood: MoodId | null, mode: 'foryou' | 'order', jump: num
   live.current = { level, lang: prefs.lang, liked: Object.keys(prefs.likes), fresh: readSoFar.readings === 0 };
 
   // Extras for this mood, in a fresh order each visit; each is shown once before any repeats.
-  const extras = useRef({ mood, snips: snippetOrder(mood), vids: videoOrder(mood), si: 0, vi: 0 });
-  if (extras.current.mood !== mood) extras.current = { mood, snips: snippetOrder(mood), vids: videoOrder(mood), si: 0, vi: 0 };
+  // What the reader has chosen to see between the ayat (You → For you page). The ayat themselves are always shown.
+  const hide = prefs.feedHide ?? [];
+  const hideKey = hide.join(',');
+  const hideRef = useRef(hide);
+  hideRef.current = hide;
+  const extras = useRef({ mood, hideKey, snips: snippetOrder(mood, hide), vids: videoOrder(mood, hide), si: 0, vi: 0 });
+  if (extras.current.mood !== mood || extras.current.hideKey !== hideKey) extras.current = { mood, hideKey, snips: snippetOrder(mood, hide), vids: videoOrder(mood, hide), si: 0, vi: 0 };
   // Approved community posts, for this mood first. Each is shown once per visit, in every other extras slot.
   const posts = useRef<{ list: Post[]; pi: number }>({ list: [], pi: 0 });
   useEffect(() => {
     if (mode !== 'foryou') return;
+    if (hideRef.current.includes('posts')) {
+      posts.current = { list: [], pi: 0 };
+      return;
+    }
     (async () => {
       const [l, fol] = await Promise.all([approvedPosts(), me ? followingIds(me).catch(() => new Set<string>()) : Promise.resolve(new Set<string>())]);
       const re = fol.size ? await followingReposts([...fol]).catch(() => [] as Post[]) : [];
@@ -116,7 +126,7 @@ function useEndlessFeed(mood: MoodId | null, mode: 'foryou' | 'order', jump: num
         });
       });
     });
-  }, [mood, mode, me]);
+  }, [mood, mode, me, hideKey]);
 
   const compose = (base: Item[], list: Verse[], r: number): Item[] => {
     const recent = new Set(base.slice(-14).flatMap((x) => (x.kind === 'verse' ? [x.v.k] : [])));
@@ -133,7 +143,7 @@ function useEndlessFeed(mood: MoodId | null, mode: 'foryou' | 'order', jump: num
         continue;
       }
       // Once per feed: a card for this time of day (early on), and later how far the reader has come.
-      if (n >= 2 && !out.some((it) => it.kind === 'time')) {
+      if (n >= 2 && !hideRef.current.includes('timely') && !out.some((it) => it.kind === 'time')) {
         // Shown once per time window per day (remembered on the phone), so rebuilding the feed doesn't repeat it.
         const t = freshTimelyCard();
         if (t) {
@@ -142,7 +152,7 @@ function useEndlessFeed(mood: MoodId | null, mode: 'foryou' | 'order', jump: num
           continue;
         }
       }
-      if (n >= 14 && !out.some((it) => it.kind === 'progress') && Object.keys(readSoFar.ayat ?? {}).length >= 20) {
+      if (n >= 14 && !hideRef.current.includes('progress') && !out.some((it) => it.kind === 'progress') && Object.keys(readSoFar.ayat ?? {}).length >= 20) {
         out.push({ kind: 'progress', key: `progress-${r}`, i: out.length });
         continue;
       }
@@ -254,7 +264,7 @@ export default function Feed() {
   const guest = acctEarly.status === 'signedOut';
   // Since 10 Nov 2026 guests can try For you too (pick a mood, see ayat that speak to it) before being asked to sign up.
   const mode: 'foryou' | 'order' = prefs.feedMode;
-  const [sheet, setSheet] = useState<null | 'mood' | 'context' | 'remind' | 'support' | 'reading'>(prefs.onboarded ? null : 'mood');
+  const [sheet, setSheet] = useState<null | 'mood' | 'context' | 'remind' | 'support' | 'reading' | 'topics'>(prefs.onboarded ? null : 'mood');
   const [remindAt, setRemindAt] = useState(2);
   const [contextVerse, setContextVerse] = useState<Verse | null>(null);
   const [resting, setResting] = useState(false);
@@ -336,6 +346,17 @@ export default function Feed() {
   };
 
   const { items, setItems, reset, more, refreshAhead, orderFailed } = useEndlessFeed(prefs.mood, mode, mode === 'order' ? prefs.jump : 0, guest);
+  // When the reader changes what For you shows, rebuild everything after the next card.
+  const feedHideKey = (prefs.feedHide ?? []).join(',');
+  const firstHide = useRef(true);
+  useEffect(() => {
+    if (firstHide.current) {
+      firstHide.current = false;
+      return;
+    }
+    if (mode === 'foryou') refreshAhead(active + 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feedHideKey]);
 
   /** For you (curated, by mood) or In order (the whole Quran, from where you left off). */
   const switchMode = (m: 'foryou' | 'order') => {
@@ -947,7 +968,8 @@ export default function Feed() {
         </Pressable>
       </Sheet>
 
-      <ReadingSheet visible={sheet === 'reading'} onClose={() => setSheet(null)} pal={pal} />
+      <ReadingSheet visible={sheet === 'reading'} onClose={() => setSheet(null)} pal={pal} onTopics={() => { setSheet(null); setTimeout(() => setSheet('topics'), 350); }} />
+      <FeedTopicsSheet visible={sheet === 'topics'} onClose={() => setSheet(null)} pal={pal} />
 
       <Sheet visible={sheet === 'support'} onClose={() => setSheet(null)} title="Someone to talk to" pal={pal}>
         <Text style={[styles.lead, { color: pal.muted }]}>
