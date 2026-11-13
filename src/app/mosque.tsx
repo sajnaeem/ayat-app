@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,7 +30,9 @@ export default function MosqueScreen() {
   const toast = useToast();
   const acct = useAccount();
   const prefs = usePrefs();
-  const [url, setUrl] = useState('');
+  // Opened from Mosques near you with a mosque's website already filled in.
+  const { url: given } = useLocalSearchParams<{ url?: string }>();
+  const [url, setUrl] = useState(given ?? '');
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState('');
   // A mosque that's been found but not yet confirmed, or the one followed.

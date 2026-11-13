@@ -76,6 +76,7 @@ export default function PrayerTab() {
             onPress={() => router.push('/mosque')}
             highlight={!prefs.mosque}
           />
+          <Row pal={pal} icon="compass" title="Mosques near you" sub="Nearest first, with directions" onPress={() => router.push('/nearby')} divider />
         </Group>
 
         <Section pal={pal} title="Every day" />
