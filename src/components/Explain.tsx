@@ -80,16 +80,16 @@ export function ExplainIntro({ id, pal, style, compact }: { id: string; pal: Pal
     );
   }
   return (
-    <View style={[styles.card, { backgroundColor: mix(pal.surface, pal.accent, pal.dark ? 0.16 : 0.08), borderColor: mix(pal.surface, pal.accent, 0.3) }, style]}>
-      <Text style={[styles.eyebrow, { color: pal.accent }]}>NEW TO THIS?</Text>
-      <Text style={[styles.cardTitle, { color: pal.text }]}>{e.ask}</Text>
-      <Text style={[styles.body, { color: pal.text }]}>{e.short}</Text>
+    <View style={[styles.card, pal.bold ? { backgroundColor: pal.pop.teal, borderColor: pal.pop.teal } : { backgroundColor: mix(pal.surface, pal.accent, pal.dark ? 0.16 : 0.08), borderColor: mix(pal.surface, pal.accent, 0.3) }, style]}>
+      <Text style={[styles.eyebrow, { color: pal.bold ? 'rgba(255,255,255,0.8)' : pal.accent }]}>NEW TO THIS?</Text>
+      <Text style={[styles.cardTitle, { color: pal.bold ? '#FFFFFF' : pal.text }]}>{e.ask}</Text>
+      <Text style={[styles.body, { color: pal.bold ? '#FFFFFF' : pal.text }]}>{e.short}</Text>
       <View style={styles.actions}>
-        <Pressable onPress={() => open(id)} style={[styles.btn, { backgroundColor: pal.accent }]} accessibilityRole="button">
-          <Text style={[styles.btnText, { color: pal.onAccent }]}>Learn more</Text>
+        <Pressable onPress={() => open(id)} style={[styles.btn, { backgroundColor: pal.bold ? '#FFFFFF' : pal.accent }]} accessibilityRole="button">
+          <Text style={[styles.btnText, { color: pal.bold ? '#0D0F0E' : pal.onAccent }]}>Learn more</Text>
         </Pressable>
         <Pressable onPress={() => prefs.set({ explained: [...(prefs.explained ?? []), id] })} style={styles.btnGhost} accessibilityRole="button">
-          <Text style={[styles.btnText, { color: pal.muted }]}>I know this</Text>
+          <Text style={[styles.btnText, { color: pal.bold ? 'rgba(255,255,255,0.85)' : pal.muted }]}>I know this</Text>
         </Pressable>
       </View>
       {sheet}

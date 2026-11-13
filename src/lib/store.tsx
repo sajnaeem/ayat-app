@@ -50,6 +50,8 @@ export type Prefs = {
   feedHide: string[];
   /** Explainers the reader has said they already know (the "New to this?" card becomes a small link). */
   explained: string[];
+  /** How Munib looks: bold (dark with bright colour, the default), light (the original Quiet Modern) or follow the phone. */
+  look: 'bold' | 'light' | 'auto';
   /** General prayer times, worked out on the phone from where you are (stored on the phone only). */
   prayer: { method: string; asr: 'standard' | 'hanafi'; loc: { lat: number; lon: number; label: string; at: number } | null; alerts: Record<'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha', boolean> };
 };
@@ -87,6 +89,7 @@ const DEFAULTS: Prefs = {
   autoScroll: 'off',
   feedHide: [],
   explained: [],
+  look: 'bold',
   prayer: { method: 'MoonsightingCommittee', asr: 'standard', loc: null, alerts: { fajr: false, dhuhr: false, asr: false, maghrib: false, isha: false } },
 };
 
@@ -102,6 +105,8 @@ type Store = Prefs & {
 };
 
 const Ctx = createContext<Store | null>(null);
+/** For code that may run outside the provider (the theme): null there. */
+export const usePrefsMaybe = () => useContext(Ctx);
 
 export function PrefsProvider({ children }: { children: ReactNode }) {
   const [prefs, setPrefs] = useState<Prefs>(DEFAULTS);

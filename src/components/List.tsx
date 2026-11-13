@@ -1,7 +1,7 @@
 import type React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon, IconName } from './Icon';
-import { fonts, mix, Palette } from '@/lib/theme';
+import { fonts, mix, Palette, popFor } from '@/lib/theme';
 
 /** Grouped settings-style lists, shared by the You, Quran, Prayer and Together tabs. */
 export const DANGER = '#B4432F';
@@ -16,7 +16,7 @@ export function Section({ pal, title, note }: { pal: Palette; title: string; not
 }
 
 export function Group({ pal, children }: { pal: Palette; children: React.ReactNode }) {
-  return <View style={[styles.card, { backgroundColor: pal.surface }]}>{children}</View>;
+  return <View style={[styles.card, { backgroundColor: pal.surface }, pal.bold && { borderRadius: 22 }]}>{children}</View>;
 }
 
 export function Row({
@@ -29,8 +29,8 @@ export function Row({
       style={({ pressed }) => [styles.row, divider && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: pal.line }, pressed && { opacity: 0.6 }]}
       accessibilityRole="button"
     >
-      <View style={[styles.icon, { backgroundColor: highlight ? tint : mix(pal.surface, tint, pal.dark ? 0.22 : 0.12) }]}>
-        <Icon name={icon} size={18} color={highlight ? pal.onAccent : tint} />
+      <View style={[styles.icon, { backgroundColor: pal.bold && !danger ? popFor(pal, icon) : highlight ? tint : mix(pal.surface, tint, pal.dark ? 0.22 : 0.12) }]}>
+        <Icon name={icon} size={18} color={pal.bold && !danger ? '#FFFFFF' : highlight ? pal.onAccent : tint} strokeWidth={pal.bold ? 2 : undefined} />
       </View>
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={[styles.rowTitle, { color: danger ? DANGER : pal.text }]}>{title}</Text>
@@ -95,10 +95,10 @@ const styles = StyleSheet.create({
   infoText: { fontFamily: fonts.uiBold, fontSize: 13, lineHeight: 16 },
   card: { borderRadius: 16, overflow: 'hidden' },
   section: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 14, paddingHorizontal: 4 },
-  sectionTitle: { fontFamily: fonts.uiBold, fontSize: 19, letterSpacing: -0.3 },
+  sectionTitle: { fontFamily: fonts.uiBold, fontSize: 20, letterSpacing: -0.4 },
   sub: { fontFamily: fonts.ui, fontSize: 13.5, lineHeight: 19 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 13 },
-  icon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  icon: { width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   rowTitle: { fontFamily: fonts.uiSemi, fontSize: 16 },
   value: { fontFamily: fonts.ui, fontSize: 15 },
   choice: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 12, borderWidth: 1.5, paddingHorizontal: 14, paddingVertical: 12 },

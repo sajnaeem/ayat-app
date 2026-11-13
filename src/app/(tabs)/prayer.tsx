@@ -7,7 +7,7 @@ import { ExplainIntro, useExplain } from '@/components/Explain';
 import { Group, Row, Section } from '@/components/List';
 import { CALC_ROWS, calcDay, hm, nextPrayer, until } from '@/lib/prayertimes';
 import { usePrefs } from '@/lib/store';
-import { fonts, mix, usePalette } from '@/lib/theme';
+import { fonts, mix, onColour, usePalette } from '@/lib/theme';
 
 /** The Prayer tab: today's times, your mosque, Qibla, duas and tasbeeh. */
 export default function PrayerTab() {
@@ -17,6 +17,7 @@ export default function PrayerTab() {
   const prefs = usePrefs();
   const s = prefs.prayer;
   const [explain, explainSheet] = useExplain(pal);
+  const hp = onColour(pal, pal.pop.emerald);
   const [now, setNow] = useState(new Date());
   // Fresh countdown whenever the tab is opened, and every 30 seconds while it's open.
   useFocusEffect(
@@ -38,21 +39,21 @@ export default function PrayerTab() {
       </View>
       <ScrollView contentContainerStyle={styles.body}>
         <ExplainIntro id="salah" pal={pal} />
-        <Pressable onPress={() => router.push('/prayertimes')} style={({ pressed }) => [styles.card, { backgroundColor: pal.surface, opacity: pressed ? 0.8 : 1 }]} accessibilityRole="button">
+        <Pressable onPress={() => router.push('/prayertimes')} style={({ pressed }) => [styles.card, { backgroundColor: hp.surface, opacity: pressed ? 0.8 : 1 }]} accessibilityRole="button">
           {day && next ? (
             <>
-              <Text style={[styles.eyebrow, { color: pal.accent }]}>NEXT</Text>
-              <Text style={[styles.next, { color: pal.text }]}>
+              <Text style={[styles.eyebrow, { color: hp.accent }]}>NEXT</Text>
+              <Text style={[styles.next, { color: hp.text }]}>
                 {next.id === 'dhuhr' && next.at.getDay() === 5 ? 'Jumuʿah' : next.name} at {hm(next.at)}
               </Text>
-              <Text style={[styles.sub, { color: pal.muted }]}>in {until(next.at.getTime() - now.getTime())}</Text>
-              <View style={[styles.times, { borderTopColor: pal.line }]}>
+              <Text style={[styles.sub, { color: hp.muted }]}>in {until(next.at.getTime() - now.getTime())}</Text>
+              <View style={[styles.times, { borderTopColor: hp.line }]}>
                 {CALC_ROWS.filter((r) => r.id !== 'sunrise').map((r) => {
                   const on = next.id === r.id && next.at.toDateString() === now.toDateString();
                   return (
-                    <View key={r.id} style={[styles.time, on && { backgroundColor: mix(pal.surface, pal.accent, 0.12) }]}>
-                      <Text style={[styles.timeName, { color: on ? pal.accent : pal.muted }]}>{r.name}</Text>
-                      <Text style={[styles.timeAt, { color: on ? pal.accent : pal.text }]}>{hm(day.times[r.id]).replace(/ (am|pm)$/, '')}</Text>
+                    <View key={r.id} style={[styles.time, on && { backgroundColor: (hp.bold ? 'rgba(255,255,255,0.18)' : mix(hp.surface, hp.accent, 0.12)) }]}>
+                      <Text style={[styles.timeName, { color: on ? hp.accent : hp.muted }]}>{r.name}</Text>
+                      <Text style={[styles.timeAt, { color: on ? hp.accent : hp.text }]}>{hm(day.times[r.id]).replace(/ (am|pm)$/, '')}</Text>
                     </View>
                   );
                 })}
@@ -61,10 +62,10 @@ export default function PrayerTab() {
           ) : (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <View style={{ flex: 1, gap: 4 }}>
-                <Text style={[styles.eyebrow, { color: pal.accent }]}>PRAYER TIMES</Text>
-                <Text style={[styles.rowTitle, { color: pal.text }]}>Today’s times wherever you are, with alerts when each prayer begins</Text>
+                <Text style={[styles.eyebrow, { color: hp.accent }]}>PRAYER TIMES</Text>
+                <Text style={[styles.rowTitle, { color: hp.text }]}>Today’s times wherever you are, with alerts when each prayer begins</Text>
               </View>
-              <Icon name="chevron" size={18} color={pal.muted} />
+              <Icon name="chevron" size={18} color={hp.muted} />
             </View>
           )}
         </Pressable>
@@ -106,7 +107,7 @@ const styles = StyleSheet.create({
   more: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'center', paddingVertical: 8 },
   moreText: { fontFamily: fonts.uiSemi, fontSize: 14 },
   head: { paddingHorizontal: 20, paddingBottom: 6 },
-  title: { fontFamily: fonts.uiBold, fontSize: 30, letterSpacing: -0.6 },
+  title: { fontFamily: fonts.uiBold, fontSize: 34, letterSpacing: -0.8 },
   body: { padding: 16, gap: 12, paddingBottom: 30 },
   card: { borderRadius: 16, padding: 16, gap: 2 },
   eyebrow: { fontFamily: fonts.uiBold, fontSize: 12, letterSpacing: 1.2 },

@@ -20,7 +20,7 @@ import { feedSummary } from '@/lib/feedTopics';
 import { SPEEDS, TEXT_SIZES, textScale, usePrefs } from '@/lib/store';
 import { profileCard, Profile } from '@/lib/profiles';
 import { amReviewer, deletePost, myPosts, Post, reviewQueue } from '@/lib/posts';
-import { fonts, mix, Palette, usePalette } from '@/lib/theme';
+import { fonts, mix, Palette, usePalette, onColour } from '@/lib/theme';
 import Constants from 'expo-constants';
 import * as Updates from 'expo-updates';
 
@@ -34,11 +34,12 @@ export default function You() {
   const router = useRouter();
   const prefs = usePrefs();
   const { progress } = useProgress();
+  const hp = onColour(pal, pal.pop.sky);
   const acct = useAccount();
   const toast = useToast();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showRules, setShowRules] = useState(false);
-  const [pick, setPick] = useState<'reminder' | 'lang' | 'reciter' | 'speed' | 'size' | 'auto' | 'topics' | null>(null);
+  const [pick, setPick] = useState<'reminder' | 'lang' | 'reciter' | 'speed' | 'size' | 'auto' | 'topics' | 'look' | null>(null);
   const [blocked, setBlocked] = useState<{ id: string; handle: string }[] | null>(null);
   const [blockedLoading, setBlockedLoading] = useState(false);
   const openBlocked = () => {
@@ -122,17 +123,17 @@ export default function You() {
           </Pressable>
         )}
         {/* Progress */}
-        <View style={[styles.card, styles.pad, { backgroundColor: pal.surface }]}>
-          <Text style={[styles.eyebrow, { color: pal.accent }]}>YOUR READING</Text>
-          <Text style={[styles.big, { color: pal.text }]}>
-            {total.toLocaleString('en-GB')} <Text style={[styles.sub, { color: pal.muted }]}>of 6,236 ayat</Text>
+        <View style={[styles.card, styles.pad, { backgroundColor: hp.surface }]}>
+          <Text style={[styles.eyebrow, { color: hp.accent }]}>YOUR READING</Text>
+          <Text style={[styles.big, { color: hp.text }]}>
+            {total.toLocaleString('en-GB')} <Text style={[styles.sub, { color: hp.muted }]}>of 6,236 ayat</Text>
           </Text>
-          <Bar pal={pal} pct={Math.min(1, total / 6236)} />
-          <View style={[styles.stats, { borderTopColor: pal.line }]}>
-            <Stat pal={pal} n={week} label="This week" />
-            <Stat pal={pal} n={total} label="Ayat read" />
-            <Stat pal={pal} n={done.length} label="Surahs" />
-            <Stat pal={pal} n={Object.keys(progress.mem).length} label="Memorised" />
+          <Bar pal={hp} pct={Math.min(1, total / 6236)} />
+          <View style={[styles.stats, { borderTopColor: hp.line }]}>
+            <Stat pal={hp} n={week} label="This week" />
+            <Stat pal={hp} n={total} label="Ayat read" />
+            <Stat pal={hp} n={done.length} label="Surahs" />
+            <Stat pal={hp} n={Object.keys(progress.mem).length} label="Memorised" />
           </View>
         </View>
         <View style={[styles.card, styles.pad, { backgroundColor: pal.surface }]}>
@@ -193,6 +194,7 @@ export default function You() {
           <Row pal={pal} icon="speed" title="Recitation speed" value={speedLabel(prefs.speed ?? 1)} onPress={() => setPick('speed')} divider />
           <Row pal={pal} icon="text" title="Text size" value={TEXT_SIZES.find((t) => t.id === (prefs.textSize ?? 'medium'))?.label} onPress={() => setPick('size')} divider />
           <Row pal={pal} icon="play" title="Auto scroll" value={AUTO_PACES.find((x) => x.id === (prefs.autoScroll ?? 'off'))?.label} onPress={() => setPick('auto')} divider />
+          <Row pal={pal} icon="text" title="Look" value={{ bold: 'Bold', light: 'Light', auto: 'Match phone' }[prefs.look ?? 'bold']} onPress={() => setPick('look')} divider />
           <Row pal={pal} icon="sliders" title="Your For you page" value={feedSummary(prefs.feedHide)} onPress={() => setPick('topics')} divider />
         </Group>
 
@@ -340,6 +342,13 @@ export default function You() {
         ))}
       </Sheet>
       <FeedTopicsSheet visible={pick === 'topics'} onClose={() => setPick(null)} pal={pal} />
+      <Sheet visible={pick === 'look'} onClose={() => setPick(null)} title="Look" pal={pal}>
+        <View style={{ gap: 8 }}>
+          <Choice pal={pal} on={(prefs.look ?? 'bold') === 'bold'} title="Bold" sub="Dark, with bright colour" onPress={() => prefs.set({ look: 'bold' })} />
+          <Choice pal={pal} on={prefs.look === 'light'} title="Light" sub="Soft and quiet, light grounds" onPress={() => prefs.set({ look: 'light' })} />
+          <Choice pal={pal} on={prefs.look === 'auto'} title="Match phone" sub="Light by day, dark when your phone is in dark mode" onPress={() => prefs.set({ look: 'auto' })} />
+        </View>
+      </Sheet>
       <Sheet visible={pick === 'auto'} onClose={() => setPick(null)} title="Auto scroll" pal={pal}>
         {AUTO_PACES.map((x) => (
           <Choice
@@ -378,7 +387,7 @@ export default function You() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingBottom: 6 },
-  title: { fontFamily: fonts.uiBold, fontSize: 30, letterSpacing: -0.6 },
+  title: { fontFamily: fonts.uiBold, fontSize: 34, letterSpacing: -0.8 },
   x: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   body: { padding: 16, gap: 12 },
   card: { borderRadius: 16, overflow: 'hidden' },

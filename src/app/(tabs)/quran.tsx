@@ -7,7 +7,7 @@ import { pageOf } from '@/data/mushaf';
 import { learnedCount, nextToLearn } from '@/lib/learn';
 import { useProgress } from '@/lib/progress';
 import { usePrefs } from '@/lib/store';
-import { fonts, mix, Palette, usePalette } from '@/lib/theme';
+import { fonts, mix, onColour, Palette, usePalette } from '@/lib/theme';
 
 /** The Quran tab: every surah, juz and page, with page view, search and offline listening on top. */
 export default function QuranTab() {
@@ -18,6 +18,7 @@ export default function QuranTab() {
   const { progress } = useProgress();
   const learned = learnedCount(progress);
   const next = nextToLearn(progress);
+  const lp = onColour(pal, pal.pop.amber);
   return (
     <QuranIndex
       title="Quran"
@@ -26,20 +27,20 @@ export default function QuranTab() {
         <View style={{ gap: 10 }}>
         <Pressable
           onPress={() => router.push('/learn')}
-          style={({ pressed }) => [styles.learn, { backgroundColor: pal.surface, opacity: pressed ? 0.8 : 1 }]}
+          style={({ pressed }) => [styles.learn, { backgroundColor: lp.surface, opacity: pressed ? 0.8 : 1 }]}
           accessibilityRole="button"
           accessibilityHint="Opens the short surahs to learn for prayer"
         >
-          <View style={[styles.toolIcon, { backgroundColor: pal.accent }]}>
-            <Icon name="mic" size={19} color={pal.onAccent} />
+          <View style={[styles.toolIcon, { backgroundColor: lp.accent }]}>
+            <Icon name="mic" size={19} color={lp.onAccent} />
           </View>
           <View style={{ flex: 1, gap: 2 }}>
-            <Text style={[styles.learnTitle, { color: pal.text }]}>Learn surahs for your prayer</Text>
-            <Text style={[styles.learnSub, { color: pal.muted }]}>
+            <Text style={[styles.learnTitle, { color: lp.text }]}>Learn surahs for your prayer</Text>
+            <Text style={[styles.learnSub, { color: lp.muted }]}>
               {learned ? `${learned} of ${LEARN.length} learned${next ? ` · next: ${next.name}` : ''}` : 'Short surahs, easiest first, one ayah at a time'}
             </Text>
           </View>
-          <Icon name="chevron" size={16} color={pal.muted} />
+          <Icon name="chevron" size={16} color={lp.muted} />
         </Pressable>
         <View style={styles.tools}>
           <Tool pal={pal} icon="book" label="Page view" onPress={() => router.push({ pathname: '/mushaf', params: { page: String(pageOf(at.s, at.a)) } })} />

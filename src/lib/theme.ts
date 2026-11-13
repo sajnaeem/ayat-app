@@ -1,4 +1,5 @@
 import { useColorScheme } from 'react-native';
+import { usePrefsMaybe } from './store';
 
 /** Quiet Modern: soft tinted grounds, one accent per card, ink-dark text. */
 export type Tone = { bg: string; accent: string };
@@ -18,8 +19,24 @@ const DARK_TONES: Tone[] = [
   { bg: '#17141F', accent: '#B49AF0' },
 ];
 
+/** Bright colours for solid cards and icon tiles (white text sits on all of them). */
+export type Pop = { emerald: string; coral: string; amber: string; violet: string; sky: string; rose: string; teal: string };
+const POP: Pop = { emerald: '#17945F', coral: '#E5544A', amber: '#D9821C', violet: '#6E4FE0', sky: '#2479D6', rose: '#D44683', teal: '#11938F' };
+
+/** Bold ayah grounds: deep and rich but calm, so the recitation keeps the focus. */
+const BOLD_TONES: Tone[] = [
+  { bg: '#0F2A20', accent: '#6EE0AE' },
+  { bg: '#141B35', accent: '#9DB4FF' },
+  { bg: '#2B1713', accent: '#FFA488' },
+  { bg: '#0D2627', accent: '#6AD7D5' },
+  { bg: '#1F1632', accent: '#C3A8FF' },
+];
+
 export type Palette = {
   dark: boolean;
+  /** True for the bold look: solid colour cards, white buttons. */
+  bold: boolean;
+  pop: Pop;
   bg: string;
   surface: string;
   line: string;
@@ -33,6 +50,8 @@ export type Palette = {
 
 const light: Palette = {
   dark: false,
+  bold: false,
+  pop: POP,
   bg: '#F1F3EF',
   surface: '#FFFFFF',
   line: '#D3D9D4',
@@ -45,6 +64,8 @@ const light: Palette = {
 };
 const dark: Palette = {
   dark: true,
+  bold: false,
+  pop: POP,
   bg: '#121A16',
   surface: '#1B2520',
   line: '#2E3A34',
@@ -56,9 +77,43 @@ const dark: Palette = {
   tones: DARK_TONES,
 };
 
+/** Bold: near-black, white type, bright emerald and solid colour cards (Saj, 14 Nov 2026). */
+const bold: Palette = {
+  dark: true,
+  bold: true,
+  pop: POP,
+  bg: '#0D0F0E',
+  surface: '#1A1D1B',
+  line: '#2C312E',
+  text: '#FFFFFF',
+  muted: '#A3ACA7',
+  accent: '#3DDC97',
+  onAccent: '#05140D',
+  scrim: 'rgba(0,0,0,0.62)',
+  tones: BOLD_TONES,
+};
+
 export function usePalette(): Palette {
-  return useColorScheme() === 'dark' ? dark : light;
+  const scheme = useColorScheme();
+  const look = usePrefsMaybe()?.look ?? 'bold';
+  if (look === 'bold') return bold;
+  if (look === 'light') return light;
+  return scheme === 'dark' ? dark : light;
 }
+
+/** In the bold look, a palette for content sitting on a solid colour card (white type). Unchanged otherwise. */
+export function onColour(pal: Palette, c: string): Palette {
+  if (!pal.bold) return pal;
+  return { ...pal, bg: c, surface: c, text: '#FFFFFF', muted: 'rgba(255,255,255,0.8)', line: 'rgba(255,255,255,0.28)', accent: '#FFFFFF', onAccent: c };
+}
+
+/** A stable bright colour for an icon tile, so each row has its own. */
+const ICON_POP: Record<string, keyof Pop> = {
+  mosque: 'emerald', compass: 'sky', hands: 'violet', beads: 'amber', bell: 'coral', mic: 'rose', people: 'emerald', moon: 'violet',
+  pen: 'coral', search: 'sky', user: 'teal', info: 'teal', book: 'emerald', download: 'sky', heart: 'rose', save: 'amber',
+  globe: 'sky', speed: 'amber', text: 'violet', play: 'emerald', sliders: 'rose', flag: 'coral', shield: 'teal', out: 'coral', chat: 'violet',
+};
+export const popFor = (pal: Palette, icon: string) => pal.pop[ICON_POP[icon] ?? 'emerald'];
 
 export const fonts = {
   arabic: 'NotoNaskhArabic_400Regular',

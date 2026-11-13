@@ -33,8 +33,8 @@ export default function TogetherTab() {
         <Text style={[styles.lead, { color: pal.muted }]}>The Quran with the people you love, and an ummah that reminds each other.</Text>
       </View>
       <ScrollView contentContainerStyle={styles.body}>
-        <View style={[styles.ummah, { backgroundColor: pal.accent }]} accessibilityRole="summary">
-          <Text style={[styles.ummahEyebrow, { color: mix(pal.accent, '#FFFFFF', 0.75) }]}>THE UMMAH, READING TOGETHER</Text>
+        <View style={[styles.ummah, { backgroundColor: pal.bold ? pal.pop.violet : pal.accent }]} accessibilityRole="summary">
+          <Text style={[styles.ummahEyebrow, { color: 'rgba(255,255,255,0.8)' }]}>THE UMMAH, READING TOGETHER</Text>
           {stats && stats.week > 0 ? (
             <>
               <Text style={[styles.ummahBig, { color: '#FFFFFF' }]}>{stats.week.toLocaleString('en-GB')}</Text>
@@ -43,7 +43,7 @@ export default function TogetherTab() {
           ) : (
             <Text style={[styles.ummahSub, { color: '#FFFFFF' }]}>Every ayah you read adds to everyone’s total.</Text>
           )}
-          <Text style={[styles.ummahNote, { color: mix(pal.accent, '#FFFFFF', 0.7) }]}>Only the total is counted, never who read what.</Text>
+          <Text style={[styles.ummahNote, { color: 'rgba(255,255,255,0.78)' }]}>Only the total is counted, never who read what.</Text>
           <Pressable onPress={() => explain('ummah')} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', marginTop: 4 }}>
             <Text style={[styles.ummahNote, { color: '#FFFFFF', textDecorationLine: 'underline', marginTop: 0 }]}>What is the ummah?</Text>
           </Pressable>
@@ -77,10 +77,10 @@ export default function TogetherTab() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   head: { paddingHorizontal: 20, paddingBottom: 6, gap: 6 },
-  title: { fontFamily: fonts.uiBold, fontSize: 30, letterSpacing: -0.6 },
+  title: { fontFamily: fonts.uiBold, fontSize: 34, letterSpacing: -0.8 },
   lead: { fontFamily: fonts.read, fontSize: 15.5, lineHeight: 22 },
   body: { padding: 16, gap: 12, paddingBottom: 30 },
-  ummah: { borderRadius: 18, padding: 18, gap: 4 },
+  ummah: { borderRadius: 24, padding: 18, gap: 4 },
   ummahEyebrow: { fontFamily: fonts.uiBold, fontSize: 11, letterSpacing: 1.2 },
   ummahBig: { fontFamily: fonts.uiBold, fontSize: 40, letterSpacing: -1, fontVariant: ['tabular-nums'] },
   ummahSub: { fontFamily: fonts.uiSemi, fontSize: 15.5, lineHeight: 21 },
