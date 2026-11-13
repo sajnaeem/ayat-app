@@ -4,7 +4,8 @@ import { useAudioPlayer } from 'expo-audio';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { FeedVideo, Snippet } from '@/data/snippets';
-import { ayahAudio, ReciterId, RECITERS } from '@/lib/audio';
+import { ayahAudio, ReciterId, RECITERS, wordAudioUrl } from '@/lib/audio';
+import { ayahWords } from '@/lib/quran';
 import { posterUrl, Timely, videoUrl } from '@/lib/extras';
 import { fonts, mix, Palette, Tone } from '@/lib/theme';
 import { Icon } from './Icon';
@@ -169,33 +170,39 @@ export function SnippetCard(p: CardProps & { s: Snippet; part?: number; active: 
 function LetterCard(p: CardProps & { s: Extract<Snippet, { kind: 'letter' }>; active: boolean }) {
   const { s, pal, tone, height, bottomInset, active } = p;
   const player = useAudioPlayer(null);
-  const [playing, setPlaying] = useState(false);
+  // What's playing: the word on its own, or the whole ayah.
+  const [playing, setPlaying] = useState<null | 'word' | 'ayah'>(null);
   const soft = mix(tone.bg, pal.text, 0.75);
   const faint = mix(tone.bg, pal.text, 0.55);
+  const pos = ayahWords(s.ayah).findIndex((w) => w === s.word || w.startsWith(s.word)) + 1;
 
   useEffect(() => {
     const sub = player.addListener('playbackStatusUpdate', (st) => {
-      if (st.didJustFinish) setPlaying(false);
+      if (st.didJustFinish) setPlaying(null);
     });
     return () => sub.remove();
-  }, [player]);
+  }, [player, setPlaying]);
   useEffect(() => {
     if (!active) {
       player.pause();
-      setPlaying(false);
+      setPlaying(null);
     }
-  }, [active, player]);
+  }, [active, player, setPlaying]);
 
-  const listen = async () => {
-    if (playing) {
+  const listen = async (what: 'word' | 'ayah') => {
+    if (playing === what) {
       player.pause();
-      setPlaying(false);
+      setPlaying(null);
       return;
     }
-    setPlaying(true);
-    // Al-Husary: slow and clear, the classic recitation for learners.
-    const a = await ayahAudio('husary', s.s, s.a);
-    player.replace(a.url);
+    player.pause();
+    setPlaying(what);
+    if (what === 'word') player.replace(wordAudioUrl(s.s, s.a, pos));
+    else {
+      // Al-Husary: slow and clear, the classic recitation for learners.
+      const a = await ayahAudio('husary', s.s, s.a);
+      player.replace(a.url);
+    }
     player.play();
   };
 
@@ -212,8 +219,8 @@ function LetterCard(p: CardProps & { s: Extract<Snippet, { kind: 'letter' }>; ac
       <View style={[styles.letterBox, { borderColor: mix(tone.bg, tone.accent, 0.35) }]}>
         <Text style={[styles.eyebrow, { color: faint }]}>IN THE QURAN · {s.s}:{s.a}</Text>
         <Text style={[styles.letterAyah, { color: soft }]}>
-          {s.ayah.split(' ').map((w, i, all) => (
-            <Text key={i} style={w === s.word ? { color: tone.accent } : undefined}>
+          {ayahWords(s.ayah).map((w, i, all) => (
+            <Text key={i} style={i + 1 === pos ? { color: tone.accent } : undefined}>
               {w}
               {i < all.length - 1 ? ' ' : ''}
             </Text>
@@ -222,10 +229,18 @@ function LetterCard(p: CardProps & { s: Extract<Snippet, { kind: 'letter' }>; ac
         <Text style={[styles.body, { color: pal.text }]}>
           <Text style={{ fontFamily: fonts.readItalic, color: tone.accent }}>{s.wordTl}</Text> · {s.meaning}
         </Text>
-        <Pressable onPress={listen} style={[styles.pill, { borderColor: tone.accent, flexDirection: 'row', alignItems: 'center', gap: 8 }]} accessibilityRole="button" accessibilityLabel={playing ? 'Stop' : `Hear ${s.s}:${s.a} recited`}>
-          <Icon name={playing ? 'pause' : 'play'} size={16} color={tone.accent} fill={!playing} />
-          <Text style={[styles.pillText, { color: tone.accent }]}>{playing ? 'Playing…' : 'Hear it in the ayah'}</Text>
-        </Pressable>
+        <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+          {pos > 0 && (
+            <Pressable onPress={() => listen('word')} style={[styles.pill, { borderColor: tone.accent, flexDirection: 'row', alignItems: 'center', gap: 8 }]} accessibilityRole="button" accessibilityLabel={playing === 'word' ? 'Stop' : `Hear the word ${s.wordTl} on its own`}>
+              <Icon name={playing === 'word' ? 'pause' : 'play'} size={16} color={tone.accent} fill={playing !== 'word'} />
+              <Text style={[styles.pillText, { color: tone.accent }]}>Hear the word</Text>
+            </Pressable>
+          )}
+          <Pressable onPress={() => listen('ayah')} style={[styles.pill, { borderColor: tone.accent, flexDirection: 'row', alignItems: 'center', gap: 8 }]} accessibilityRole="button" accessibilityLabel={playing === 'ayah' ? 'Stop' : `Hear ${s.s}:${s.a} recited`}>
+            <Icon name={playing === 'ayah' ? 'pause' : 'play'} size={16} color={tone.accent} fill={playing !== 'ayah'} />
+            <Text style={[styles.pillText, { color: tone.accent }]}>{playing === 'ayah' ? 'Playing…' : 'In the ayah'}</Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   );

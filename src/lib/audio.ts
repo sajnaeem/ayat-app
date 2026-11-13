@@ -88,3 +88,7 @@ export function wordAt(words: [number, number, number][], ms: number): number | 
 export function prefetchAudio(reciter: ReciterId, s: number) {
   loadSurahAudio(reciter, s).catch(() => {});
 }
+
+/** One word of an ayah on its own, from Quran Foundation's word-by-word recordings (1-based word position). */
+export const wordAudioUrl = (s: number, a: number, pos: number) =>
+  `https://audio.qurancdn.com/wbw/${String(s).padStart(3, '0')}_${String(a).padStart(3, '0')}_${String(pos).padStart(3, '0')}.mp3`;
