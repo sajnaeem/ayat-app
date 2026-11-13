@@ -1,7 +1,7 @@
-import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
+import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus, useAudioRecorder, useAudioRecorderState } from 'expo-audio';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
 import { useToast } from '@/components/Toast';
@@ -14,7 +14,8 @@ import { textScale, usePrefs } from '@/lib/store';
 import { fonts, mix, Palette, usePalette } from '@/lib/theme';
 
 const REPEATS = [1, 3, 5];
-type Play = { mode: 'one' | 'all'; i: number; left: number } | null;
+// What's playing: the reciter (one ayah, repeated, or all in order), your recording, or the reciter then you.
+type Play = { mode: 'one' | 'all' | 'mine' | 'compare'; i: number; left: number; stage?: 0 | 1 } | null;
 
 /**
  * Learn one surah for prayer: one ayah at a time (listen, repeat, hide the words and test yourself),
@@ -39,11 +40,22 @@ export default function LearnSurahScreen() {
   const player = useAudioPlayer(null, { updateInterval: 150 });
   const status = useAudioPlayerStatus(player);
   const scale = textScale(prefs.textSize);
+  // Recitation practice: record yourself, then hear yourself after the reciter. Recordings stay on the phone.
+  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const rec = useAudioRecorderState(recorder, 250);
+  const [mine, setMine] = useState<Record<number, string>>({});
+  const [micDenied, setMicDenied] = useState(false);
 
   const start = async (p: NonNullable<Play>) => {
     if (!l) return;
     setPlay(p);
     setWord(null);
+    if (p.mode === 'mine' || (p.mode === 'compare' && p.stage === 1)) {
+      timings.current = [];
+      player.replace({ uri: mine[p.i] });
+      player.play();
+      return;
+    }
     const a = await ayahAudio('husary', l.s, p.i + 1);
     timings.current = a.words;
     player.replace({ uri: a.url });
@@ -68,7 +80,9 @@ export default function LearnSurahScreen() {
   // When an ayah ends: repeat it, move to the next one (all together), or stop.
   useEffect(() => {
     if (!status.didJustFinish || !play || !l) return;
-    if (play.mode === 'one' && play.left > 1) {
+    if (play.mode === 'compare' && play.stage === 0) {
+      start({ ...play, stage: 1 });
+    } else if (play.mode === 'one' && play.left > 1) {
       setPlay({ ...play, left: play.left - 1 });
       setWord(null);
       player.seekTo(0).then(() => player.play()).catch(() => {});
@@ -83,6 +97,30 @@ export default function LearnSurahScreen() {
     setShown(new Set());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
+
+  const recordStart = async () => {
+    stop();
+    const perm = await requestRecordingPermissionsAsync();
+    if (!perm.granted) return setMicDenied(true);
+    setMicDenied(false);
+    await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+    await recorder.prepareToRecordAsync();
+    recorder.record();
+  };
+  const recordStop = async (i: number) => {
+    await recorder.stop();
+    // Back to normal playback through the speaker.
+    await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
+    if (recorder.uri) setMine((m) => ({ ...m, [i]: recorder.uri! }));
+  };
+  useEffect(
+    () => () => {
+      if (recorder.isRecording) recorder.stop().catch(() => {});
+      setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true }).catch(() => {});
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
 
   if (!l) return null;
   const n = l.ayat.length;
@@ -137,6 +175,17 @@ export default function LearnSurahScreen() {
               {known(step) ? ' · LEARNED' : ''}
             </Text>
             <AyahBlock a={l.ayat[step]} i={step} pal={pal} scale={scale} hide={hide} shown={shown} reveal={(k) => setShown((x) => new Set(x).add(k))} word={word} big />
+            <Practice
+              pal={pal}
+              recording={rec.isRecording}
+              seconds={Math.floor((rec.durationMillis ?? 0) / 1000)}
+              has={!!mine[step]}
+              playing={play?.mode === 'mine' || play?.mode === 'compare' ? (play.mode === 'compare' ? (play.stage === 0 ? 'reciter' : 'you') : 'you') : null}
+              denied={micDenied}
+              onRecord={() => (rec.isRecording ? recordStop(step) : recordStart())}
+              onMine={() => (play ? stop() : start({ mode: 'mine', i: step, left: 1 }))}
+              onCompare={() => (play ? stop() : start({ mode: 'compare', i: step, left: 1, stage: 0 }))}
+            />
           </>
         ) : (
           <>
@@ -205,6 +254,52 @@ export default function LearnSurahScreen() {
   );
 }
 
+/** Record yourself saying the ayah, then hear yourself straight after the reciter. */
+function Practice(p: { pal: Palette; recording: boolean; seconds: number; has: boolean; playing: 'reciter' | 'you' | null; denied: boolean; onRecord: () => void; onMine: () => void; onCompare: () => void }) {
+  const { pal } = p;
+  const red = '#C0392B';
+  return (
+    <View style={[styles.block, { backgroundColor: pal.surface, gap: 12 }]}>
+      <Text style={[styles.eyebrow, { color: pal.accent }]}>PRACTISE SAYING IT</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+        <Pressable
+          onPress={p.onRecord}
+          style={[styles.mic, { backgroundColor: p.recording ? red : mix(pal.surface, red, 0.1), borderColor: red }]}
+          accessibilityRole="button"
+          accessibilityLabel={p.recording ? 'Stop recording' : p.has ? 'Record again' : 'Record yourself'}
+        >
+          {p.recording ? <View style={styles.stopSquare} /> : <Icon name="mic" size={24} color={red} />}
+        </Pressable>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={[styles.practiceTitle, { color: pal.text }]}>
+            {p.recording ? `Recording… 0:${String(p.seconds).padStart(2, '0')}` : p.has ? 'Got it. Now compare.' : 'Record yourself'}
+          </Text>
+          <Text style={[styles.small, { color: pal.muted }]}>
+            {p.recording ? 'Say the ayah, then tap to stop.' : p.has ? 'Listen for any word that sounds different, then try again.' : 'Tap the mic and say the ayah. Hide the words first to test yourself.'}
+          </Text>
+        </View>
+      </View>
+      {p.denied && (
+        <Pressable onPress={() => Linking.openSettings()} accessibilityRole="button">
+          <Text style={[styles.small, { color: red }]}>Munib needs the microphone for this. Tap to allow it in Settings.</Text>
+        </Pressable>
+      )}
+      {p.has && !p.recording && (
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <Pressable onPress={p.onCompare} style={[styles.cmp, { backgroundColor: pal.text }]} accessibilityRole="button">
+            <Icon name={p.playing ? 'pause' : 'play'} size={14} color={pal.bg} fill />
+            <Text style={[styles.cmpText, { color: pal.bg }]}>{p.playing === 'reciter' ? 'Reciter…' : p.playing === 'you' ? 'You…' : 'Reciter, then you'}</Text>
+          </Pressable>
+          <Pressable onPress={p.onMine} style={[styles.cmp, { borderWidth: 1, borderColor: pal.line }]} accessibilityRole="button">
+            <Text style={[styles.cmpText, { color: pal.text }]}>Just me</Text>
+          </Pressable>
+        </View>
+      )}
+      <Text style={[styles.small, { color: pal.muted }]}>Your recording stays on your phone and is gone when you leave this screen.</Text>
+    </View>
+  );
+}
+
 function AyahBlock({ a, i, pal, scale, hide, shown, reveal, word, big }: { a: LearnAyah; i: number; pal: Palette; scale: number; hide: boolean; shown: Set<string>; reveal: (k: string) => void; word: { i: number; pos: number } | null; big?: boolean }) {
   const words = ayahWords(a.ar);
   const size = (big ? 34 : 28) * scale;
@@ -261,5 +356,10 @@ const styles = StyleSheet.create({
   chip: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
   chipText: { fontFamily: fonts.uiSemi, fontSize: 13.5 },
   main: { flex: 1, borderRadius: 14, minHeight: 50, alignItems: 'center', justifyContent: 'center' },
+  mic: { width: 58, height: 58, borderRadius: 29, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  stopSquare: { width: 18, height: 18, borderRadius: 4, backgroundColor: '#FFFFFF' },
+  practiceTitle: { fontFamily: fonts.uiSemi, fontSize: 16 },
+  cmp: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 9 },
+  cmpText: { fontFamily: fonts.uiSemi, fontSize: 14 },
   mainText: { fontFamily: fonts.uiBold, fontSize: 15.5 },
 });
