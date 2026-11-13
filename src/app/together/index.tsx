@@ -29,6 +29,8 @@ export default function Together() {
   const [sheet, setSheet] = useState<'new' | 'join' | null>(null);
   const [title, setTitle] = useState('');
   const [intention, setIntention] = useState('');
+  const [memory, setMemory] = useState('');
+  const [inMemory, setInMemory] = useState(false);
   const [aim, setAim] = useState<number | null>(null);
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
@@ -55,9 +57,11 @@ export default function Together() {
     setBusy(true);
     try {
       const by = aim ? new Date(Date.now() + aim * 86400000).toISOString().slice(0, 10) : null;
-      const r = await createKhatm(title.trim(), intention.trim(), by);
+      const r = await createKhatm(title.trim(), intention.trim(), by, inMemory ? memory : undefined);
       setSheet(null);
       setTitle('');
+      setMemory('');
+      setInMemory(false);
       setIntention('');
       setAim(null);
       router.push({ pathname: '/together/[id]', params: { id: r.id, fresh: '1' } });
@@ -145,6 +149,29 @@ export default function Together() {
       <Sheet visible={sheet === 'new'} onClose={() => setSheet(null)} title="Start a khatm" pal={pal}>
         <Text style={[styles.label, { color: pal.muted }]}>NAME</Text>
         <TextInput value={title} onChangeText={setTitle} placeholder="e.g. For Dad, or Ramadan 2027" placeholderTextColor={pal.muted} maxLength={60} style={[styles.input, { color: pal.text, borderColor: pal.line, backgroundColor: pal.bg }]} />
+        <Pressable onPress={() => setInMemory((x) => !x)} style={styles.memRow} accessibilityRole="switch" accessibilityState={{ checked: inMemory }}>
+          <View style={[styles.memBox, { borderColor: inMemory ? pal.accent : pal.line, backgroundColor: inMemory ? pal.accent : 'transparent' }]}>
+            {inMemory && <Icon name="check" size={13} color={pal.onAccent} strokeWidth={2.4} />}
+          </View>
+          <Text style={[styles.small, { color: pal.text, flex: 1 }]}>Read in memory of someone who has passed away</Text>
+        </Pressable>
+        {inMemory && (
+          <>
+            <Text style={[styles.label, { color: pal.muted }]}>THEIR NAME</Text>
+            <TextInput
+              value={memory}
+              onChangeText={(v) => {
+                setMemory(v);
+                if (!title.trim() || title.startsWith('For ')) setTitle(v.trim() ? `For ${v.trim()}`.slice(0, 60) : '');
+              }}
+              placeholder="e.g. Dad, or Naeem Ahmed"
+              placeholderTextColor={pal.muted}
+              maxLength={60}
+              style={[styles.input, { color: pal.text, borderColor: pal.line, backgroundColor: pal.bg }]}
+            />
+            <Text style={[styles.small, { color: pal.muted }]}>Everyone in the khatm sees their name with a dua for them. The invite says who you’re reading for.</Text>
+          </>
+        )}
         <Text style={[styles.label, { color: pal.muted }]}>A NOTE FOR THE GROUP (OPTIONAL)</Text>
         <TextInput
           value={intention}
@@ -202,6 +229,7 @@ function KhatmRow({ k, pal, onPress }: { k: KhatmSummary; pal: Palette; onPress:
             {k.title}
           </Text>
           <Text style={[styles.small, { color: pal.muted }]}>
+            {k.in_memory ? `In memory of ${k.in_memory} · ` : ''}
             {k.completed_at ? 'Finished, alhamdulillah' : `${k.done} of 30 juz read`} · {k.members} {k.members === 1 ? 'person' : 'people'}
             {k.round > 1 ? ` · khatm ${k.round}` : ''}
           </Text>
@@ -219,6 +247,8 @@ function KhatmRow({ k, pal, onPress }: { k: KhatmSummary; pal: Palette; onPress:
 }
 
 const styles = StyleSheet.create({
+  memRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 },
+  memBox: { width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   root: { flex: 1 },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingBottom: 12, borderBottomWidth: StyleSheet.hairlineWidth },
   title: { fontFamily: fonts.uiBold, fontSize: 26, letterSpacing: -0.5 },

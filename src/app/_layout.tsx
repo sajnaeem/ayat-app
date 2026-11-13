@@ -7,7 +7,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, AppState, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ChooseName } from '@/components/SignIn';
 import { ToastProvider } from '@/components/Toast';
@@ -15,6 +15,7 @@ import { AccountProvider, useAccount } from '@/lib/account';
 import { ProgressProvider } from '@/lib/progress';
 import { PrefsProvider, usePrefs } from '@/lib/store';
 import { usePalette } from '@/lib/theme';
+import { flushUmmah } from '@/lib/together-more';
 import { useLiveUpdates } from '@/lib/updates';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -33,6 +34,12 @@ function Root() {
     BricolageGrotesque_700Bold,
   });
   const loaded = (fontsLoaded || !!fontError) && ready && acct.status !== 'loading';
+
+  useEffect(() => {
+    // Send this phone's count towards the ummah counter when Munib goes to the background.
+    const sub = AppState.addEventListener('change', (s) => s !== 'active' && flushUmmah());
+    return () => sub.remove();
+  }, []);
 
   useEffect(() => {
     // Recitation should still play when the phone's silent switch is on.
@@ -89,6 +96,7 @@ function Root() {
         <Stack.Screen name="stories/[id]" />
         <Stack.Screen name="learn/index" options={{ presentation: 'modal' }} />
         <Stack.Screen name="nearby" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="dua-requests" options={{ presentation: 'modal' }} />
         <Stack.Screen name="learn/[s]" />
       </Stack>
     </>

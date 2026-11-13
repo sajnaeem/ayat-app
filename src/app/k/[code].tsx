@@ -62,6 +62,7 @@ export default function JoinKhatm() {
       ) : (
         <View style={styles.body}>
           <Text style={[styles.eyebrow, { color: pal.accent }]}>YOU’RE INVITED TO READ TOGETHER</Text>
+          {!!p.in_memory && <Text style={[styles.intention, { color: pal.accent }]}>In loving memory of {p.in_memory}</Text>}
           <Text style={[styles.title, { color: pal.text }]}>{p.title}</Text>
           {!!p.intention && <Text style={[styles.intention, { color: pal.muted }]}>{p.intention}</Text>}
           <View style={[styles.card, { backgroundColor: pal.surface, borderColor: pal.line }]}>

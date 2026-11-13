@@ -29,6 +29,8 @@ export type Khatm = {
   code: string;
   title: string;
   intention: string | null;
+  /** The name of someone who has passed, when the khatm is read in their memory. */
+  in_memory: string | null;
   round: number;
   rounds_done: number;
   finish_by: string | null;
@@ -39,8 +41,8 @@ export type Khatm = {
   parts: Part[];
 };
 export type MyPart = { juz: number; status: PartStatus; upto: string | null; pct: number };
-export type KhatmSummary = { id: string; title: string; round: number; completed_at: string | null; members: number; done: number; mine: MyPart[] };
-export type Preview = { id: string; title: string; intention: string | null; round: number; members: number; done: number; open: number; member: boolean };
+export type KhatmSummary = { id: string; title: string; in_memory?: string | null; round: number; completed_at: string | null; members: number; done: number; mine: MyPart[] };
+export type Preview = { id: string; title: string; intention: string | null; in_memory?: string | null; round: number; members: number; done: number; open: number; member: boolean };
 
 export const inviteLink = (code: string) => `${SITE}/k/${code}`;
 
@@ -102,8 +104,8 @@ async function rpc<T>(fn: string, args: Record<string, unknown> = {}): Promise<T
 
 export const myKhatms = () => rpc<KhatmSummary[]>('my_khatms').then((d) => d ?? []);
 export const khatmDetail = (id: string) => rpc<Khatm | null>('khatm_detail', { k: id });
-export const createKhatm = (title: string, intention: string, finishBy: string | null) =>
-  rpc<{ id: string; code: string }>('create_khatm', { p_title: title, p_intention: intention || null, p_finish_by: finishBy });
+export const createKhatm = (title: string, intention: string, finishBy: string | null, inMemory?: string) =>
+  rpc<{ id: string; code: string }>('create_khatm', { p_title: title, p_intention: intention || null, p_finish_by: finishBy, p_in_memory: inMemory?.trim() || null });
 export const previewKhatm = (code: string) => rpc<Preview | null>('khatm_preview', { p_code: code });
 export const joinKhatm = (code: string) => rpc<string>('join_khatm', { p_code: code });
 export const leaveKhatm = (id: string) => rpc<void>('leave_khatm', { k: id });
@@ -236,3 +238,6 @@ export function localPct(khatm: string, juz: number): number | null {
   if (!t) return null;
   return Math.min(99, Math.floor((t.read.length / juzSize(juz)) * 100));
 }
+
+/** The dua for the deceased shown on khatms read in someone's memory: Hisn al-Muslim h157 ("O Allah, forgive our living and our dead…"), worded for everyone. */
+export const MEMORY_DUA_ID = 'h157';

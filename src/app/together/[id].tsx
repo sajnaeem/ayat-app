@@ -22,6 +22,7 @@ import {
   khatmDetail,
   leaveKhatm,
   localPct,
+  MEMORY_DUA_ID,
   newRound,
   Part,
   placeLabel,
@@ -32,6 +33,10 @@ import {
   untrackPart,
 } from '@/lib/together';
 import { fonts, mix, Palette, usePalette } from '@/lib/theme';
+import { DUA_TOPICS } from '@/data/duas';
+
+// The dua for the deceased (Hisn al-Muslim), shown on khatms read in someone's memory.
+const memoryDua = DUA_TOPICS.flatMap((t) => t.duas.map((d) => ({ ...d, src: t.src }))).find((d) => d.id === MEMORY_DUA_ID);
 
 const ago = (iso: string) => {
   const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
@@ -90,7 +95,7 @@ export default function KhatmScreen() {
     if (!k) return;
     const link = inviteLink(k.code);
     Share.share({
-      message: `Join our khatm “${k.title}” on Munib. Pick a juz and we’ll finish the Quran together: ${link}\n\nOr open Munib → Read together and enter the code ${k.code}`,
+      message: `${k.in_memory ? `We’re reading the whole Quran in memory of ${k.in_memory}. ` : ''}Join our khatm “${k.title}” on Munib. Pick a juz and we’ll finish the Quran together: ${link}\n\nOr open Munib → Read together and enter the code ${k.code}`,
     }).catch(() => {});
   };
 
@@ -179,6 +184,15 @@ export default function KhatmScreen() {
           <Text style={[styles.title, { color: pal.text }]}>{k.title}</Text>
           {!!k.intention && <Text style={[styles.intention, { color: pal.muted }]}>{k.intention}</Text>}
         </View>
+
+        {!!k.in_memory && memoryDua && (
+          <View style={[styles.note, { backgroundColor: pal.surface, borderColor: pal.line, gap: 8 }]}>
+            <Text style={[styles.eyebrow, { color: pal.accent }]}>IN LOVING MEMORY OF {k.in_memory.toUpperCase()}</Text>
+            <Text style={[styles.memAr, { color: pal.text }]}>{memoryDua.ar}</Text>
+            <Text style={[styles.small, { color: pal.text }]}>{memoryDua.en}</Text>
+            <Text style={[styles.small, { color: pal.muted }]}>{memoryDua.src} · a dua for all who have passed</Text>
+          </View>
+        )}
 
         {welcome && (
           <View style={[styles.note, { backgroundColor: mix(pal.bg, pal.accent, 0.1), borderColor: mix(pal.bg, pal.accent, 0.3) }]}>
@@ -466,6 +480,7 @@ function Tile({ p, me, pal, label, onPress }: { p: Part; me: string | null; pal:
 }
 
 const styles = StyleSheet.create({
+  memAr: { fontFamily: fonts.arabic, fontSize: 21, lineHeight: 40, textAlign: 'right', writingDirection: 'rtl' },
   root: { flex: 1 },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingBottom: 12, borderBottomWidth: StyleSheet.hairlineWidth },
   x: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },

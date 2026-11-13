@@ -26,7 +26,7 @@ module.exports = async (req, res) => {
   } catch (e) {}
   const cta = APP_STORE_URL || '/';
   const app = `munib://k/${code}`;
-  const title = k ? `Join “${k.title}” · Read together on Munib` : 'Read together · Munib';
+  const title = k ? `Join “${k.title}”${k.in_memory ? ` in memory of ${k.in_memory}` : ''} · Read together on Munib` : 'Read together · Munib';
   const desc = k ? `${k.members} ${k.members === 1 ? 'person is' : 'people are'} reading the whole Quran together. ${k.done} of 30 juz finished. Pick a juz and read with them.` : 'Read the whole Quran together with your family on Munib.';
   const bar = Array.from({ length: 30 }, (_, i) => `<i class="${k && i < k.done ? 'on' : ''}"></i>`).join('');
   const html = `<!doctype html>
@@ -75,6 +75,7 @@ footer a { color: var(--muted); }
 ${k ? `
 <div class="eyebrow">YOU’RE INVITED TO READ TOGETHER</div>
 <h1>${esc(k.title)}</h1>
+${k.in_memory ? `<p class="note">In loving memory of ${esc(k.in_memory)}</p>` : ''}
 ${k.intention ? `<p class="note">${esc(k.intention)}</p>` : ''}
 <div class="card">
   <p>${k.members} ${k.members === 1 ? 'person is' : 'people are'} reading the whole Quran together. ${k.done} of 30 juz finished${k.open ? `, ${k.open} still open to pick` : ''}.</p>

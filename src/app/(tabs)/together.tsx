@@ -1,9 +1,11 @@
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Group, Row, Section } from '@/components/List';
 import { useAccount } from '@/lib/account';
-import { fonts, usePalette } from '@/lib/theme';
+import { flushUmmah, UmmahStats, ummahStats } from '@/lib/together-more';
+import { fonts, mix, usePalette } from '@/lib/theme';
 
 /** The Together tab: reading as a family, stories for children, and the community. */
 export default function TogetherTab() {
@@ -12,6 +14,14 @@ export default function TogetherTab() {
   const router = useRouter();
   const acct = useAccount();
   const signedIn = acct.status === 'signedIn';
+  const [stats, setStats] = useState<UmmahStats | null>(null);
+  useFocusEffect(
+    useCallback(() => {
+      flushUmmah();
+      const t = setTimeout(() => ummahStats().then(setStats), 600);
+      return () => clearTimeout(t);
+    }, []),
+  );
   const needs = (why: string, go: () => void) => () => (signedIn ? go() : router.push({ pathname: '/signin', params: { why } }));
 
   return (
@@ -21,9 +31,27 @@ export default function TogetherTab() {
         <Text style={[styles.lead, { color: pal.muted }]}>The Quran with the people you love, and an ummah that reminds each other.</Text>
       </View>
       <ScrollView contentContainerStyle={styles.body}>
+        <View style={[styles.ummah, { backgroundColor: pal.accent }]} accessibilityRole="summary">
+          <Text style={[styles.ummahEyebrow, { color: mix(pal.accent, '#FFFFFF', 0.75) }]}>THE UMMAH, READING TOGETHER</Text>
+          {stats && stats.week > 0 ? (
+            <>
+              <Text style={[styles.ummahBig, { color: '#FFFFFF' }]}>{stats.week.toLocaleString('en-GB')}</Text>
+              <Text style={[styles.ummahSub, { color: '#FFFFFF' }]}>ayat read on Munib this week{stats.today ? ` · ${stats.today.toLocaleString('en-GB')} today` : ''}</Text>
+            </>
+          ) : (
+            <Text style={[styles.ummahSub, { color: '#FFFFFF' }]}>Every ayah you read adds to everyone’s total.</Text>
+          )}
+          <Text style={[styles.ummahNote, { color: mix(pal.accent, '#FFFFFF', 0.7) }]}>Only the total is counted, never who read what.</Text>
+        </View>
+
+        <Section pal={pal} title="Pray for each other" />
+        <Group pal={pal}>
+          <Row pal={pal} icon="hands" title="Ask for dua" sub="Ask the ummah to pray for you, or make dua for others" onPress={() => router.push('/dua-requests')} highlight />
+        </Group>
+
         <Section pal={pal} title="Family" />
         <Group pal={pal}>
-          <Row pal={pal} icon="people" title="Read together" sub="Finish the Quran as a family, a juz each" onPress={needs('together', () => router.push('/together'))} highlight />
+          <Row pal={pal} icon="people" title="Read together" sub="Finish the Quran as a family, a juz each, or in memory of someone" onPress={needs('together', () => router.push('/together'))} />
           <Row pal={pal} icon="moon" title="Bedtime stories" sub="True stories for children, read or played" onPress={() => router.push('/stories')} divider />
         </Group>
 
@@ -46,5 +74,10 @@ const styles = StyleSheet.create({
   title: { fontFamily: fonts.uiBold, fontSize: 30, letterSpacing: -0.6 },
   lead: { fontFamily: fonts.read, fontSize: 15.5, lineHeight: 22 },
   body: { padding: 16, gap: 12, paddingBottom: 30 },
+  ummah: { borderRadius: 18, padding: 18, gap: 4 },
+  ummahEyebrow: { fontFamily: fonts.uiBold, fontSize: 11, letterSpacing: 1.2 },
+  ummahBig: { fontFamily: fonts.uiBold, fontSize: 40, letterSpacing: -1, fontVariant: ['tabular-nums'] },
+  ummahSub: { fontFamily: fonts.uiSemi, fontSize: 15.5, lineHeight: 21 },
+  ummahNote: { fontFamily: fonts.ui, fontSize: 12, marginTop: 6 },
   note: { fontFamily: fonts.ui, fontSize: 13, lineHeight: 18, paddingHorizontal: 4 },
 });
