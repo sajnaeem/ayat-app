@@ -796,6 +796,10 @@ export default function Feed() {
                 reflectionCount={acct.stats[item.v.k]?.reflections ?? null}
                 onReflections={acct.online ? () => (guest ? router.push({ pathname: '/signin', params: { why: 'reflect' } }) : setReflectFor(item.v)) : null}
                 onSupport={() => setSheet('support')}
+                onRef={() => {
+                  stop();
+                  router.push('/read');
+                }}
                 chrome={chrome}
                 chromeOn={chromeOn}
                 onTap={() => showChrome()}

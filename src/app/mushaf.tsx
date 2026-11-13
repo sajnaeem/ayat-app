@@ -1,6 +1,7 @@
 import { useAudioPlayer } from 'expo-audio';
 import * as ExpoFont from 'expo-font';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { onPageJump } from '@/lib/nav';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, LayoutChangeEvent, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -44,6 +45,16 @@ export default function Mushaf() {
     loadHafs();
     prunePages();
   }, []);
+  // "Go to" (the title) can send this page view to another page.
+  useEffect(
+    () =>
+      onPageJump((p) => {
+        setSel(null);
+        setPage(p);
+        list.current?.scrollToIndex({ index: p - 1, animated: false });
+      }),
+    [],
+  );
 
   /* ---------- reading progress: a page that stays on screen counts as read ---------- */
   const counted = useRef(new Set<number>());
@@ -150,14 +161,24 @@ export default function Mushaf() {
         <Pressable onPress={() => { stopAudio(); router.back(); }} style={[styles.x, { borderColor: pal.line }]} accessibilityRole="button" accessibilityLabel="Close page view" hitSlop={8}>
           <Icon name="close" size={18} color={pal.text} />
         </Pressable>
-        <View style={{ flex: 1, alignItems: 'center' }}>
-          <Text style={[styles.topTitle, { color: pal.text }]} numberOfLines={1}>
-            {SURAHS[ps - 1][0]}
-          </Text>
+        <Pressable
+          onPress={() => router.push({ pathname: '/read', params: { to: 'pages' } })}
+          style={{ flex: 1, alignItems: 'center' }}
+          accessibilityRole="button"
+          accessibilityLabel={`${SURAHS[ps - 1][0]}, juz ${juzOf(ps, pa)}, page ${page}. Go to another surah, juz or page`}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Text style={[styles.topTitle, { color: pal.text }]} numberOfLines={1}>
+              {SURAHS[ps - 1][0]}
+            </Text>
+            <View style={{ transform: [{ rotate: '90deg' }] }}>
+              <Icon name="chevron" size={14} color={pal.muted} strokeWidth={2.2} />
+            </View>
+          </View>
           <Text style={[styles.topSub, { color: pal.muted }]}>
             Juz {juzOf(ps, pa)} · Page {page}
           </Text>
-        </View>
+        </Pressable>
         <View style={{ flexDirection: 'row', gap: 6 }}>
           <Pressable onPress={togglePage} style={[styles.x, { borderColor: playing ? pal.accent : pal.line }]} accessibilityRole="button" accessibilityLabel={playing && !paused ? 'Pause recitation' : 'Listen from this page'} hitSlop={6}>
             <Icon name={playing && !paused ? 'pause' : 'play'} size={16} color={playing ? pal.accent : pal.text} fill={!(playing && !paused)} />

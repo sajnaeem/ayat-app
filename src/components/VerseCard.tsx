@@ -54,6 +54,8 @@ type Props = {
   onTap: () => void;
   /** Opens "Someone to talk to" (shown on cards for heavier feelings such as grief, divorce or conflict). */
   onSupport: () => void;
+  /** Tapping the surah name opens "Go to" (any surah, juz or page). */
+  onRef?: () => void;
 };
 
 const EASE = Easing.bezier(0.2, 0.7, 0.2, 1);
@@ -279,6 +281,7 @@ export const VerseCard = memo(function VerseCard(props: Props) {
         }}
       >
         <Pressable onPress={onBodyPress} style={styles.stage} accessible={false}>
+          <Pressable onPress={props.onRef} disabled={!props.onRef} hitSlop={8} style={{ alignSelf: 'flex-start', maxWidth: '100%' }} accessibilityRole={props.onRef ? 'button' : undefined} accessibilityLabel={props.onRef ? `${v.name} ${v.k}. Go to another surah, juz or page` : undefined}>
           <Reveal p={p} start={0} style={styles.ref}>
             <View style={[styles.keyChip, { backgroundColor: tone.accent }]}>
               <Text style={[styles.keyText, { color: pal.dark ? tone.bg : '#FFFFFF' }]}>{v.k.replace('-', '–')}</Text>
@@ -287,7 +290,13 @@ export const VerseCard = memo(function VerseCard(props: Props) {
               {v.name} · {v.meaning}
             </Text>
             <Text style={[styles.refAr, { color: muted }]} numberOfLines={1}>{v.ar_name}</Text>
+            {props.onRef && (
+              <View style={{ transform: [{ rotate: '90deg' }], marginLeft: -4 }}>
+                <Icon name="chevron" size={14} color={muted} strokeWidth={2.2} />
+              </View>
+            )}
           </Reveal>
+          </Pressable>
           {moodHit && (
             <Reveal p={p} start={60}>
               <Text style={[styles.because, { color: tone.accent }]}>
