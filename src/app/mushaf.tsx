@@ -1,7 +1,7 @@
 import { useAudioPlayer } from 'expo-audio';
 import * as ExpoFont from 'expo-font';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { onPageJump } from '@/lib/nav';
+import { onPageJump, showFeed } from '@/lib/nav';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, LayoutChangeEvent, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -149,7 +149,7 @@ export default function Mushaf() {
     stopAudio();
     const [s, a] = (k ?? `${pageStart(page).join(':')}`).split(':').map(Number);
     prefs.readAt(s, a);
-    router.dismissAll();
+    showFeed(router);
   };
 
   const [ps, pa] = pageStart(page);

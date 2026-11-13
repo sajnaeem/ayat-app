@@ -1,9 +1,11 @@
 import { useFocusEffect, useRouter } from 'expo-router';
+import { showFeed } from '@/lib/nav';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GuidelinesSheet } from '@/components/Guidelines';
-import { Icon, IconName } from '@/components/Icon';
+import { Icon } from '@/components/Icon';
+import { Bar, Choice, DANGER, Group, Row, Section, speedLabel, Stat } from '@/components/List';
 import { Sheet } from '@/components/Sheet';
 import { Avatar } from '@/components/Avatar';
 import { useToast } from '@/components/Toast';
@@ -81,7 +83,7 @@ export default function You() {
   const openKey = (k: string) => {
     const [s, ab] = k.split(':');
     prefs.readAt(Number(s), Number(ab.split('-')[0]));
-    router.dismissAll();
+    showFeed(router);
   };
 
   const reminderLabel = !prefs.reminders.on ? 'Off' : REMINDER_TIMES.find((t) => t.hour === prefs.reminders.hour && t.minute === prefs.reminders.minute)?.sub ?? 'On';
@@ -93,12 +95,20 @@ export default function You() {
     <View style={[styles.root, { backgroundColor: pal.bg }]}>
       <View style={[styles.head, { paddingTop: insets.top + 12 }]}>
         <Text style={[styles.title, { color: pal.text }]}>You</Text>
-        <Pressable onPress={() => router.back()} style={[styles.x, { backgroundColor: pal.surface }]} accessibilityRole="button" accessibilityLabel="Back to the feed" hitSlop={8}>
-          <Icon name="close" size={16} color={pal.text} />
-        </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + 40 }]}>
+      <ScrollView contentContainerStyle={[styles.body, { paddingBottom: 30 }]}>
+        {acct.status !== 'signedIn' && (
+          <Pressable
+            onPress={() => router.push({ pathname: '/signin', params: { why: 'you' } })}
+            style={({ pressed }) => [styles.card, styles.pad, { backgroundColor: pal.surface, opacity: pressed ? 0.7 : 1 }]}
+            accessibilityRole="button"
+          >
+            <Text style={[styles.eyebrow, { color: pal.accent }]}>MAKE MUNIB YOURS</Text>
+            <Text style={[styles.rowTitle, { color: pal.text }]}>Sign in to keep your progress safe, reflect with others and read together.</Text>
+            <Text style={[styles.sub, { color: pal.accent, fontFamily: fonts.uiBold }]}>Sign in or create a free account</Text>
+          </Pressable>
+        )}
         {acct.online && !!acct.userId && (
           <Pressable onPress={() => router.push(`/profile/${acct.userId}`)} style={({ pressed }) => [styles.card, styles.me, { backgroundColor: pal.surface, opacity: pressed ? 0.7 : 1 }]} accessibilityRole="button">
             <Avatar id={acct.userId} name={acct.handle ?? '?'} size={52} />
@@ -141,33 +151,6 @@ export default function You() {
             </View>
           )}
         </View>
-
-        {/* Quran: reading together, page view, offline audio */}
-        <Section pal={pal} title="The Quran" />
-        <Group pal={pal}>
-          <Row pal={pal} icon="people" title="Read together" sub="Finish the Quran as a family, a juz each" onPress={() => router.push('/together')} highlight />
-          <Row pal={pal} icon="book" title="Page view" sub="The printed mushaf, page by page" onPress={() => router.push('/mushaf')} divider />
-          <Row pal={pal} icon="moon" title="Bedtime stories" sub="True stories for children, read or played" onPress={() => router.push('/stories')} divider />
-          <Row pal={pal} icon="download" title="Listen offline" sub="Download recitations for no signal" onPress={() => router.push('/downloads')} divider />
-        </Group>
-
-        {/* My mosque */}
-        <Section pal={pal} title="Prayer" />
-        <Group pal={pal}>
-          <Row pal={pal} icon="bell" title="Prayer times" sub="Today’s times wherever you are, with alerts" onPress={() => router.push('/prayertimes')} />
-          <Row
-            pal={pal}
-            divider
-            icon="mosque"
-            title={prefs.mosque ? prefs.mosque.name : 'Add your mosque'}
-            sub={prefs.mosque ? 'Prayer times and jama’ah alerts' : 'Get an alert before each jama’ah'}
-            onPress={() => router.push('/mosque')}
-            highlight={!prefs.mosque}
-          />
-          <Row pal={pal} icon="compass" title="Qibla" sub="Which way to face, from where you are" onPress={() => router.push('/qibla')} divider />
-          <Row pal={pal} icon="hands" title="Find a dua" sub="Say what’s happening, get duas for it" onPress={() => router.push('/duas')} divider />
-          <Row pal={pal} icon="beads" title="Tasbeeh" sub="Count your dhikr, with the after-prayer set" onPress={() => router.push('/tasbeeh')} divider />
-        </Group>
 
         {/* Saved */}
         <Section pal={pal} title="Saved ayat" note={saves.length ? `${saves.length}` : undefined} />
@@ -248,9 +231,8 @@ export default function You() {
                 onPress={async () => {
                   await acct.signOut();
                   toast('Signed out');
-                  // Back to the Quran tab, which works without an account.
-                  if (router.canGoBack()) router.dismissAll();
-                  else router.replace('/');
+                  // Back to Home, which works without an account.
+                  router.navigate('/');
                 }}
               />
             </Group>
@@ -380,86 +362,6 @@ export default function You() {
           <Choice key={r.id} pal={pal} on={prefs.reciter === r.id} title={r.name} sub={r.note} onPress={() => prefs.set({ reciter: r.id })} />
         ))}
       </Sheet>
-    </View>
-  );
-}
-
-const DANGER = '#B4432F';
-
-function Section({ pal, title, note }: { pal: Palette; title: string; note?: string }) {
-  return (
-    <View style={styles.section}>
-      <Text style={[styles.sectionTitle, { color: pal.text }]}>{title}</Text>
-      {!!note && <Text style={[styles.sub, { color: pal.muted }]}>{note}</Text>}
-    </View>
-  );
-}
-
-function Group({ pal, children }: { pal: Palette; children: React.ReactNode }) {
-  return <View style={[styles.card, { backgroundColor: pal.surface }]}>{children}</View>;
-}
-
-function Row({
-  pal, icon, title, sub, value, valueColor, onPress, divider, highlight, danger,
-}: { pal: Palette; icon: IconName; title: string; sub?: string; value?: string; valueColor?: string; onPress: () => void; divider?: boolean; highlight?: boolean; danger?: boolean }) {
-  const tint = danger ? DANGER : pal.accent;
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [styles.row, divider && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: pal.line }, pressed && { opacity: 0.6 }]}
-      accessibilityRole="button"
-    >
-      <View style={[styles.icon, { backgroundColor: highlight ? tint : mix(pal.surface, tint, pal.dark ? 0.22 : 0.12) }]}>
-        <Icon name={icon} size={18} color={highlight ? pal.onAccent : tint} />
-      </View>
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text style={[styles.rowTitle, { color: danger ? DANGER : pal.text }]}>{title}</Text>
-        {!!sub && <Text style={[styles.sub, { color: pal.muted }]}>{sub}</Text>}
-      </View>
-      {!!value && <Text style={[styles.value, { color: valueColor ?? pal.muted }]}>{value}</Text>}
-      {!danger && <Icon name="chevron" size={16} color={pal.muted} />}
-    </Pressable>
-  );
-}
-
-const speedLabel = (x: number) => (x === 1 ? 'Normal' : `${x}×`);
-
-function Choice({ pal, on, title, sub, onPress, box }: { pal: Palette; on: boolean; title: string; sub?: string; onPress: () => void; box?: boolean }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={[styles.choice, { backgroundColor: on ? mix(pal.surface, pal.accent, pal.dark ? 0.2 : 0.09) : pal.bg, borderColor: on ? pal.accent : 'transparent' }]}
-      accessibilityRole={box ? 'switch' : 'radio'}
-      accessibilityState={box ? { checked: on } : { selected: on }}
-    >
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text style={[styles.rowTitle, { color: pal.text }]}>{title}</Text>
-        {!!sub && <Text style={[styles.sub, { color: pal.muted }]}>{sub}</Text>}
-      </View>
-      <View style={[box ? styles.box : styles.radio, { borderColor: on ? pal.accent : pal.line, backgroundColor: on ? pal.accent : 'transparent' }]}>
-        {on && <Icon name="check" size={14} color={pal.onAccent} strokeWidth={2.4} />}
-      </View>
-    </Pressable>
-  );
-}
-
-function Bar({ pal, pct }: { pal: Palette; pct: number }) {
-  return (
-    <View style={[styles.bar, { backgroundColor: mix(pal.surface, pal.accent, pal.dark ? 0.25 : 0.14) }]}>
-      <View style={{ width: `${Math.round(Math.max(0, Math.min(1, pct)) * 100)}%`, height: '100%', backgroundColor: pal.accent, borderRadius: 4 }} />
-    </View>
-  );
-}
-
-function Stat({ pal, n, label }: { pal: Palette; n: number; label: string }) {
-  return (
-    <View style={styles.stat}>
-      <Text style={[styles.statN, { color: pal.text }]} numberOfLines={1} adjustsFontSizeToFit>
-        {n}
-      </Text>
-      <Text style={[styles.statL, { color: pal.muted }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
-        {label}
-      </Text>
     </View>
   );
 }

@@ -1,4 +1,5 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { showFeed } from '@/lib/nav';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -118,7 +119,7 @@ export default function KhatmScreen() {
     if (view === 'pages') router.push({ pathname: '/mushaf', params: { page: String(pageOf(s, a)) } });
     else {
       prefs.readAt(s, a);
-      router.dismissAll();
+      showFeed(router);
     }
   };
 

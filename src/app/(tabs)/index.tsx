@@ -1,7 +1,7 @@
 import { useAudioPlayer } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, ActivityIndicator, Alert, AppState, FlatList, Linking, Modal, Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import Animated, { SharedValue, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -484,11 +484,20 @@ export default function Feed() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finished]);
 
+  // Recitation stops when another tab is open, and the card starts again on coming back to Home.
+  const [focused, setFocused] = useState(true);
+  useFocusEffect(
+    useCallback(() => {
+      setFocused(true);
+      return () => setFocused(false);
+    }, []),
+  );
+
   /* ---------- auto scroll (Quran tab): follows the recitation, or a reading pace when the sound is paused ---------- */
   const [autoPaused, setAutoPaused] = useState(false);
   const autoOn = mode === 'order' && (prefs.autoScroll ?? 'off') !== 'off';
   const autoRef = useRef(false);
-  autoRef.current = autoOn && !autoPaused && !sheet && !resting;
+  autoRef.current = autoOn && !autoPaused && !sheet && !resting && focused;
   const activeRef = useRef(0);
   activeRef.current = active;
   function advance() {
@@ -509,7 +518,7 @@ export default function Feed() {
     const t = setTimeout(advance, ms);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, autoOn, autoPaused, audioOn, sheet, resting, prefs.autoScroll, items.length]);
+  }, [active, autoOn, autoPaused, audioOn, sheet, resting, prefs.autoScroll, items.length, focused]);
 
   // Look up the audio for this card and the next two ahead of time, so recitation starts without a wait.
   useEffect(() => {
@@ -522,12 +531,13 @@ export default function Feed() {
   // when the feed first loads on opening the app, and after a mood change swaps the cards.
   const activeKey = items[active]?.key;
   useEffect(() => {
+    if (!focused) return stop();
     if (!items.length || sheet === 'mood' || resting) return;
     const it = items[active];
     if (prefs.sound && !heldRef.current) startCard(it, it?.kind === 'verse' ? (repeat[it.key] ?? 1) : 1);
     else stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeKey, prefs.sound, prefs.reciter, sheet === 'mood', resting]);
+  }, [activeKey, prefs.sound, prefs.reciter, sheet === 'mood', resting, focused]);
 
   // Each new card: controls visible while it arrives, then fade (after the translation and buttons have appeared).
   useEffect(() => {
@@ -717,7 +727,7 @@ export default function Feed() {
                   pal={pal}
                   tone={tone}
                   height={height}
-                  bottomInset={insets.bottom}
+                  bottomInset={0}
                   active={index === active && sheet !== 'mood'}
                   autoplay={prefs.sound && !held}
                 />
@@ -730,7 +740,7 @@ export default function Feed() {
                   pal={pal}
                   tone={tone}
                   height={height}
-                  bottomInset={insets.bottom}
+                  bottomInset={0}
                   onAction={(s, a) => (s === 0 ? switchMode('order') : openSurah(s, a))}
                 />
               );
@@ -742,7 +752,7 @@ export default function Feed() {
                   pal={pal}
                   tone={tone}
                   height={height}
-                  bottomInset={insets.bottom}
+                  bottomInset={0}
                   active={index === active && sheet !== 'mood'}
                   autoplay={prefs.sound && !held}
                   liked={postLikes.has(item.p.id)}
@@ -755,7 +765,7 @@ export default function Feed() {
                 />
               );
             }
-            if (item.kind === 'progress') return <ProgressCard read={Object.keys(prog.progress.ayat).length} pal={pal} tone={tone} height={height} bottomInset={insets.bottom} />;
+            if (item.kind === 'progress') return <ProgressCard read={Object.keys(prog.progress.ayat).length} pal={pal} tone={tone} height={height} bottomInset={0} />;
             if (item.kind === 'video') {
               return (
                 <VideoCard
@@ -763,7 +773,7 @@ export default function Feed() {
                   pal={pal}
                   tone={tone}
                   height={height}
-                  bottomInset={insets.bottom}
+                  bottomInset={0}
                   active={index === active && sheet !== 'mood'}
                   near={Math.abs(index - active) <= 1}
                   autoplay={prefs.sound && !held}
@@ -813,7 +823,7 @@ export default function Feed() {
                 pal={pal}
                 height={height}
                 topInset={insets.top}
-                bottomInset={insets.bottom}
+                bottomInset={0}
                 active={index === active && sheet !== 'mood'}
                 lang={prefs.lang}
                 showTl={prefs.showTl}
@@ -910,10 +920,6 @@ export default function Feed() {
           const it = items[active];
           const at = it && it.kind === 'verse' && it.ord ? { s: it.v.s, a: it.v.a } : prefs.place ?? { s: 1, a: 1 };
           router.push({ pathname: '/mushaf', params: { page: String(pageOf(at.s, at.a)) } });
-        }}
-        onYou={() => {
-          stop();
-          router.push(guest ? { pathname: '/signin', params: { why: 'you' } } : '/you');
         }}
       />
 
@@ -1107,7 +1113,7 @@ function OffRamp(p: { pal: Palette; tone: { bg: string; accent: string }; height
   );
 }
 
-function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palette; onDark?: boolean; top: number; moodLabel: string; mode: 'foryou' | 'order'; onMode: (m: 'foryou' | 'order') => void; showTl: boolean; onMood: () => void; onTl: () => void; onRead: () => void; onPages: () => void; onYou: () => void }) {
+function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palette; onDark?: boolean; top: number; moodLabel: string; mode: 'foryou' | 'order'; onMode: (m: 'foryou' | 'order') => void; showTl: boolean; onMood: () => void; onTl: () => void; onRead: () => void; onPages: () => void }) {
   // On a dark card (a video, a photo post) switch to light text and dark see-through buttons, with a shadow under the tab names.
   const pal: Palette = p.onDark ? { ...p.pal, text: '#FFFFFF', muted: 'rgba(255,255,255,0.72)', surface: 'rgba(20,24,22,0.55)', line: 'rgba(255,255,255,0.28)', bg: '#121A16', accent: '#7FE0B5' } : p.pal;
   const pill = [styles.pill, { borderColor: pal.line, backgroundColor: pal.surface }];
@@ -1153,9 +1159,6 @@ function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palett
         </Pressable>
         <Pressable onPress={p.onTl} style={[pill, p.showTl && { borderColor: pal.accent }]} accessibilityRole="button" accessibilityLabel="Reading options: transliteration, text size, speed and auto scroll">
           <Text style={[styles.aa, { color: p.showTl ? pal.accent : pal.text }]}>Aa</Text>
-        </Pressable>
-        <Pressable onPress={p.onYou} style={[pill, { backgroundColor: pal.text, borderColor: pal.text }]} accessibilityRole="button" accessibilityLabel="Your progress and settings">
-          <Icon name="user" size={17} color={pal.bg} />
         </Pressable>
       </View>
     </Animated.View>

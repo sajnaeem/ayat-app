@@ -1,0 +1,104 @@
+import type React from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Icon, IconName } from './Icon';
+import { fonts, mix, Palette } from '@/lib/theme';
+
+/** Grouped settings-style lists, shared by the You, Quran, Prayer and Together tabs. */
+export const DANGER = '#B4432F';
+
+export function Section({ pal, title, note }: { pal: Palette; title: string; note?: string }) {
+  return (
+    <View style={styles.section}>
+      <Text style={[styles.sectionTitle, { color: pal.text }]}>{title}</Text>
+      {!!note && <Text style={[styles.sub, { color: pal.muted }]}>{note}</Text>}
+    </View>
+  );
+}
+
+export function Group({ pal, children }: { pal: Palette; children: React.ReactNode }) {
+  return <View style={[styles.card, { backgroundColor: pal.surface }]}>{children}</View>;
+}
+
+export function Row({
+  pal, icon, title, sub, value, valueColor, onPress, divider, highlight, danger,
+}: { pal: Palette; icon: IconName; title: string; sub?: string; value?: string; valueColor?: string; onPress: () => void; divider?: boolean; highlight?: boolean; danger?: boolean }) {
+  const tint = danger ? DANGER : pal.accent;
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.row, divider && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: pal.line }, pressed && { opacity: 0.6 }]}
+      accessibilityRole="button"
+    >
+      <View style={[styles.icon, { backgroundColor: highlight ? tint : mix(pal.surface, tint, pal.dark ? 0.22 : 0.12) }]}>
+        <Icon name={icon} size={18} color={highlight ? pal.onAccent : tint} />
+      </View>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={[styles.rowTitle, { color: danger ? DANGER : pal.text }]}>{title}</Text>
+        {!!sub && <Text style={[styles.sub, { color: pal.muted }]}>{sub}</Text>}
+      </View>
+      {!!value && <Text style={[styles.value, { color: valueColor ?? pal.muted }]}>{value}</Text>}
+      {!danger && <Icon name="chevron" size={16} color={pal.muted} />}
+    </Pressable>
+  );
+}
+
+export const speedLabel = (x: number) => (x === 1 ? 'Normal' : `${x}×`);
+
+export function Choice({ pal, on, title, sub, onPress, box }: { pal: Palette; on: boolean; title: string; sub?: string; onPress: () => void; box?: boolean }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[styles.choice, { backgroundColor: on ? mix(pal.surface, pal.accent, pal.dark ? 0.2 : 0.09) : pal.bg, borderColor: on ? pal.accent : 'transparent' }]}
+      accessibilityRole={box ? 'switch' : 'radio'}
+      accessibilityState={box ? { checked: on } : { selected: on }}
+    >
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={[styles.rowTitle, { color: pal.text }]}>{title}</Text>
+        {!!sub && <Text style={[styles.sub, { color: pal.muted }]}>{sub}</Text>}
+      </View>
+      <View style={[box ? styles.box : styles.radio, { borderColor: on ? pal.accent : pal.line, backgroundColor: on ? pal.accent : 'transparent' }]}>
+        {on && <Icon name="check" size={14} color={pal.onAccent} strokeWidth={2.4} />}
+      </View>
+    </Pressable>
+  );
+}
+
+export function Bar({ pal, pct }: { pal: Palette; pct: number }) {
+  return (
+    <View style={[styles.bar, { backgroundColor: mix(pal.surface, pal.accent, pal.dark ? 0.25 : 0.14) }]}>
+      <View style={{ width: `${Math.round(Math.max(0, Math.min(1, pct)) * 100)}%`, height: '100%', backgroundColor: pal.accent, borderRadius: 4 }} />
+    </View>
+  );
+}
+
+export function Stat({ pal, n, label }: { pal: Palette; n: number; label: string }) {
+  return (
+    <View style={styles.stat}>
+      <Text style={[styles.statN, { color: pal.text }]} numberOfLines={1} adjustsFontSizeToFit>
+        {n}
+      </Text>
+      <Text style={[styles.statL, { color: pal.muted }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+
+const styles = StyleSheet.create({
+  card: { borderRadius: 16, overflow: 'hidden' },
+  section: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 14, paddingHorizontal: 4 },
+  sectionTitle: { fontFamily: fonts.uiBold, fontSize: 19, letterSpacing: -0.3 },
+  sub: { fontFamily: fonts.ui, fontSize: 13.5, lineHeight: 19 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 13 },
+  icon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  rowTitle: { fontFamily: fonts.uiSemi, fontSize: 16 },
+  value: { fontFamily: fonts.ui, fontSize: 15 },
+  choice: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 12, borderWidth: 1.5, paddingHorizontal: 14, paddingVertical: 12 },
+  radio: { width: 24, height: 24, borderRadius: 12, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  box: { width: 24, height: 24, borderRadius: 7, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  bar: { height: 8, borderRadius: 4, overflow: 'hidden' },
+  stat: { flex: 1, gap: 1 },
+  statN: { fontFamily: fonts.uiBold, fontSize: 24, letterSpacing: -0.5, fontVariant: ['tabular-nums'] },
+  statL: { fontFamily: fonts.ui, fontSize: 12 },
+});

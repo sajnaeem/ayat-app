@@ -11,3 +11,9 @@ export function onPageJump(fn: Fn) {
 export function jumpToPage(page: number) {
   listeners.forEach((fn) => fn(page));
 }
+
+/** Shows the feed (Home tab), closing any screens opened on top: used after choosing a place to read. */
+export function showFeed(router: { canDismiss: () => boolean; dismissAll: () => void; navigate: (href: '/') => void }) {
+  if (router.canDismiss()) router.dismissAll();
+  router.navigate('/');
+}

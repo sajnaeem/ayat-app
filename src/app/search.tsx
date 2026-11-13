@@ -1,4 +1,5 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { showFeed } from '@/lib/nav';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Hit, isArabic, searchQuran, warmSearch } from '@/lib/quranSearch';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -30,7 +31,8 @@ export default function Search() {
   const acct = useAccount();
   const toast = useToast();
   const [q, setQ] = useState('');
-  const [tab, setTab] = useState<Tab>('all');
+  const { tab: startTab } = useLocalSearchParams<{ tab?: Tab }>();
+  const [tab, setTab] = useState<Tab>(startTab ?? 'all');
   const [people, setPeople] = useState<PersonHit[] | null>(null);
   const [posts, setPosts] = useState<Post[] | null>(null);
   const [open, setOpen] = useState<number | null>(null);
@@ -100,7 +102,7 @@ export default function Search() {
 
   const openAt = (s: number, a: number) => {
     prefs.readAt(s, a);
-    router.dismissAll();
+    showFeed(router);
   };
   const pickMood = (id: MoodId) => {
     prefs.set({ mood: id, feedMode: 'foryou' });
