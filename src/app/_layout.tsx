@@ -83,6 +83,7 @@ function Root() {
         <Stack.Screen name="mushaf" options={{ animation: 'fade' }} />
         <Stack.Screen name="downloads" options={{ presentation: 'modal' }} />
         <Stack.Screen name="qibla" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="duas" options={{ presentation: 'modal' }} />
       </Stack>
     </>
   );

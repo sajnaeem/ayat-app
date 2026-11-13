@@ -179,6 +179,7 @@ export default function Search() {
               ))}
             </View>
             <Row pal={pal} icon="book" title="All 114 surahs" sub="Browse the whole Quran" onPress={() => router.push('/read')} />
+            <Row pal={pal} icon="heart" title="Find a dua" sub="Say what’s happening, get duas for it" onPress={() => router.push('/duas')} />
             <Label pal={pal} text="Try searching" />
             <Text style={[styles.hint, { color: pal.muted }]}>A surah ("Mulk", "36"), an ayah ("2:255"), a feeling ("anxious"), any word in the Quran, in English or Arabic ("patience", "صبر"), or someone's name.</Text>
           </>

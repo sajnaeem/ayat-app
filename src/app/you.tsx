@@ -161,6 +161,7 @@ export default function You() {
             highlight={!prefs.mosque}
           />
           <Row pal={pal} icon="compass" title="Qibla" sub="Which way to face, from where you are" onPress={() => router.push('/qibla')} divider />
+          <Row pal={pal} icon="hands" title="Find a dua" sub="Say what’s happening, get duas for it" onPress={() => router.push('/duas')} divider />
         </Group>
 
         {/* Saved */}
