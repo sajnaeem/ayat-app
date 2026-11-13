@@ -87,6 +87,8 @@ function Root() {
         <Stack.Screen name="prayertimes" options={{ presentation: 'modal' }} />
         <Stack.Screen name="stories/index" options={{ presentation: 'modal' }} />
         <Stack.Screen name="stories/[id]" />
+        <Stack.Screen name="learn/index" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="learn/[s]" />
       </Stack>
     </>
   );

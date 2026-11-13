@@ -80,7 +80,8 @@ export default function PrayerTab() {
 
         <Section pal={pal} title="Every day" />
         <Group pal={pal}>
-          <Row pal={pal} icon="compass" title="Qibla" sub="Which way to face, from where you are" onPress={() => router.push('/qibla')} />
+          <Row pal={pal} icon="mic" title="Surahs for your prayer" sub="Learn short surahs, one ayah at a time" onPress={() => router.push('/learn')} />
+          <Row pal={pal} icon="compass" title="Qibla" sub="Which way to face, from where you are" onPress={() => router.push('/qibla')} divider />
           <Row pal={pal} icon="hands" title="Find a dua" sub="Say what’s happening, get duas for it" onPress={() => router.push('/duas')} divider />
           <Row pal={pal} icon="beads" title="Tasbeeh" sub="Count your dhikr, with the after-prayer set" value={tasbeehToday ? `${tasbeehToday} today` : undefined} onPress={() => router.push('/tasbeeh')} divider />
           <Row pal={pal} icon="bell" title="Prayer times and alerts" sub={s.loc ? 'Calculation, Asr and alerts' : 'Set up for where you are'} onPress={() => router.push('/prayertimes')} divider />
