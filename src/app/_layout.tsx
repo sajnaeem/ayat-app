@@ -6,8 +6,8 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import { ActivityIndicator, AppState, View } from 'react-native';
+import React, { useEffect } from 'react';
+import { ActivityIndicator, AppState, Platform, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ChooseName } from '@/components/SignIn';
 import { ToastProvider } from '@/components/Toast';
@@ -104,8 +104,19 @@ function Root() {
   );
 }
 
+/** On a computer, the web app shows as a phone-width column in the middle of the screen. */
+function WebFrame({ children }: { children: React.ReactNode }) {
+  if (Platform.OS !== 'web') return <>{children}</>;
+  return (
+    <View style={{ flex: 1, alignItems: 'center', backgroundColor: '#E4E8E2' }}>
+      <View style={{ flex: 1, width: '100%', maxWidth: 520, overflow: 'hidden' }}>{children}</View>
+    </View>
+  );
+}
+
 export default function Layout() {
   return (
+    <WebFrame>
     <SafeAreaProvider>
       <PrefsProvider>
         <ProgressProvider>
@@ -117,5 +128,6 @@ export default function Layout() {
         </ProgressProvider>
       </PrefsProvider>
     </SafeAreaProvider>
+    </WebFrame>
   );
 }

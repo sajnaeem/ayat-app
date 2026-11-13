@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon, IconName } from '@/components/Icon';
 import { QuranIndex } from '@/components/QuranIndex';
 import { LEARN } from '@/data/learn';
@@ -44,7 +44,7 @@ export default function QuranTab() {
         <View style={styles.tools}>
           <Tool pal={pal} icon="book" label="Page view" onPress={() => router.push({ pathname: '/mushaf', params: { page: String(pageOf(at.s, at.a)) } })} />
           <Tool pal={pal} icon="search" label="Search" onPress={() => router.push({ pathname: '/search', params: { tab: 'quran' } })} />
-          <Tool pal={pal} icon="download" label="Offline" onPress={() => router.push('/downloads')} />
+          {Platform.OS !== 'web' && <Tool pal={pal} icon="download" label="Offline" onPress={() => router.push('/downloads')} />}
         </View>
         </View>
       }
