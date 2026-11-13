@@ -10,7 +10,7 @@ from kokoro_onnx import Kokoro
 models, src = sys.argv[1], sys.argv[2]
 only = set(sys.argv[3:])
 k = Kokoro(models + '/kokoro-v1.0.onnx', models + '/voices-v1.0.bin')
-VOICE, LANG, SPEED = 'bf_emma', 'en-gb', 0.86
+VOICE, LANG, SPEED = 'bf_emma', 'en-gb', 0.74
 
 # Names the English voice gets wrong: the sounds it should make instead (IPA, as Kokoro uses).
 FIX = {
@@ -45,7 +45,7 @@ for st in json.load(open(src)):
         starts.append(round(pos, 2))
         pos += len(s) / sr
         parts.append(s)
-        gap = 1.4 if i == 0 or i >= len(st['paras']) else 0.9
+        gap = 2.0 if i == 0 or i >= len(st['paras']) else 1.4
         parts.append(np.zeros(int(gap * sr), dtype=s.dtype))
         pos += int(gap * sr) / sr
     audio = np.concatenate([np.zeros(int(.5 * sr), dtype=parts[0].dtype), *parts])

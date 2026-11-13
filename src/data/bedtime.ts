@@ -28,7 +28,7 @@ export const STORIES: Story[] = [
     id: 'yunus',
     title: 'A prayer in the dark',
     about: 'Prophet Yunus',
-    minutes: 4,
+    minutes: 3,
     paras: [
       'A long time ago, Allah sent a prophet called Yunus, peace be upon him, to a town full of people. Yunus told them about Allah, again and again. But the people would not listen.',
       'One day Yunus became upset with his people, and he went away. He hurried down to the sea and climbed onto a ship that was packed full.',
@@ -47,7 +47,7 @@ export const STORIES: Story[] = [
     id: 'nuh',
     title: 'The big boat',
     about: 'Prophet Nuh',
-    minutes: 4,
+    minutes: 3,
     paras: [
       'Prophet Nuh, peace be upon him, lived for a very, very long time. For nine hundred and fifty years he called his people to worship Allah alone.',
       'He talked to them in the daytime and he talked to them at night. He talked to them in front of everyone, and he talked to them quietly, one by one. But most of them put their fingers in their ears so they wouldn’t hear.',
@@ -67,7 +67,7 @@ export const STORIES: Story[] = [
     id: 'ibrahim-fire',
     title: 'The fire that was cool',
     about: 'Prophet Ibrahim',
-    minutes: 3,
+    minutes: 2,
     paras: [
       'When Prophet Ibrahim, peace be upon him, was a young man, the people of his town worshipped statues they had carved out of stone. They bowed to them and asked them for help.',
       'Ibrahim asked them, “What are these statues you are so devoted to?” They said, “Our fathers did it, so we do it too.” Ibrahim said, “Then you and your fathers have been making a mistake.”',
@@ -86,7 +86,7 @@ export const STORIES: Story[] = [
     id: 'musa-basket',
     title: 'A basket on the river',
     about: 'Prophet Musa and his mother',
-    minutes: 4,
+    minutes: 3,
     paras: [
       'Long ago in Egypt there was a proud and cruel king called Pharaoh. He was afraid of the families of Bani Israel, and he made their lives very hard. He had even ordered that their baby boys be taken away.',
       'In one of those families, a baby boy was born. His name was Musa. His mother loved him so much, and she was frightened for him.',
@@ -105,7 +105,7 @@ export const STORIES: Story[] = [
     id: 'sulayman-ant',
     title: 'The ant who spoke up',
     about: 'Prophet Sulayman',
-    minutes: 3,
+    minutes: 2,
     paras: [
       'Prophet Sulayman, peace be upon him, was a king. Allah gave him wonderful gifts. He could understand the language of the birds, and he had a great army of people, and jinn, and birds too.',
       'One day Sulayman and his army were marching along, row after row after row. They came to a valley where lots and lots of ants lived.',
@@ -122,7 +122,7 @@ export const STORIES: Story[] = [
     id: 'cave',
     title: 'The very long sleep',
     about: 'The young men of the cave',
-    minutes: 4,
+    minutes: 3,
     paras: [
       'Long ago, there were some young men who believed in Allah, even though the people around them did not. Allah made their hearts strong, and they said, “Our Lord is the Lord of the heavens and the earth.”',
       'To keep their faith safe, they went to a cave in the mountains. Their dog came with them. Inside the cave they prayed: “Our Lord, give us mercy from You, and make everything right for us.”',
@@ -142,7 +142,7 @@ export const STORIES: Story[] = [
     id: 'maryam',
     title: 'Dates under the palm tree',
     about: 'Maryam and baby Isa',
-    minutes: 4,
+    minutes: 3,
     paras: [
       'Allah chose Maryam, peace be upon her, above all the women of the world. A whole chapter of the Quran is named after her. She spent her days worshipping Allah.',
       'One day, an angel brought her wonderful news from Allah: she was going to have a baby boy, called Isa. And he would be a prophet.',
@@ -161,7 +161,7 @@ export const STORIES: Story[] = [
     id: 'thirsty-dog',
     title: 'The man and the thirsty dog',
     about: 'A story the Prophet ﷺ told',
-    minutes: 3,
+    minutes: 2,
     paras: [
       'Our Prophet Muhammad, peace and blessings be upon him, once told his friends this story.',
       'A man was walking along a road when he grew very, very thirsty. Then he found a well. He climbed down inside it, drank the cool water, and climbed back out.',
@@ -179,3 +179,6 @@ export const STORIES: Story[] = [
 
 /** The dua before sleeping, from Munib's Hisn al-Muslim library (Sahih al-Bukhari 6324). */
 export const SLEEP_DUA_ID = 'h105';
+
+/** Night colours for bedtime screens, whatever the phone's setting: dim, warm, easy on sleepy eyes. */
+export const NIGHT = { bg: '#141829', card: '#1C2136', line: 'rgba(255,255,255,0.09)', text: '#EDEAF4', muted: 'rgba(237,234,244,0.62)', accent: '#E9C47E' };
