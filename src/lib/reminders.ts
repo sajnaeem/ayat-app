@@ -11,7 +11,7 @@ import { LangId, SURAHS, VERSES } from './quran';
  * "we've missed you" and then nothing more until they come back. On Fridays the reminder is Surah al-Kahf.
  */
 
-export type ReminderData = { to: 'mood' } | { to: 'surah'; s: number; a?: number } | { to: 'mosque' };
+export type ReminderData = { to: 'mood' } | { to: 'surah'; s: number; a?: number } | { to: 'mosque' } | { to: 'prayertimes' };
 
 export const REMINDER_TIMES = [
   { label: 'Morning', sub: '7:00 am', hour: 7, minute: 0 },

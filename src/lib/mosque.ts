@@ -81,12 +81,13 @@ export const todayIso = () => {
 /** Cancels any prayer alerts already planned and plans the next 9 days'. Safe to call whenever Munib opens. */
 export async function scheduleMosqueAlerts(o: { mosque: Mosque; days: MosqueDay[]; alerts: Alerts; jumuah: number } | null) {
   if (Platform.OS === 'web') return;
-  await cancelWhere((id) => id.startsWith('prayer-'));
+  await cancelWhere((id) => id.startsWith('prayer-') && !id.startsWith('prayer-calc-'));
   if (!o || !(await hasPermission())) return;
   const now = Date.now() + 60_000;
   let planned = 0;
   let lastDay = '';
   for (const d of o.days.slice(0, 9)) {
+    if (planned >= 45) break;
     for (const p of PRAYERS) {
       const before = o.alerts[p.id];
       if (before === null || before === undefined) continue;

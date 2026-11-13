@@ -2,7 +2,7 @@ import { memo, ReactNode, useEffect, useMemo, useReducer, useRef, useState } fro
 import { textScale, usePrefs } from '@/lib/store';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { Easing, FadeIn, FadeOut, SharedValue, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
-import { arabicNumber, chapterTranslator, LANGS, LangId, liveVerse, loadChapter, loadedChapter, MOODS, MoodId, translationFor, Verse } from '@/lib/quran';
+import { arabicNumber, ayahWords, chapterTranslator, LANGS, LangId, liveVerse, loadChapter, loadedChapter, MOODS, MoodId, translationFor, Verse } from '@/lib/quran';
 import { fonts, mix, Palette, Tone } from '@/lib/theme';
 import { Icon } from './Icon';
 import { AskSheet, TafsirSheet, WordPick, WordSheet } from './Study';
@@ -187,7 +187,7 @@ export const VerseCard = memo(function VerseCard(props: Props) {
   const L = LANGS.find((l) => l.id === lang)!;
   const tr = translationFor(v, lang);
 
-  const wordCount = useMemo(() => v.ar.reduce((n, [t]) => n + t.split(' ').filter(Boolean).length, 0), [v]);
+  const wordCount = useMemo(() => v.ar.reduce((n, [t]) => n + ayahWords(t).length, 0), [v]);
   const hidden = useMemo(() => {
     const order = hideOrder(wordCount, v.k);
     return new Set(order.slice(0, Math.ceil((wordCount * hideLevel) / 4)));
@@ -225,7 +225,7 @@ export const VerseCard = memo(function VerseCard(props: Props) {
   const arabic = v.ar.flatMap(([t, n]) => {
     const dim = playing && playingAyah !== null && playingAyah !== n;
     const col = dim ? soft : text;
-    const words = t.split(' ').filter(Boolean);
+    const words = ayahWords(t);
     // Light up the word being recited, but only when the timings line up with this text word for word.
     const pw = props.playingWord;
     const said = playing && playingAyah === n && pw && pw.of === words.length ? pw.pos - 1 : -1;

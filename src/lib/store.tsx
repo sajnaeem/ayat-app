@@ -11,7 +11,7 @@ function placeBefore(s: number, a: number): { s: number; a: number } | null {
   return null;
 }
 
-type Prefs = {
+export type Prefs = {
   onboarded: boolean;
   mood: MoodId | null;
   lang: LangId;
@@ -42,6 +42,12 @@ type Prefs = {
   speed: number;
   /** Size of the Arabic and translation on cards. */
   textSize: TextSize;
+  /** Tasbeeh counter: the phrase, the count and target, and today's and all-time totals (phone only). */
+  tasbeeh: { phrase: string; count: number; target: number; set: boolean; day: string; today: number; total: number };
+  /** Auto scroll on the Quran tab: off, or the reading pace used when recitation is paused. */
+  autoScroll: 'off' | 'slow' | 'medium' | 'fast';
+  /** General prayer times, worked out on the phone from where you are (stored on the phone only). */
+  prayer: { method: string; asr: 'standard' | 'hanafi'; loc: { lat: number; lon: number; label: string; at: number } | null; alerts: Record<'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha', boolean> };
 };
 export type TextSize = 'small' | 'medium' | 'large' | 'xl';
 export const TEXT_SIZES: { id: TextSize; label: string; scale: number }[] = [
@@ -73,6 +79,9 @@ const DEFAULTS: Prefs = {
   mushafPage: null,
   speed: 1,
   textSize: 'medium',
+  tasbeeh: { phrase: 'subhanallah', count: 0, target: 33, set: false, day: '', today: 0, total: 0 },
+  autoScroll: 'off',
+  prayer: { method: 'MoonsightingCommittee', asr: 'standard', loc: null, alerts: { fajr: false, dhuhr: false, asr: false, maghrib: false, isha: false } },
 };
 
 const KEY = 'ayat.prefs.v1';

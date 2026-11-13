@@ -9,14 +9,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
 import { ReflectionsSheet } from '@/components/Reflections';
 import { ShareSheet } from '@/components/ShareCard';
+import { ReadingSheet } from '@/components/ReadingSheet';
 import { Sheet } from '@/components/Sheet';
 import { useToast } from '@/components/Toast';
 import { VerseCard } from '@/components/VerseCard';
 import { ayahAudio, prefetchAudio, wordAt } from '@/lib/audio';
-import { ayahKeys, feedRound, interleave, ladderCards, loadChapter, orderCards, MOODS, MoodId, revealedIn, SUPPORT, SURAHS, translationFor, Verse } from '@/lib/quran';
+import { ayahKeys, ayahWords, feedRound, interleave, ladderCards, loadChapter, orderCards, MOODS, MoodId, revealedIn, SUPPORT, SURAHS, translationFor, Verse } from '@/lib/quran';
 import { useAccount } from '@/lib/account';
 import { dayKey, useProgress } from '@/lib/progress';
 import { refreshMosque } from '@/lib/mosque';
+import { schedulePrayerCalcAlerts } from '@/lib/prayertimes';
 import { askPermission, REMINDER_TIMES, ReminderData, scheduleReminders } from '@/lib/reminders';
 import { usePrefs } from '@/lib/store';
 import type { FeedVideo, Snippet } from '@/data/snippets';
@@ -235,6 +237,9 @@ function useEndlessFeed(mood: MoodId | null, mode: 'foryou' | 'order', jump: num
   return { items, setItems, reset, more, refreshAhead, orderFailed };
 }
 
+// Auto scroll reading pace: seconds per Arabic word plus translation words per minute.
+const PACE = { slow: { ar: 0.9, wpm: 150 }, medium: { ar: 0.6, wpm: 200 }, fast: { ar: 0.4, wpm: 260 } };
+
 export default function Feed() {
   const pal = usePalette();
   const insets = useSafeAreaInsets();
@@ -249,7 +254,7 @@ export default function Feed() {
   const guest = acctEarly.status === 'signedOut';
   // Since 10 Nov 2026 guests can try For you too (pick a mood, see ayat that speak to it) before being asked to sign up.
   const mode: 'foryou' | 'order' = prefs.feedMode;
-  const [sheet, setSheet] = useState<null | 'mood' | 'context' | 'remind' | 'support'>(prefs.onboarded ? null : 'mood');
+  const [sheet, setSheet] = useState<null | 'mood' | 'context' | 'remind' | 'support' | 'reading'>(prefs.onboarded ? null : 'mood');
   const [remindAt, setRemindAt] = useState(2);
   const [contextVerse, setContextVerse] = useState<Verse | null>(null);
   const [resting, setResting] = useState(false);
@@ -470,10 +475,41 @@ export default function Feed() {
     else if (q.pass < q.passes) {
       q.pass += 1;
       q.idx = 0;
+    } else if (autoRef.current) {
+      // Auto scroll: the reciter has finished this card, so bring the next one (it starts reciting when it settles).
+      advance();
+      return;
     } else return stop();
     playIdx();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finished]);
+
+  /* ---------- auto scroll (Quran tab): follows the recitation, or a reading pace when the sound is paused ---------- */
+  const [autoPaused, setAutoPaused] = useState(false);
+  const autoOn = mode === 'order' && (prefs.autoScroll ?? 'off') !== 'off';
+  const autoRef = useRef(false);
+  autoRef.current = autoOn && !autoPaused && !sheet && !resting;
+  const activeRef = useRef(0);
+  activeRef.current = active;
+  function advance() {
+    const next = activeRef.current + 1;
+    if (next < items.length) listRef.current?.scrollToIndex({ index: next, animated: true });
+  }
+  const audioOn = prefs.sound && !held && !paused;
+  useEffect(() => {
+    if (!autoRef.current || audioOn) return;
+    const it = items[active];
+    const pace = PACE[prefs.autoScroll as Exclude<typeof prefs.autoScroll, 'off'>] ?? PACE.medium;
+    let ms = 5000;
+    if (it?.kind === 'verse') {
+      const ar = it.v.ar.reduce((n, [x]) => n + ayahWords(x).length, 0);
+      const tr = (translationFor(it.v, prefs.lang) ?? []).join(' ').split(/\s+/).length;
+      ms = Math.max(5000, ar * pace.ar * 1000 + (tr / pace.wpm) * 60000);
+    }
+    const t = setTimeout(advance, ms);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, autoOn, autoPaused, audioOn, sheet, resting, prefs.autoScroll, items.length]);
 
   // Look up the audio for this card and the next two ahead of time, so recitation starts without a wait.
   useEffect(() => {
@@ -589,6 +625,16 @@ export default function Feed() {
     return () => sub.remove();
   }, [mosqueId]);
 
+  // General prayer-time alerts (worked out on the phone): re-planned every time Munib opens.
+  const prayerRef = useRef(prefs.prayer);
+  prayerRef.current = prefs.prayer;
+  useEffect(() => {
+    const go = () => schedulePrayerCalcAlerts(prayerRef.current, !!prefs.mosque).catch(() => {});
+    go();
+    const sub = AppState.addEventListener('change', (st) => st === 'active' && go());
+    return () => sub.remove();
+  }, [prefs.prayer, !!prefs.mosque]);
+
   // Downloaded recitations: re-checked against the synced list at least weekly (Quran Foundation terms).
   useEffect(() => {
     const t = setTimeout(() => recheckDownloads().catch(() => {}), 5000);
@@ -625,6 +671,7 @@ export default function Feed() {
     const data = lastResponse.notification.request.content.data as unknown as ReminderData | undefined;
     if (data?.to === 'surah') openSurah(data.s, data.a ?? 1);
     else if (data?.to === 'mosque') router.push('/mosque');
+    else if (data?.to === 'prayertimes') router.push('/prayertimes');
     else setSheet('mood');
     Notifications.clearLastNotificationResponseAsync().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -825,6 +872,19 @@ export default function Feed() {
         />
       )}
 
+      {autoOn && (
+        <Pressable
+          onPress={() => setAutoPaused((x) => !x)}
+          style={[styles.autoPill, { top: insets.top + 58, borderColor: autoPaused ? pal.line : pal.accent, backgroundColor: pal.surface }]}
+          accessibilityRole="button"
+          accessibilityLabel={autoPaused ? 'Resume auto scroll' : 'Pause auto scroll'}
+          hitSlop={6}
+        >
+          <Icon name={autoPaused ? 'play' : 'pause'} size={11} color={autoPaused ? pal.muted : pal.accent} fill />
+          <Text style={[styles.autoText, { color: autoPaused ? pal.muted : pal.accent }]}>Auto</Text>
+        </Pressable>
+      )}
+
       <TopBar
         chrome={chrome}
         chromeOn={chromeOn}
@@ -840,7 +900,7 @@ export default function Feed() {
         onMode={switchMode}
         showTl={prefs.showTl}
         onMood={() => setSheet('mood')}
-        onTl={() => prefs.set({ showTl: !prefs.showTl })}
+        onTl={() => setSheet('reading')}
         onRead={() => {
           stop();
           router.push('/search');
@@ -880,6 +940,8 @@ export default function Feed() {
           <Text style={[styles.skipText, { color: pal.muted }]}>Just let me scroll</Text>
         </Pressable>
       </Sheet>
+
+      <ReadingSheet visible={sheet === 'reading'} onClose={() => setSheet(null)} pal={pal} />
 
       <Sheet visible={sheet === 'support'} onClose={() => setSheet(null)} title="Someone to talk to" pal={pal}>
         <Text style={[styles.lead, { color: pal.muted }]}>
@@ -1089,7 +1151,7 @@ function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palett
         <Pressable onPress={p.onRead} style={pill} accessibilityRole="button" accessibilityLabel="Search surahs, ayat, people and posts">
           <Icon name="search" size={17} color={pal.text} />
         </Pressable>
-        <Pressable onPress={p.onTl} style={[pill, p.showTl && { borderColor: pal.accent }]} accessibilityRole="switch" accessibilityState={{ checked: p.showTl }} accessibilityLabel="Show transliteration">
+        <Pressable onPress={p.onTl} style={[pill, p.showTl && { borderColor: pal.accent }]} accessibilityRole="button" accessibilityLabel="Reading options: transliteration, text size, speed and auto scroll">
           <Text style={[styles.aa, { color: p.showTl ? pal.accent : pal.text }]}>Aa</Text>
         </Pressable>
         <Pressable onPress={p.onYou} style={[pill, { backgroundColor: pal.text, borderColor: pal.text }]} accessibilityRole="button" accessibilityLabel="Your progress and settings">
@@ -1125,6 +1187,8 @@ const styles = StyleSheet.create({
   skipText: { fontFamily: fonts.ui, fontSize: 14, textDecorationLine: 'underline' },
   note: { fontFamily: fonts.read, fontSize: 16, lineHeight: 25 },
   h3: { fontFamily: fonts.uiBold, fontSize: 11, letterSpacing: 1.2 },
+  autoPill: { position: 'absolute', right: 16, flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
+  autoText: { fontFamily: fonts.uiBold, fontSize: 12 },
   off: { width: '100%', justifyContent: 'center', paddingHorizontal: 24, gap: 16 },
   offEyebrow: { fontFamily: fonts.uiBold, fontSize: 12, letterSpacing: 1.4 },
   offTitle: { fontFamily: fonts.uiBold, fontSize: 32, lineHeight: 37, letterSpacing: -0.6 },

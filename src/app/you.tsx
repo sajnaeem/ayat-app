@@ -12,6 +12,7 @@ import { RECITERS } from '@/lib/audio';
 import { dayKey, surahDone, useProgress } from '@/lib/progress';
 import { LANGS, SURAHS, VERSES } from '@/lib/quran';
 import { askPermission, REMINDER_TIMES } from '@/lib/reminders';
+import { AUTO_PACES } from '@/components/ReadingSheet';
 import { SPEEDS, TEXT_SIZES, textScale, usePrefs } from '@/lib/store';
 import { profileCard, Profile } from '@/lib/profiles';
 import { amReviewer, deletePost, myPosts, Post, reviewQueue } from '@/lib/posts';
@@ -33,7 +34,7 @@ export default function You() {
   const toast = useToast();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showRules, setShowRules] = useState(false);
-  const [pick, setPick] = useState<'reminder' | 'lang' | 'reciter' | 'speed' | 'size' | null>(null);
+  const [pick, setPick] = useState<'reminder' | 'lang' | 'reciter' | 'speed' | 'size' | 'auto' | null>(null);
   const [blocked, setBlocked] = useState<{ id: string; handle: string }[] | null>(null);
   const [blockedLoading, setBlockedLoading] = useState(false);
   const openBlocked = () => {
@@ -152,8 +153,10 @@ export default function You() {
         {/* My mosque */}
         <Section pal={pal} title="Prayer" />
         <Group pal={pal}>
+          <Row pal={pal} icon="bell" title="Prayer times" sub="Today’s times wherever you are, with alerts" onPress={() => router.push('/prayertimes')} />
           <Row
             pal={pal}
+            divider
             icon="mosque"
             title={prefs.mosque ? prefs.mosque.name : 'Add your mosque'}
             sub={prefs.mosque ? 'Prayer times and jama’ah alerts' : 'Get an alert before each jama’ah'}
@@ -162,6 +165,7 @@ export default function You() {
           />
           <Row pal={pal} icon="compass" title="Qibla" sub="Which way to face, from where you are" onPress={() => router.push('/qibla')} divider />
           <Row pal={pal} icon="hands" title="Find a dua" sub="Say what’s happening, get duas for it" onPress={() => router.push('/duas')} divider />
+          <Row pal={pal} icon="beads" title="Tasbeeh" sub="Count your dhikr, with the after-prayer set" onPress={() => router.push('/tasbeeh')} divider />
         </Group>
 
         {/* Saved */}
@@ -197,6 +201,7 @@ export default function You() {
           <Row pal={pal} icon="mic" title="Reciter" value={reciter.name.split(' ').slice(-1)[0]} onPress={() => setPick('reciter')} divider />
           <Row pal={pal} icon="speed" title="Recitation speed" value={speedLabel(prefs.speed ?? 1)} onPress={() => setPick('speed')} divider />
           <Row pal={pal} icon="text" title="Text size" value={TEXT_SIZES.find((t) => t.id === (prefs.textSize ?? 'medium'))?.label} onPress={() => setPick('size')} divider />
+          <Row pal={pal} icon="play" title="Auto scroll" value={AUTO_PACES.find((x) => x.id === (prefs.autoScroll ?? 'off'))?.label} onPress={() => setPick('auto')} divider />
         </Group>
 
         {acct.online && (
@@ -341,6 +346,18 @@ export default function You() {
       <Sheet visible={pick === 'lang'} onClose={() => setPick(null)} title="Translation" pal={pal}>
         {LANGS.map((l) => (
           <Choice key={l.id} pal={pal} on={prefs.lang === l.id} title={l.native ? `${l.name}  ${l.native}` : l.name} sub={l.by} onPress={() => prefs.set({ lang: l.id })} />
+        ))}
+      </Sheet>
+      <Sheet visible={pick === 'auto'} onClose={() => setPick(null)} title="Auto scroll" pal={pal}>
+        {AUTO_PACES.map((x) => (
+          <Choice
+            key={x.id}
+            pal={pal}
+            on={(prefs.autoScroll ?? 'off') === x.id}
+            title={x.label}
+            sub={x.id === 'off' ? 'Swipe to the next card yourself' : 'On the Quran tab: follows the recitation, or this reading pace with the sound paused'}
+            onPress={() => prefs.set({ autoScroll: x.id })}
+          />
         ))}
       </Sheet>
       <Sheet visible={pick === 'speed'} onClose={() => setPick(null)} title="Recitation speed" pal={pal}>

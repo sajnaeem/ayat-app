@@ -372,9 +372,9 @@ export async function orderCards(s: number, lang: LangId, from = 1): Promise<Ver
   let a = Math.max(1, Math.min(from, c.length));
   while (a <= c.length) {
     let b = a;
-    let words = c[a - 1].ar.split(' ').filter(Boolean).length;
+    let words = ayahWords(c[a - 1].ar).length;
     while (b < c.length && words < 10 && b - a < 3) {
-      const nw = c[b].ar.split(' ').filter(Boolean).length;
+      const nw = ayahWords(c[b].ar).length;
       if (words + nw > 24) break;
       words += nw;
       b++;
@@ -449,4 +449,25 @@ export function loadTafsir(key: string, lang: LangId): Promise<Tafsir> {
     tafsirCache.set(id, p);
   }
   return p;
+}
+
+/**
+ * An ayah's words as the reciter's timings count them: the small pause signs (ۖ ۗ ۚ …) that some texts
+ * write as separate "words" are joined onto the word before, so word 5 on screen is word 5 in the audio
+ * (and in the word-by-word meanings).
+ */
+const MARK_ONLY = /^[\u0610-\u061A\u06D6-\u06ED]+$/;
+export function ayahWords(t: string): string[] {
+  const out: string[] = [];
+  let lead = '';
+  for (const w of t.split(/\s+/)) {
+    if (!w) continue;
+    if (w === '۞') lead = '۞ ';
+    else if (MARK_ONLY.test(w) && out.length) out[out.length - 1] += w;
+    else {
+      out.push(lead + w);
+      lead = '';
+    }
+  }
+  return out;
 }
