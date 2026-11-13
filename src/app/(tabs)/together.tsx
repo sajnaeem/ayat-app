@@ -1,7 +1,8 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useExplain } from '@/components/Explain';
 import { Group, Row, Section } from '@/components/List';
 import { useAccount } from '@/lib/account';
 import { flushUmmah, UmmahStats, ummahStats } from '@/lib/together-more';
@@ -14,6 +15,7 @@ export default function TogetherTab() {
   const router = useRouter();
   const acct = useAccount();
   const signedIn = acct.status === 'signedIn';
+  const [explain, explainSheet] = useExplain(pal);
   const [stats, setStats] = useState<UmmahStats | null>(null);
   useFocusEffect(
     useCallback(() => {
@@ -42,16 +44,19 @@ export default function TogetherTab() {
             <Text style={[styles.ummahSub, { color: '#FFFFFF' }]}>Every ayah you read adds to everyone’s total.</Text>
           )}
           <Text style={[styles.ummahNote, { color: mix(pal.accent, '#FFFFFF', 0.7) }]}>Only the total is counted, never who read what.</Text>
+          <Pressable onPress={() => explain('ummah')} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', marginTop: 4 }}>
+            <Text style={[styles.ummahNote, { color: '#FFFFFF', textDecorationLine: 'underline', marginTop: 0 }]}>What is the ummah?</Text>
+          </Pressable>
         </View>
 
         <Section pal={pal} title="Pray for each other" />
         <Group pal={pal}>
-          <Row pal={pal} icon="hands" title="Ask for dua" sub="Ask the ummah to pray for you, or make dua for others" onPress={() => router.push('/dua-requests')} highlight />
+          <Row pal={pal} icon="hands" title="Ask for dua" sub="Ask the ummah to pray for you, or make dua for others" onPress={() => router.push('/dua-requests')} onInfo={() => explain('duaothers')} highlight />
         </Group>
 
         <Section pal={pal} title="Family" />
         <Group pal={pal}>
-          <Row pal={pal} icon="people" title="Read together" sub="Finish the Quran as a family, a juz each, or in memory of someone" onPress={needs('together', () => router.push('/together'))} />
+          <Row pal={pal} icon="people" title="Read together" sub="Finish the whole Quran as a family, a part (juz) each, or in memory of someone" onPress={needs('together', () => router.push('/together'))} onInfo={() => explain('khatm')} />
           <Row pal={pal} icon="moon" title="Bedtime stories" sub="True stories for children, read or played" onPress={() => router.push('/stories')} divider />
         </Group>
 
@@ -64,6 +69,7 @@ export default function TogetherTab() {
         <View style={{ height: 8 }} />
         <Text style={[styles.note, { color: pal.muted }]}>Posts from people you follow show first in For you on Home.</Text>
       </ScrollView>
+      {explainSheet}
     </View>
   );
 }

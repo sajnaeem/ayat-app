@@ -180,6 +180,11 @@ export default function You() {
         </Group>
 
         {/* Reading settings */}
+        <Section pal={pal} title="Learn" />
+        <Group pal={pal}>
+          <Row pal={pal} icon="info" title="Words and practices explained" sub="Dhikr, dua, salah, the Qibla and more, in plain English" onPress={() => router.push('/explain')} />
+        </Group>
+
         <Section pal={pal} title="Reading" />
         <Group pal={pal}>
           <Row pal={pal} icon="bell" title="Daily reminder" value={reminderLabel} onPress={() => setPick('reminder')} />

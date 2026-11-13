@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ExplainIntro } from '@/components/Explain';
 import { Icon } from '@/components/Icon';
 import { LEARN } from '@/data/learn';
 import { isLearned, learnedAyat, learnedCount, nextToLearn } from '@/lib/learn';
@@ -31,6 +32,7 @@ export default function LearnList() {
         contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: insets.bottom + 30 }}
         ListHeaderComponent={
           <View style={{ gap: 10, marginBottom: 4 }}>
+            <ExplainIntro id="surahs" pal={pal} />
             <View style={[styles.card, { backgroundColor: pal.surface }]}>
               <Text style={[styles.eyebrow, { color: pal.accent }]}>{count ? `${count} OF ${LEARN.length} LEARNED` : 'START HERE'}</Text>
               <Text style={[styles.body, { color: pal.text }]}>

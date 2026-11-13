@@ -20,8 +20,8 @@ export function Group({ pal, children }: { pal: Palette; children: React.ReactNo
 }
 
 export function Row({
-  pal, icon, title, sub, value, valueColor, onPress, divider, highlight, danger,
-}: { pal: Palette; icon: IconName; title: string; sub?: string; value?: string; valueColor?: string; onPress: () => void; divider?: boolean; highlight?: boolean; danger?: boolean }) {
+  pal, icon, title, sub, value, valueColor, onPress, divider, highlight, danger, onInfo,
+}: { pal: Palette; icon: IconName; title: string; sub?: string; value?: string; valueColor?: string; onPress: () => void; divider?: boolean; highlight?: boolean; danger?: boolean; onInfo?: () => void }) {
   const tint = danger ? DANGER : pal.accent;
   return (
     <Pressable
@@ -37,6 +37,11 @@ export function Row({
         {!!sub && <Text style={[styles.sub, { color: pal.muted }]}>{sub}</Text>}
       </View>
       {!!value && <Text style={[styles.value, { color: valueColor ?? pal.muted }]}>{value}</Text>}
+      {!!onInfo && (
+        <Pressable onPress={onInfo} hitSlop={10} accessibilityRole="button" accessibilityLabel={`What is ${title}?`} style={[styles.info, { borderColor: mix(pal.surface, pal.accent, 0.45) }]}>
+          <Text style={[styles.infoText, { color: pal.accent }]}>?</Text>
+        </Pressable>
+      )}
       {!danger && <Icon name="chevron" size={16} color={pal.muted} />}
     </Pressable>
   );
@@ -86,6 +91,8 @@ export function Stat({ pal, n, label }: { pal: Palette; n: number; label: string
 
 
 const styles = StyleSheet.create({
+  info: { width: 24, height: 24, borderRadius: 12, borderWidth: 1.2, alignItems: 'center', justifyContent: 'center' },
+  infoText: { fontFamily: fonts.uiBold, fontSize: 13, lineHeight: 16 },
   card: { borderRadius: 16, overflow: 'hidden' },
   section: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 14, paddingHorizontal: 4 },
   sectionTitle: { fontFamily: fonts.uiBold, fontSize: 19, letterSpacing: -0.3 },

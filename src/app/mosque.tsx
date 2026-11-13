@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ExplainIntro } from '@/components/Explain';
 import { Icon } from '@/components/Icon';
 import { useToast } from '@/components/Toast';
 import { useAccount } from '@/lib/account';
@@ -107,6 +108,7 @@ export default function MosqueScreen() {
         </Pressable>
       </View>
       <ScrollView contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + 40 }]} keyboardShouldPersistTaps="handled">
+        <ExplainIntro id="jamaah" pal={pal} />
         {found ? (
           <>
             <Text style={[styles.h2, { color: pal.text }]}>{found.mosque.name}</Text>

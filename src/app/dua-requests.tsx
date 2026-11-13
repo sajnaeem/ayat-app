@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ActionSheetIOS, ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ExplainIntro } from '@/components/Explain';
 import { GuidelinesList } from '@/components/Guidelines';
 import { Icon } from '@/components/Icon';
 import { useToast } from '@/components/Toast';
@@ -187,6 +188,7 @@ export default function DuaRequests() {
         contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: insets.bottom + 30 }}
         ListHeaderComponent={
           <View style={{ gap: 10, marginBottom: 6 }}>
+            <ExplainIntro id="duaothers" pal={pal} />
             <Text style={[styles.lead, { color: pal.muted }]}>
               The Prophet ﷺ said the dua of a Muslim for their brother or sister in their absence is answered, and an angel says, “Ameen, and the same for you” (Sahih Muslim 2733).
             </Text>

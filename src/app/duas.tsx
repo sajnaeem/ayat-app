@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ExplainIntro } from '@/components/Explain';
 import { Icon } from '@/components/Icon';
 import type { Dua } from '@/data/duas';
 import { useAccount } from '@/lib/account';
@@ -48,6 +49,7 @@ export default function FindDua() {
       </View>
 
       <ScrollView ref={scroll} keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}>
+        <ExplainIntro id="dua" pal={pal} />
         <Text style={[styles.lead, { color: pal.muted }]}>Tell us what’s going on, in your own words. Munib finds duas for it from Hisn al-Muslim and the Quran.</Text>
         <View style={[styles.box, { backgroundColor: pal.surface, borderColor: pal.line }]}>
           <TextInput

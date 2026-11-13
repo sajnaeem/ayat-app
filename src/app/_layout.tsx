@@ -97,6 +97,7 @@ function Root() {
         <Stack.Screen name="learn/index" options={{ presentation: 'modal' }} />
         <Stack.Screen name="nearby" options={{ presentation: 'modal' }} />
         <Stack.Screen name="dua-requests" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="explain" options={{ presentation: 'modal' }} />
         <Stack.Screen name="learn/[s]" />
       </Stack>
     </>

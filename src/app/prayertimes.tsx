@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ExplainIntro, useExplain } from '@/components/Explain';
 import { Icon } from '@/components/Icon';
 import { Sheet } from '@/components/Sheet';
 import { askPermission } from '@/lib/reminders';
@@ -17,6 +18,7 @@ export default function PrayerTimesScreen() {
   const router = useRouter();
   const prefs = usePrefs();
   const s = prefs.prayer;
+  const [setWhy, whySheet] = useExplain(pal);
   const [now, setNow] = useState(new Date());
   const [dayOffset, setDayOffset] = useState(0);
   const [locating, setLocating] = useState(false);
@@ -82,6 +84,7 @@ export default function PrayerTimesScreen() {
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ padding: 18, gap: 14, paddingBottom: insets.bottom + 30 }}>
+          <ExplainIntro id="prayertimes" pal={pal} />
           {next && (
             <View style={[styles.next, { backgroundColor: mix(pal.surface, pal.accent, 0.08), borderColor: mix(pal.line, pal.accent, 0.4) }]}>
               <Text style={[styles.eyebrow, { color: pal.accent }]}>NEXT</Text>
@@ -138,7 +141,7 @@ export default function PrayerTimesScreen() {
           </View>
           {day && (
             <Text style={[styles.small, { color: pal.muted }]}>
-              The last third of the night begins at {hm(day.lastThird)}. Tap a bell for an alert when that prayer begins.
+              The last third of the night (<Text onPress={() => setWhy('lastthird')} style={{ color: pal.accent, textDecorationLine: 'underline' }}>why it matters</Text>) begins at {hm(day.lastThird)}. Tap a bell for an alert when that prayer begins.
             </Text>
           )}
 
@@ -221,6 +224,7 @@ export default function PrayerTimesScreen() {
           </Pressable>
         ))}
       </Sheet>
+      {whySheet}
     </View>
   );
 }

@@ -48,6 +48,8 @@ export type Prefs = {
   autoScroll: 'off' | 'slow' | 'medium' | 'fast';
   /** For you: the kinds of extras the reader has turned off (ids from FEED_TOPICS). The ayat are always shown. */
   feedHide: string[];
+  /** Explainers the reader has said they already know (the "New to this?" card becomes a small link). */
+  explained: string[];
   /** General prayer times, worked out on the phone from where you are (stored on the phone only). */
   prayer: { method: string; asr: 'standard' | 'hanafi'; loc: { lat: number; lon: number; label: string; at: number } | null; alerts: Record<'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha', boolean> };
 };
@@ -84,6 +86,7 @@ const DEFAULTS: Prefs = {
   tasbeeh: { phrase: 'subhanallah', count: 0, target: 33, set: false, day: '', today: 0, total: 0 },
   autoScroll: 'off',
   feedHide: [],
+  explained: [],
   prayer: { method: 'MoonsightingCommittee', asr: 'standard', loc: null, alerts: { fajr: false, dhuhr: false, asr: false, maghrib: false, isha: false } },
 };
 

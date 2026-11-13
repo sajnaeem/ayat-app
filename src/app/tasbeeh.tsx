@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
+import { ExplainIntro } from '@/components/Explain';
 import { Icon } from '@/components/Icon';
 import { usePrefs } from '@/lib/store';
 import { fonts, mix, usePalette } from '@/lib/theme';
@@ -81,6 +82,7 @@ export default function Tasbeeh() {
         </Pressable>
       </View>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
+        <ExplainIntro id="dhikr" pal={pal} style={{ marginHorizontal: 18, marginTop: 4, marginBottom: 6 }} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
           <Pressable
             onPress={() => save({ set: true, phrase: SET[0].id, target: SET[0].n, count: 0 })}

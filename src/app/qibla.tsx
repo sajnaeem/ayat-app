@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
+import { ExplainIntro } from '@/components/Explain';
 import { Icon } from '@/components/Icon';
 import { fonts, mix, usePalette } from '@/lib/theme';
 
@@ -100,6 +101,7 @@ export default function Qibla() {
           <Icon name="close" size={18} color={pal.text} />
         </Pressable>
       </View>
+      <ExplainIntro id="qibla" pal={pal} compact style={{ paddingHorizontal: 20 }} />
 
       {state === 'asking' ? (
         <View style={styles.center}>

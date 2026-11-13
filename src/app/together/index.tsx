@@ -2,6 +2,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ExplainIntro } from '@/components/Explain';
 import { Icon } from '@/components/Icon';
 import { KhatmBar as Bar } from '@/components/KhatmBar';
 import { Sheet } from '@/components/Sheet';
@@ -104,6 +105,7 @@ export default function Together() {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} />}
       >
+        <ExplainIntro id="khatm" pal={pal} />
         {list === null ? (
           <ActivityIndicator color={pal.muted} style={{ marginTop: 40 }} />
         ) : (

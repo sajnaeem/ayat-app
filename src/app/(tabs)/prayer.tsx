@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
+import { ExplainIntro, useExplain } from '@/components/Explain';
 import { Group, Row, Section } from '@/components/List';
 import { CALC_ROWS, calcDay, hm, nextPrayer, until } from '@/lib/prayertimes';
 import { usePrefs } from '@/lib/store';
@@ -15,6 +16,7 @@ export default function PrayerTab() {
   const router = useRouter();
   const prefs = usePrefs();
   const s = prefs.prayer;
+  const [explain, explainSheet] = useExplain(pal);
   const [now, setNow] = useState(new Date());
   // Fresh countdown whenever the tab is opened, and every 30 seconds while it's open.
   useFocusEffect(
@@ -35,6 +37,7 @@ export default function PrayerTab() {
         <Text style={[styles.title, { color: pal.text }]}>Prayer</Text>
       </View>
       <ScrollView contentContainerStyle={styles.body}>
+        <ExplainIntro id="salah" pal={pal} />
         <Pressable onPress={() => router.push('/prayertimes')} style={({ pressed }) => [styles.card, { backgroundColor: pal.surface, opacity: pressed ? 0.8 : 1 }]} accessibilityRole="button">
           {day && next ? (
             <>
@@ -72,8 +75,9 @@ export default function PrayerTab() {
             pal={pal}
             icon="mosque"
             title={prefs.mosque ? prefs.mosque.name : 'Add your mosque'}
-            sub={prefs.mosque ? 'Jamaʿah times and alerts' : 'Get an alert before each jamaʿah'}
+            sub={prefs.mosque ? 'Jamaʿah (group prayer) times and alerts' : 'An alert before each jamaʿah, the group prayer'}
             onPress={() => router.push('/mosque')}
+            onInfo={() => explain('jamaah')}
             highlight={!prefs.mosque}
           />
           <Row pal={pal} icon="compass" title="Mosques near you" sub="Nearest first, with directions" onPress={() => router.push('/nearby')} divider />
@@ -81,19 +85,26 @@ export default function PrayerTab() {
 
         <Section pal={pal} title="Every day" />
         <Group pal={pal}>
-          <Row pal={pal} icon="mic" title="Surahs for your prayer" sub="Learn short surahs, one ayah at a time" onPress={() => router.push('/learn')} />
-          <Row pal={pal} icon="compass" title="Qibla" sub="Which way to face, from where you are" onPress={() => router.push('/qibla')} divider />
-          <Row pal={pal} icon="hands" title="Find a dua" sub="Say what’s happening, get duas for it" onPress={() => router.push('/duas')} divider />
-          <Row pal={pal} icon="beads" title="Tasbeeh" sub="Count your dhikr, with the after-prayer set" value={tasbeehToday ? `${tasbeehToday} today` : undefined} onPress={() => router.push('/tasbeeh')} divider />
-          <Row pal={pal} icon="bell" title="Prayer times and alerts" sub={s.loc ? 'Calculation, Asr and alerts' : 'Set up for where you are'} onPress={() => router.push('/prayertimes')} divider />
+          <Row pal={pal} icon="mic" title="Surahs for your prayer" sub="Learn short surahs to recite, one ayah at a time" onPress={() => router.push('/learn')} onInfo={() => explain('surahs')} />
+          <Row pal={pal} icon="compass" title="Qibla" sub="Which way to face Makkah when you pray" onPress={() => router.push('/qibla')} onInfo={() => explain('qibla')} divider />
+          <Row pal={pal} icon="hands" title="Find a dua" sub="Words to ask Allah with, for what’s happening" onPress={() => router.push('/duas')} onInfo={() => explain('dua')} divider />
+          <Row pal={pal} icon="beads" title="Tasbeeh" sub="Count phrases that remember Allah, like SubhanAllah" onInfo={() => explain('dhikr')} value={tasbeehToday ? `${tasbeehToday} today` : undefined} onPress={() => router.push('/tasbeeh')} divider />
+          <Row pal={pal} icon="bell" title="Prayer times and alerts" sub={s.loc ? 'Calculation, Asr and alerts' : 'Set up for where you are'} onPress={() => router.push('/prayertimes')} onInfo={() => explain('prayertimes')} divider />
         </Group>
+        <Pressable onPress={() => router.push('/explain')} style={styles.more} accessibilityRole="button">
+          <Icon name="info" size={15} color={pal.accent} />
+          <Text style={[styles.moreText, { color: pal.accent }]}>New to this? Words and practices explained</Text>
+        </Pressable>
       </ScrollView>
+      {explainSheet}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  more: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'center', paddingVertical: 8 },
+  moreText: { fontFamily: fonts.uiSemi, fontSize: 14 },
   head: { paddingHorizontal: 20, paddingBottom: 6 },
   title: { fontFamily: fonts.uiBold, fontSize: 30, letterSpacing: -0.6 },
   body: { padding: 16, gap: 12, paddingBottom: 30 },
