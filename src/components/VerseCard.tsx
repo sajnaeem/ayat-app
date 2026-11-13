@@ -1,4 +1,5 @@
 import { memo, ReactNode, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { textScale, usePrefs } from '@/lib/store';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { Easing, FadeIn, FadeOut, SharedValue, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { arabicNumber, chapterTranslator, LANGS, LangId, liveVerse, loadChapter, loadedChapter, MOODS, MoodId, translationFor, Verse } from '@/lib/quran';
@@ -175,9 +176,12 @@ export const VerseCard = memo(function VerseCard(props: Props) {
   const checkFit = () => {
     if (!memOpen && viewport.current && content.current > viewport.current + 2 && fit > 0.55) setFit((f) => Math.max(0.55, f * 0.88));
   };
-  useEffect(() => setFit(1), [v.k, lang, showTl]);
-  const arSize = (arLen > 520 ? 24 : arLen > 240 ? 27 : 32) * fit;
-  const trSize = (arLen > 520 ? 16 : arLen > 240 ? 17 : 18.5) * Math.max(0.82, fit);
+  const sizePref = usePrefs().textSize;
+  useEffect(() => setFit(1), [v.k, lang, showTl, sizePref]);
+  // The reader's text size (You → Reading → Text size); long passages still shrink to fit the screen.
+  const scale = textScale(usePrefs().textSize);
+  const arSize = (arLen > 520 ? 24 : arLen > 240 ? 27 : 32) * fit * scale;
+  const trSize = (arLen > 520 ? 16 : arLen > 240 ? 17 : 18.5) * Math.max(0.82, fit) * scale;
   const L = LANGS.find((l) => l.id === lang)!;
   const tr = translationFor(v, lang);
 

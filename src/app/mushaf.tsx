@@ -90,10 +90,11 @@ export default function Mushaf() {
         if (current.current !== k) return;
         timings.current = au.words;
         player.replace(au.url);
+        player.setPlaybackRate(prefs.speed ?? 1, 'high');
         player.play();
       });
     },
-    [player, prefs.reciter, page],
+    [player, prefs.reciter, prefs.speed, page],
   );
 
   const stopAudio = useCallback(() => {

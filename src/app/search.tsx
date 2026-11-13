@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Hit, isArabic, searchQuran, warmSearch } from '@/lib/quranSearch';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar } from '@/components/Avatar';
@@ -35,6 +36,29 @@ export default function Search() {
   const [open, setOpen] = useState<number | null>(null);
   const online = !!acct.userId;
   const t = q.trim();
+
+  // The whole Quran, searched on the phone (Arabic or the translation).
+  const [hits, setHits] = useState<{ q: string; list: Hit[]; total: number } | null>(null);
+  const [hitErr, setHitErr] = useState(false);
+  const [more, setMore] = useState(30);
+  useEffect(() => warmSearch(prefs.lang), [prefs.lang]);
+  const qseq = useRef(0);
+  useEffect(() => {
+    setMore(30);
+    if (t.length < 2 || /^\d+(\s*[:.]\s*\d*)?$/.test(t)) {
+      setHits(null);
+      return;
+    }
+    const n = ++qseq.current;
+    setHitErr(false);
+    const timer = setTimeout(() => {
+      searchQuran(t, prefs.lang).then(
+        (r) => n === qseq.current && setHits({ q: t, list: r.hits, total: r.total }),
+        () => n === qseq.current && (setHits({ q: t, list: [], total: 0 }), setHitErr(true)),
+      );
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [t, prefs.lang]);
 
   // People and posts: wait until typing pauses, and ignore answers to older searches.
   const seq = useRef(0);
@@ -94,7 +118,7 @@ export default function Search() {
     }
   };
 
-  const quranCount = local.surahs.length + local.moods.length + local.ayat.length + (local.ref ? 1 : 0);
+  const quranCount = local.surahs.length + local.moods.length + (hits?.list.length ? 0 : local.ayat.length) + (local.ref ? 1 : 0) + (hits?.list.length ?? 0);
   const show = (x: Tab) => tab === 'all' || tab === x;
   const cap = (n: number) => (tab === 'all' ? n : 999);
 
@@ -156,7 +180,7 @@ export default function Search() {
             </View>
             <Row pal={pal} icon="book" title="All 114 surahs" sub="Browse the whole Quran" onPress={() => router.push('/read')} />
             <Label pal={pal} text="Try searching" />
-            <Text style={[styles.hint, { color: pal.muted }]}>A surah ("Mulk", "36"), an ayah ("2:255"), a feeling ("anxious"), words from an ayah ("patience"), or someone's name.</Text>
+            <Text style={[styles.hint, { color: pal.muted }]}>A surah ("Mulk", "36"), an ayah ("2:255"), a feeling ("anxious"), any word in the Quran, in English or Arabic ("patience", "صبر"), or someone's name.</Text>
           </>
         ) : (
           <>
@@ -172,7 +196,40 @@ export default function Search() {
                 {local.moods.slice(0, cap(3)).map((m) => (
                   <Row key={m.id} pal={pal} icon="heart" title={m.when} sub="Ayat picked for this, in For you" onPress={() => pickMood(m.id)} />
                 ))}
-                {local.ayat.slice(0, cap(4)).map((v) => (
+                {!!hits?.list.length && (
+                  <>
+                    <Text style={[styles.sub, { color: pal.muted, marginTop: 6 }]}>
+                      {hits.total === 1 ? '1 ayah' : `${hits.total.toLocaleString('en-GB')} ayat`} in the Quran{isArabic(t) ? '' : ` mention “${t}”`}
+                    </Text>
+                    {hits.list.slice(0, tab === 'all' ? 4 : more).map((h) => (
+                      <Pressable key={h.key} onPress={() => openAt(h.s, h.a)} style={[styles.card, { backgroundColor: pal.surface }]} accessibilityRole="button">
+                        <Text style={[styles.key, { color: pal.accent }]}>
+                          {SURAHS[h.s - 1][0]} {h.key}
+                        </Text>
+                        {isArabic(t) && (
+                          <Text style={[styles.ar, { color: pal.text, textAlign: 'right', lineHeight: 34 }]} numberOfLines={2}>
+                            {h.ar}
+                          </Text>
+                        )}
+                        <Highlight pal={pal} text={h.tr} q={t} lines={3} />
+                      </Pressable>
+                    ))}
+                    {tab === 'all' && hits.list.length > 4 && (
+                      <Pressable onPress={() => setTab('quran')} style={{ paddingVertical: 6 }}>
+                        <Text style={[styles.sub, { color: pal.accent, fontFamily: fonts.uiBold }]}>See all {hits.total.toLocaleString('en-GB')} in the Quran</Text>
+                      </Pressable>
+                    )}
+                    {tab === 'quran' && hits.list.length > more && (
+                      <Pressable onPress={() => setMore((m) => m + 30)} style={{ paddingVertical: 8, alignItems: 'center' }}>
+                        <Text style={[styles.sub, { color: pal.accent, fontFamily: fonts.uiBold }]}>Show more</Text>
+                      </Pressable>
+                    )}
+                    {tab === 'quran' && hits.total > hits.list.length && hits.list.length <= more && (
+                      <Text style={[styles.sub, { color: pal.muted, textAlign: 'center' }]}>Showing the first {hits.list.length}. Add another word to narrow it down.</Text>
+                    )}
+                  </>
+                )}
+                {!hits?.list.length && local.ayat.slice(0, cap(4)).map((v) => (
                   <Pressable key={v.k} onPress={() => openAt(v.s, v.a)} style={[styles.card, { backgroundColor: pal.surface }]} accessibilityRole="button">
                     <Text style={[styles.key, { color: pal.accent }]}>
                       {v.name} {v.k.replace('-', '–')}
@@ -236,6 +293,8 @@ export default function Search() {
             {(() => {
               const waiting = online && (people === null || posts === null) && t.length >= 2;
               const shown = (show('quran') ? quranCount : 0) + (show('people') ? people?.length ?? 0 : 0) + (show('posts') ? posts?.length ?? 0 : 0);
+              if (hitErr && tab === 'quran') return <Text style={[styles.hint, { color: pal.muted, textAlign: 'center', marginTop: 24 }]}>Couldn’t load Quran search. Check your connection and try again.</Text>;
+              if (tab === 'quran' && hits === null && t.length >= 2 && !/^\d/.test(t)) return <ActivityIndicator color={pal.accent} style={{ marginTop: 16 }} />;
               if (waiting && tab === 'all') return <ActivityIndicator color={pal.accent} style={{ marginTop: 16 }} />;
               if (!waiting && shown === 0 && (online || tab === 'quran' || tab === 'all'))
                 return <Text style={[styles.hint, { color: pal.muted, textAlign: 'center', marginTop: 24 }]}>Nothing found for “{t}”.</Text>;

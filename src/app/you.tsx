@@ -10,9 +10,9 @@ import { useToast } from '@/components/Toast';
 import { useAccount } from '@/lib/account';
 import { RECITERS } from '@/lib/audio';
 import { dayKey, surahDone, useProgress } from '@/lib/progress';
-import { LANGS, LEVELS, SURAHS, VERSES } from '@/lib/quran';
+import { LANGS, SURAHS, VERSES } from '@/lib/quran';
 import { askPermission, REMINDER_TIMES } from '@/lib/reminders';
-import { usePrefs } from '@/lib/store';
+import { SPEEDS, TEXT_SIZES, textScale, usePrefs } from '@/lib/store';
 import { profileCard, Profile } from '@/lib/profiles';
 import { amReviewer, deletePost, myPosts, Post, reviewQueue } from '@/lib/posts';
 import { fonts, mix, Palette, usePalette } from '@/lib/theme';
@@ -28,12 +28,12 @@ export default function You() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const prefs = usePrefs();
-  const { progress, level } = useProgress();
+  const { progress } = useProgress();
   const acct = useAccount();
   const toast = useToast();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showRules, setShowRules] = useState(false);
-  const [pick, setPick] = useState<'reminder' | 'lang' | 'reciter' | null>(null);
+  const [pick, setPick] = useState<'reminder' | 'lang' | 'reciter' | 'speed' | 'size' | null>(null);
   const [blocked, setBlocked] = useState<{ id: string; handle: string }[] | null>(null);
   const [blockedLoading, setBlockedLoading] = useState(false);
   const openBlocked = () => {
@@ -65,11 +65,6 @@ export default function You() {
       toast("Couldn't delete. Try again");
     }
   };
-
-  const cur = LEVELS[level - 1];
-  const next = LEVELS[level];
-  const toNext = next ? Math.max(0, Math.ceil(next.at - progress.readings)) : 0;
-  const levelPct = next ? Math.min(1, (progress.readings - cur.at) / (next.at - cur.at)) : 1;
 
   let week = 0;
   for (let i = 0; i < 7; i++) {
@@ -115,12 +110,11 @@ export default function You() {
         )}
         {/* Progress */}
         <View style={[styles.card, styles.pad, { backgroundColor: pal.surface }]}>
-          <Text style={[styles.eyebrow, { color: pal.accent }]}>LEVEL {level}</Text>
-          <Text style={[styles.big, { color: pal.text }]}>{cur.name}</Text>
-          <Bar pal={pal} pct={levelPct} />
-          <Text style={[styles.sub, { color: pal.muted }]}>
-            {next ? `${toNext} more readings to unlock ${next.name.toLowerCase()}` : 'All levels unlocked. Your feed now includes longer readings.'}
+          <Text style={[styles.eyebrow, { color: pal.accent }]}>YOUR READING</Text>
+          <Text style={[styles.big, { color: pal.text }]}>
+            {total.toLocaleString('en-GB')} <Text style={[styles.sub, { color: pal.muted }]}>of 6,236 ayat</Text>
           </Text>
+          <Bar pal={pal} pct={Math.min(1, total / 6236)} />
           <View style={[styles.stats, { borderTopColor: pal.line }]}>
             <Stat pal={pal} n={week} label="This week" />
             <Stat pal={pal} n={total} label="Ayat read" />
@@ -199,6 +193,8 @@ export default function You() {
           <Row pal={pal} icon="bell" title="Daily reminder" value={reminderLabel} onPress={() => setPick('reminder')} />
           <Row pal={pal} icon="globe" title="Translation" value={lang.name} onPress={() => setPick('lang')} divider />
           <Row pal={pal} icon="mic" title="Reciter" value={reciter.name.split(' ').slice(-1)[0]} onPress={() => setPick('reciter')} divider />
+          <Row pal={pal} icon="speed" title="Recitation speed" value={speedLabel(prefs.speed ?? 1)} onPress={() => setPick('speed')} divider />
+          <Row pal={pal} icon="text" title="Text size" value={TEXT_SIZES.find((t) => t.id === (prefs.textSize ?? 'medium'))?.label} onPress={() => setPick('size')} divider />
         </Group>
 
         {acct.online && (
@@ -345,6 +341,20 @@ export default function You() {
           <Choice key={l.id} pal={pal} on={prefs.lang === l.id} title={l.native ? `${l.name}  ${l.native}` : l.name} sub={l.by} onPress={() => prefs.set({ lang: l.id })} />
         ))}
       </Sheet>
+      <Sheet visible={pick === 'speed'} onClose={() => setPick(null)} title="Recitation speed" pal={pal}>
+        {SPEEDS.map((x) => (
+          <Choice key={x} pal={pal} on={(prefs.speed ?? 1) === x} title={speedLabel(x)} sub={x < 1 ? 'Slower, to follow along or learn' : x === 1 ? 'As the reciter recited it' : 'Faster, for revision'} onPress={() => prefs.set({ speed: x })} />
+        ))}
+      </Sheet>
+      <Sheet visible={pick === 'size'} onClose={() => setPick(null)} title="Text size" pal={pal}>
+        {TEXT_SIZES.map((t) => (
+          <Choice key={t.id} pal={pal} on={(prefs.textSize ?? 'medium') === t.id} title={t.label} onPress={() => prefs.set({ textSize: t.id })} />
+        ))}
+        <View style={{ alignItems: 'flex-end', paddingTop: 8 }}>
+          <Text style={{ fontFamily: fonts.arabic, fontSize: 30 * textScale(prefs.textSize), lineHeight: 30 * textScale(prefs.textSize) * 1.9, color: pal.text }}>بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</Text>
+        </View>
+        <Text style={{ fontFamily: fonts.read, fontSize: 18 * textScale(prefs.textSize), lineHeight: 18 * textScale(prefs.textSize) * 1.5, color: pal.text }}>In the name of Allah, the Entirely Merciful, the Especially Merciful.</Text>
+      </Sheet>
       <Sheet visible={pick === 'reciter'} onClose={() => setPick(null)} title="Reciter" pal={pal}>
         {RECITERS.map((r) => (
           <Choice key={r.id} pal={pal} on={prefs.reciter === r.id} title={r.name} sub={r.note} onPress={() => prefs.set({ reciter: r.id })} />
@@ -391,6 +401,8 @@ function Row({
     </Pressable>
   );
 }
+
+const speedLabel = (x: number) => (x === 1 ? 'Normal' : `${x}×`);
 
 function Choice({ pal, on, title, sub, onPress, box }: { pal: Palette; on: boolean; title: string; sub?: string; onPress: () => void; box?: boolean }) {
   return (

@@ -13,7 +13,7 @@ import { Sheet } from '@/components/Sheet';
 import { useToast } from '@/components/Toast';
 import { VerseCard } from '@/components/VerseCard';
 import { ayahAudio, prefetchAudio, wordAt } from '@/lib/audio';
-import { ayahKeys, feedRound, interleave, ladderCards, LEVELS, loadChapter, orderCards, MOODS, MoodId, revealedIn, SUPPORT, SURAHS, translationFor, Verse } from '@/lib/quran';
+import { ayahKeys, feedRound, interleave, ladderCards, loadChapter, orderCards, MOODS, MoodId, revealedIn, SUPPORT, SURAHS, translationFor, Verse } from '@/lib/quran';
 import { useAccount } from '@/lib/account';
 import { dayKey, useProgress } from '@/lib/progress';
 import { refreshMosque } from '@/lib/mosque';
@@ -416,9 +416,18 @@ export default function Feed() {
       if (queue.current !== at.q || at.q.idx !== at.idx || at.q.pass !== at.pass) return;
       timings.current = a.words;
       player.replace(a.url);
+      player.setPlaybackRate(speedRef.current, 'high');
       if (!pausedRef.current) player.play();
     });
   }, [player, prefs.reciter]);
+  // Recitation speed (You → Reading → Speed), applied straight away too.
+  const speedRef = useRef(prefs.speed ?? 1);
+  speedRef.current = prefs.speed ?? 1;
+  useEffect(() => {
+    try {
+      player.setPlaybackRate(prefs.speed ?? 1, 'high');
+    } catch {}
+  }, [player, prefs.speed]);
 
   const startCard = useCallback(
     (item: Item | undefined, passes = 1) => {
@@ -505,11 +514,9 @@ export default function Feed() {
 
   const announce = useCallback(
     (ev: { surahsCompleted: number[]; levelUp: number | null }) => {
-      // Level-ups change the For you feed, so only mention them there.
-      if (ev.levelUp && mode === 'foryou') {
-        toast(`Unlocked: ${LEVELS[ev.levelUp - 1].name.toLowerCase()} are now in For you`);
-        refreshAhead(active + 1);
-      } else if (ev.surahsCompleted.length) toast(`MashaAllah, you've read all of ${SURAHS[ev.surahsCompleted[0] - 1][0]}`);
+      // The feed still stretches quietly as someone reads more (longer passages); no levels are shown (Saj, 13 Nov 2026).
+      if (ev.levelUp && mode === 'foryou') refreshAhead(active + 1);
+      if (ev.surahsCompleted.length) toast(`MashaAllah, you've read all of ${SURAHS[ev.surahsCompleted[0] - 1][0]}`);
     },
     [toast, refreshAhead, active, mode],
   );

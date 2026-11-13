@@ -38,7 +38,20 @@ type Prefs = {
   jumuah: number;
   /** The last page open in page view (1–604). */
   mushafPage: number | null;
+  /** Recitation speed (1 = normal). */
+  speed: number;
+  /** Size of the Arabic and translation on cards. */
+  textSize: TextSize;
 };
+export type TextSize = 'small' | 'medium' | 'large' | 'xl';
+export const TEXT_SIZES: { id: TextSize; label: string; scale: number }[] = [
+  { id: 'small', label: 'Small', scale: 0.88 },
+  { id: 'medium', label: 'Standard', scale: 1 },
+  { id: 'large', label: 'Large', scale: 1.15 },
+  { id: 'xl', label: 'Extra large', scale: 1.3 },
+];
+export const SPEEDS = [0.75, 1, 1.25, 1.5];
+export const textScale = (t: TextSize | undefined) => TEXT_SIZES.find((x) => x.id === t)?.scale ?? 1;
 
 const DEFAULTS: Prefs = {
   onboarded: false,
@@ -58,6 +71,8 @@ const DEFAULTS: Prefs = {
   prayerAlerts: { fajr: 10, dhuhr: 10, asr: 10, maghrib: 10, isha: 10 },
   jumuah: 0,
   mushafPage: null,
+  speed: 1,
+  textSize: 'medium',
 };
 
 const KEY = 'ayat.prefs.v1';

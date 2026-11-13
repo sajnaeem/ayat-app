@@ -86,6 +86,45 @@ async function qf(path: string): Promise<any> {
   }
 }
 
+/* ---------- search: the whole Quran, in Arabic and in translation (QF Search API, scope "search") ---------- */
+
+let searchToken: { value: string; until: number } | null = null;
+async function getSearchToken(): Promise<string> {
+  if (searchToken && Date.now() < searchToken.until) return searchToken.value;
+  const r = await fetch(AUTH, {
+    method: 'POST',
+    headers: { Authorization: 'Basic ' + btoa(`${CLIENT_ID}:${SECRET}`), 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'grant_type=client_credentials&scope=search',
+  });
+  if (!r.ok) throw new Error(`search token ${r.status}`);
+  const d = await r.json();
+  searchToken = { value: d.access_token, until: Date.now() + Math.max(60, (d.expires_in ?? 3600) - 300) * 1000 };
+  return searchToken.value;
+}
+
+async function searchQuran(query: string, lang: string) {
+  const t = TRANSLATIONS[lang] ?? TRANSLATIONS.en;
+  const qs = new URLSearchParams({
+    mode: 'quick',
+    query,
+    get_text: '1',
+    highlight: '1',
+    versesResultsNumber: '30',
+    navigationalResultsNumber: '5',
+    translation_ids: String(t.id),
+    filter_translations: String(t.id),
+  });
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const r = await fetch(`https://apis.quran.foundation/search/api/v1/search?${qs}`, { headers: { 'x-auth-token': await getSearchToken(), 'x-client-id': CLIENT_ID } });
+    if (r.status === 401 && attempt === 0) {
+      searchToken = null;
+      continue;
+    }
+    if (!r.ok) throw new Error(`search ${r.status}`);
+    return r.json();
+  }
+}
+
 /** Translations come with footnote markers like <sup foot_note=123>1</sup>; keep only the words. */
 const plain = (s: string) =>
   s.replace(/<sup[^>]*>.*?<\/sup>/g, '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
@@ -276,6 +315,12 @@ Deno.serve(async (req) => {
       const verses = tf.verses ?? {};
       const html = tf.text ?? (Object.values(verses)[0] as any)?.text ?? '';
       return json({ by: t.by, keys: Object.keys(verses), html }, 200, { 'Cache-Control': 'public, max-age=86400' });
+    }
+    if (body.search) {
+      const q = String(body.search).trim().slice(0, 80);
+      if (q.length < 2) return json({ error: 'too short' }, 400);
+      const d = await searchQuran(q, String(body.lang ?? 'en'));
+      return json(body.raw ? d : d, 200, { 'Cache-Control': 'public, max-age=3600' });
     }
     if (body.sync) return json(await syncAll(false));
     if (body.offline) {
