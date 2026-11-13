@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ART } from '@/lib/art';
 import { Icon, IconName } from '@/components/Icon';
 import { QuranIndex } from '@/components/QuranIndex';
 import { LEARN } from '@/data/learn';
@@ -31,9 +32,7 @@ export default function QuranTab() {
           accessibilityRole="button"
           accessibilityHint="Opens the short surahs to learn for prayer"
         >
-          <View style={[styles.toolIcon, { backgroundColor: lp.accent }]}>
-            <Icon name="mic" size={19} color={lp.onAccent} />
-          </View>
+          <Image source={ART.mushaf} style={{ width: 64, height: 50 }} resizeMode="contain" accessibilityIgnoresInvertColors />
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={[styles.learnTitle, { color: lp.text }]}>Learn surahs for your prayer</Text>
             <Text style={[styles.learnSub, { color: lp.muted }]}>

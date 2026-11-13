@@ -1,9 +1,10 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useExplain } from '@/components/Explain';
-import { Group, Row, Section } from '@/components/List';
+import { Group, Row, Section, Tile, TileGrid } from '@/components/List';
+import { ART } from '@/lib/art';
 import { useAccount } from '@/lib/account';
 import { flushUmmah, UmmahStats, ummahStats } from '@/lib/together-more';
 import { fonts, mix, usePalette } from '@/lib/theme';
@@ -34,6 +35,7 @@ export default function TogetherTab() {
       </View>
       <ScrollView contentContainerStyle={styles.body}>
         <View style={[styles.ummah, { backgroundColor: pal.bold ? pal.pop.violet : pal.accent }]} accessibilityRole="summary">
+          <Image source={ART.globe} style={styles.ummahArt} resizeMode="contain" accessibilityIgnoresInvertColors />
           <Text style={[styles.ummahEyebrow, { color: 'rgba(255,255,255,0.8)' }]}>THE UMMAH, READING TOGETHER</Text>
           {stats && stats.week > 0 ? (
             <>
@@ -49,15 +51,14 @@ export default function TogetherTab() {
           </Pressable>
         </View>
 
-        <Section pal={pal} title="Pray for each other" />
-        <Group pal={pal}>
-          <Row pal={pal} icon="hands" title="Ask for dua" sub="Ask the ummah to pray for you, or make dua for others" onPress={() => router.push('/dua-requests')} onInfo={() => explain('duaothers')} highlight />
-        </Group>
+        <TileGrid>
+          <Tile pal={pal} colour={pal.pop.rose} art="hands" title="Ask for dua" sub="Pray for each other" onPress={() => router.push('/dua-requests')} onInfo={() => explain('duaothers')} />
+          <Tile pal={pal} colour={pal.pop.sky} art="moon" title="Bedtime stories" sub="True stories for children" onPress={() => router.push('/stories')} />
+        </TileGrid>
 
         <Section pal={pal} title="Family" />
         <Group pal={pal}>
           <Row pal={pal} icon="people" title="Read together" sub="Finish the whole Quran as a family, a part (juz) each, or in memory of someone" onPress={needs('together', () => router.push('/together'))} onInfo={() => explain('khatm')} />
-          <Row pal={pal} icon="moon" title="Bedtime stories" sub="True stories for children, read or played" onPress={() => router.push('/stories')} divider />
         </Group>
 
         <Section pal={pal} title="Community" />
@@ -80,7 +81,8 @@ const styles = StyleSheet.create({
   title: { fontFamily: fonts.uiBold, fontSize: 34, letterSpacing: -0.8 },
   lead: { fontFamily: fonts.read, fontSize: 15.5, lineHeight: 22 },
   body: { padding: 16, gap: 12, paddingBottom: 30 },
-  ummah: { borderRadius: 24, padding: 18, gap: 4 },
+  ummah: { borderRadius: 24, padding: 18, gap: 4, overflow: 'hidden', paddingRight: 110 },
+  ummahArt: { position: 'absolute', right: -26, top: 14, width: 138, height: 138 },
   ummahEyebrow: { fontFamily: fonts.uiBold, fontSize: 11, letterSpacing: 1.2 },
   ummahBig: { fontFamily: fonts.uiBold, fontSize: 40, letterSpacing: -1, fontVariant: ['tabular-nums'] },
   ummahSub: { fontFamily: fonts.uiSemi, fontSize: 15.5, lineHeight: 21 },

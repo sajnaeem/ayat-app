@@ -1,0 +1,221 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:transparent}canvas{display:block}</style>
+<script type="importmap">{ "imports": { "three": "./node_modules/three/build/three.module.js", "three/addons/": "./node_modules/three/examples/jsm/" } }</script></head>
+<body><script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+const N = 1024;
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1); renderer.setSize(N, N); renderer.setClearColor(0x000000, 0);
+renderer.toneMapping = THREE.NeutralToneMapping; renderer.toneMappingExposure = 0.95; renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+const pmrem = new THREE.PMREMGenerator(renderer);
+const env = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+const gold = () => new THREE.MeshPhysicalMaterial({ color: 0xE9B44C, metalness: 1, roughness: 0.22, clearcoat: 0.6, clearcoatRoughness: 0.15 });
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+
+function base() {
+  const scene = new THREE.Scene(); scene.environment = env;
+  const key = new THREE.DirectionalLight(0xffffff, 2.0); key.position.set(1.5, 7, 3); key.castShadow = true; key.shadow.mapSize.set(2048, 2048);
+  key.shadow.camera.left = -3; key.shadow.camera.right = 3; key.shadow.camera.top = 3; key.shadow.camera.bottom = -3; key.shadow.radius = 8; key.shadow.bias = -0.0005;
+  scene.add(key); scene.add(new THREE.HemisphereLight(0xffffff, 0x334433, 0.6));
+  // soft contact shadow catcher
+  const g = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.ShadowMaterial({ opacity: 0.2 })); g.rotation.x = -Math.PI / 2; g.receiveShadow = true; scene.add(g);
+  const cam = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+  return { scene, cam, ground: g };
+}
+const cast = (o) => { o.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } }); return o; };
+
+/* ---------- 1. Crescent and lantern ---------- */
+function crescentLantern() {
+  const { scene, cam, ground } = base(); ground.position.y = -1.0;
+  const sh = new THREE.Shape(); sh.absarc(0, 0, 1, Math.PI * 0.18, Math.PI * 1.82, false);
+  const hole = new THREE.Path(); // inner bite
+  sh.absarc(0.42, 0.0, 0.82, Math.PI * 1.62, Math.PI * 0.38, true);
+  const cres = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: 0.22, bevelEnabled: true, bevelThickness: 0.08, bevelSize: 0.06, bevelSegments: 8, curveSegments: 96 }), gold());
+  cres.position.set(-0.3, 0.35, -0.3); cres.rotation.set(0.05, 0.35, 0.2); scene.add(cast(cres));
+  // star
+  const st = new THREE.Shape(); for (let i = 0; i < 10; i++) { const r = i % 2 ? 0.09 : 0.22, a = Math.PI / 2 + (i * Math.PI) / 5; i ? st.lineTo(Math.cos(a) * r, Math.sin(a) * r) : st.moveTo(Math.cos(a) * r, Math.sin(a) * r); }
+  const star = new THREE.Mesh(new THREE.ExtrudeGeometry(st, { depth: 0.06, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.02, bevelSegments: 4 }), gold());
+  star.position.set(0.05, 0.95, -0.2); star.rotation.set(0, 0.3, 0.15); scene.add(cast(star));
+  // lantern (fanous)
+  const L = new THREE.Group();
+  const glass = new THREE.MeshPhysicalMaterial({ color: 0xFF9F1C, emissive: 0xFF7A00, emissiveIntensity: 0.55, roughness: 0.1, clearcoat: 1, transparent: true, opacity: 0.88 });
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.26, 0.85, 6), glass); L.add(body);
+  for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2 + Math.PI / 6; const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.9, 12), gold()); bar.position.set(Math.cos(a) * 0.3, 0, Math.sin(a) * 0.3); bar.rotation.z = Math.cos(a) * 0.09; bar.rotation.x = -Math.sin(a) * 0.09; L.add(bar); }
+  const bot = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.2, 0.14, 6), gold()); bot.position.y = -0.49; L.add(bot);
+  const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.4, 0.22, 6), gold()); cap.position.y = 0.53; L.add(cap);
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(0.15, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), gold()); dome.position.y = 0.64; L.add(dome);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.025, 16, 40), gold()); ring.position.y = 0.86; L.add(ring);
+  const lt = new THREE.PointLight(0xFFA040, 6, 3, 2); L.add(lt);
+  const flame = new THREE.Mesh(new THREE.SphereGeometry(0.11, 24, 16), new THREE.MeshBasicMaterial({ color: 0xFFF1C2 })); flame.scale.set(1, 1.6, 1); flame.position.y = -0.05; L.add(flame);
+  L.position.set(0.72, -0.43, 0.45); L.rotation.y = 0.3; scene.add(cast(L)); body.castShadow = false;
+  cam.position.set(0.4, 0.8, 6.9); cam.lookAt(0.15, -0.05, 0);
+  return { scene, cam };
+}
+
+/* ---------- 2. Open mushaf on a stand ---------- */
+function pageTex() {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 640; const x = c.getContext('2d');
+  x.fillStyle = '#F7F0DE'; x.fillRect(0, 0, 512, 640);
+  x.strokeStyle = '#C9A24A'; x.lineWidth = 10; x.strokeRect(34, 34, 444, 572); x.lineWidth = 3; x.strokeRect(50, 50, 412, 540);
+  x.fillStyle = 'rgba(40,52,46,0.55)';
+  for (let i = 0; i < 13; i++) { const y = 90 + i * 38; let px = 448; while (px > 70) { const w = 18 + ((i * 37 + px) % 46); x.fillRect(px - w, y, w, 7); px -= w + 9; } }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+}
+function mushaf() {
+  const { scene, cam, ground } = base(); ground.position.y = -0.95;
+  const G = new THREE.Group();
+  const cover = new THREE.MeshPhysicalMaterial({ color: 0x0B5C40, roughness: 0.4, clearcoat: 0.6 });
+  const wood = new THREE.MeshPhysicalMaterial({ color: 0x7A4320, roughness: 0.45, clearcoat: 0.5 });
+  const tex = pageTex();
+  const TH = 0.42; // each half lifts this much (radians) from the spine, like a book on a stand
+  for (const s of [-1, 1]) {
+    const half = new THREE.Group(); half.rotation.y = -s * TH;
+    // page: slightly curled near the spine
+    const geo = new THREE.PlaneGeometry(1.1, 1.45, 40, 1); const p = geo.attributes.position;
+    for (let i = 0; i < p.count; i++) { const u = (p.getX(i) + 0.55) / 1.1; p.setXYZ(i, s * (0.03 + u * 1.1), p.getY(i), 0.1 * Math.pow(1 - u, 3) + 0.02 * Math.sin(u * Math.PI)); }
+    geo.computeVertexNormals();
+    half.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85, side: THREE.DoubleSide })));
+    const block = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.43, 0.1), new THREE.MeshStandardMaterial({ color: 0xEDE2C6, roughness: 0.9 })); block.position.set(s * 0.6, 0, -0.055); half.add(block);
+    const cv = new THREE.Mesh(new RoundedBoxGeometry(1.22, 1.56, 0.05, 4, 0.02), cover); cv.position.set(s * 0.63, 0, -0.13); half.add(cv);
+    for (const y of [0.76, -0.76]) { const tr = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.035, 0.055), gold()); tr.position.set(s * 0.63, y, -0.13); half.add(tr); }
+    // rehal board under this half
+    const board = new THREE.Mesh(new RoundedBoxGeometry(1.3, 1.25, 0.07, 4, 0.025), wood); board.position.set(s * 0.66, -0.12, -0.22); half.add(board);
+    G.add(half);
+  }
+  // rehal legs crossing below the spine
+  for (const s of [-1, 1]) { const leg = new THREE.Mesh(new RoundedBoxGeometry(0.07, 1.25, 1.1, 4, 0.025), wood); leg.position.set(0, -0.12, -0.75); leg.rotation.y = s * 0.55; G.add(leg); }
+  const ribbon = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.32, 0.01), new THREE.MeshStandardMaterial({ color: 0xC2412E, roughness: 0.6 })); ribbon.position.set(0.05, -0.86, 0.03); G.add(ribbon);
+  G.rotation.x = -0.95; G.position.y = 0.2;
+  scene.add(cast(G));
+  cam.position.set(0, 2.4, 5.0); cam.lookAt(0, -0.2, 0);
+  return { scene, cam };
+}
+
+/* ---------- 3. Prayer beads ---------- */
+function beads() {
+  const { scene, cam, ground } = base(); ground.position.y = -0.1;
+  const amber = new THREE.MeshPhysicalMaterial({ color: 0x9C3B12, roughness: 0.15, clearcoat: 1, clearcoatRoughness: 0.06 });
+  const pts = []; for (let i = 0; i < 48; i++) { const a = (i / 48) * Math.PI * 2; const r = 1 + 0.12 * Math.sin(a * 2 + 0.6) + 0.06 * Math.sin(a * 3 + 1); pts.push(V(Math.cos(a) * r * 0.95, 0, Math.sin(a) * r * 0.72)); }
+  const curve = new THREE.CatmullRomCurve3(pts, true);
+  const n = 33; const G = new THREE.Group();
+  G.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 300, 0.012, 8, true), new THREE.MeshStandardMaterial({ color: 0x2A1810 })));
+  const gap = 0.035; // leave room for the imam bead at the front
+  for (let i = 0; i < n; i++) { const t = 0.25 + gap + (i / (n - 1)) * (1 - 2 * gap); const b = new THREE.Mesh(new THREE.SphereGeometry(0.1, 32, 24), amber); b.position.copy(curve.getPointAt(t % 1)); G.add(b); }
+  const front = curve.getPointAt(0.25);
+  const imam = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.1, 0.34, 32), amber); imam.position.set(front.x, 0, front.z + 0.12); imam.rotation.x = Math.PI / 2; G.add(imam);
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.055, 24, 16), gold()); cap.position.set(front.x, 0, front.z + 0.31); G.add(cap);
+  const tasselMat = new THREE.MeshStandardMaterial({ color: 0x0F6B4A, roughness: 0.6 });
+  for (let i = 0; i < 70; i++) { const len = 0.42 + Math.random() * 0.1; const spread = (Math.random() - 0.5) * 0.7; const th = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, len, 4), tasselMat); th.position.set(front.x + Math.sin(spread) * len * 0.5, -0.05 - Math.random() * 0.04, front.z + 0.33 + Math.cos(spread) * len * 0.5); th.rotation.set(Math.PI / 2, 0, -spread); G.add(th); }
+  scene.add(cast(G));
+  cam.position.set(0, 3.4, 3.4); cam.lookAt(0, -0.05, 0.2);
+  return { scene, cam };
+}
+
+
+/* ---------- 4. Kaaba ---------- */
+function kaaba() {
+  const { scene, cam, ground } = base(); ground.position.y = -0.95;
+  const G = new THREE.Group();
+  const marble = new THREE.MeshPhysicalMaterial({ color: 0xF2EFE8, roughness: 0.25, clearcoat: 0.6 });
+  const base0 = new THREE.Mesh(new RoundedBoxGeometry(2.3, 0.16, 2.1, 4, 0.04), marble); base0.position.y = -0.87; G.add(base0);
+  const cloth = new THREE.MeshPhysicalMaterial({ color: 0x141414, roughness: 0.7, sheen: 1, sheenColor: new THREE.Color(0x444444), sheenRoughness: 0.5 });
+  const cube = new THREE.Mesh(new RoundedBoxGeometry(1.5, 1.6, 1.3, 4, 0.03), cloth); G.add(cube);
+  const band = new THREE.Mesh(new THREE.BoxGeometry(1.53, 0.18, 1.33), gold()); band.position.y = 0.38; G.add(band);
+  // band pattern: small raised gold blocks
+  for (let i = 0; i < 9; i++) { const k = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, 0.02), gold()); k.position.set(-0.6 + i * 0.15, 0.38, 0.675); G.add(k); }
+  const door = new THREE.Mesh(new RoundedBoxGeometry(0.42, 0.66, 0.05, 3, 0.015), gold()); door.position.set(0.32, -0.12, 0.66); G.add(door);
+  const doorLine = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.62, 0.06), new THREE.MeshStandardMaterial({ color: 0x8A6420 })); doorLine.position.set(0.32, -0.12, 0.665); G.add(doorLine);
+  G.rotation.y = -0.55; scene.add(cast(G));
+  cam.position.set(0, 1.7, 6.8); cam.lookAt(0, -0.25, 0);
+  return { scene, cam };
+}
+
+/* ---------- 5. Globe of lights (the ummah) ---------- */
+function globe() {
+  const { scene, cam, ground } = base(); ground.position.y = -1.05;
+  const G = new THREE.Group();
+  const sea = new THREE.MeshPhysicalMaterial({ color: 0x0E3B66, roughness: 0.25, clearcoat: 1, clearcoatRoughness: 0.1 });
+  G.add(new THREE.Mesh(new THREE.SphereGeometry(1, 64, 48), sea));
+  const dot = new THREE.MeshBasicMaterial({ color: 0xFFD27A });
+  const ll = (lat, lon, r = 1.005) => { const a = (lat * Math.PI) / 180, b = (lon * Math.PI) / 180; return V(r * Math.cos(a) * Math.sin(b), r * Math.sin(a), r * Math.cos(a) * Math.cos(b)); };
+  // lights around places with large Muslim communities (rough clusters), seen from Makkah's side
+  const places = [[21.4, 39.8], [24.7, 46.7], [30, 31.2], [33.5, 36.3], [41, 29], [35.7, 51.4], [24.9, 67], [31.5, 74.3], [23.8, 90.4], [28.6, 77.2], [3.1, 101.7], [-6.2, 106.8], [6.5, 3.4], [12, 8.5], [9, 38.7], [2, 45.3], [34, -6.8], [36.8, 3], [51.5, -0.1], [48.8, 2.3], [52.5, 13.4], [40.7, -74], [43.6, -79.4], [25.3, 51.5], [15.5, 32.5], [-1.3, 36.8], [33.3, 44.4], [39.9, 32.8], [41.3, 69.2], [27.7, 85.3]];
+  const pts = [];
+  places.forEach(([la, lo]) => { for (let k = 0; k < 6; k++) { const p = ll(la + (Math.random() - 0.5) * 6, lo + (Math.random() - 0.5) * 6); const s = new THREE.Mesh(new THREE.SphereGeometry(0.012 + Math.random() * 0.012, 8, 8), dot); s.position.copy(p); G.add(s); } pts.push(ll(la, lo)); });
+  // glowing arcs from Makkah
+  const arcMat = new THREE.MeshBasicMaterial({ color: 0x7CF2C0, transparent: true, opacity: 0.85 });
+  const mk = pts[0];
+  for (let i = 1; i < pts.length; i += 2) { const p = pts[i]; const mid = mk.clone().add(p).multiplyScalar(0.5).normalize().multiplyScalar(1.0 + mk.distanceTo(p) * 0.25); const c = new THREE.QuadraticBezierCurve3(mk, mid, p); G.add(new THREE.Mesh(new THREE.TubeGeometry(c, 40, 0.006, 6, false), arcMat)); }
+  const glow = new THREE.Mesh(new THREE.SphereGeometry(0.035, 16, 16), new THREE.MeshBasicMaterial({ color: 0xFFFFFF })); glow.position.copy(ll(21.4, 39.8, 1.02)); G.add(glow);
+  G.rotation.y = -(39.8 * Math.PI) / 180 + 0.25; G.rotation.x = 0.25;
+  scene.add(G); G.children[0].castShadow = true;
+  cam.position.set(0, 0.4, 4.4); cam.lookAt(0, 0, 0);
+  return { scene, cam };
+}
+
+/* ---------- 6. Moon and stars (bedtime) ---------- */
+function moon() {
+  const { scene, cam, ground } = base(); ground.position.y = -1.3;
+  const pale = new THREE.MeshPhysicalMaterial({ color: 0xFFE7A8, roughness: 0.3, clearcoat: 1, emissive: 0xFFC94D, emissiveIntensity: 0.15 });
+  const sh = new THREE.Shape(); sh.absarc(0, 0, 1, Math.PI * 0.2, Math.PI * 1.8, false); sh.absarc(0.45, 0.08, 0.8, Math.PI * 1.6, Math.PI * 0.42, true);
+  const m = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: 0.35, bevelEnabled: true, bevelThickness: 0.14, bevelSize: 0.12, bevelSegments: 10, curveSegments: 96 }), pale);
+  m.rotation.set(0.1, 0.3, 0.45); m.position.set(-0.25, 0.15, 0); scene.add(cast(m));
+  const starShape = (R, r) => { const s = new THREE.Shape(); for (let i = 0; i < 10; i++) { const rr = i % 2 ? r : R, a = Math.PI / 2 + (i * Math.PI) / 5; i ? s.lineTo(Math.cos(a) * rr, Math.sin(a) * rr) : s.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); } return s; };
+  [[0.85, 0.75, 0.24, -0.3], [1.1, -0.05, 0.15, 0.25], [0.45, 1.05, 0.11, 0.1]].forEach(([x, y, R, rz]) => { const st = new THREE.Mesh(new THREE.ExtrudeGeometry(starShape(R, R * 0.48), { depth: 0.08, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.04, bevelSegments: 6 }), pale); st.position.set(x, y, 0.1); st.rotation.set(0, -0.2, rz); scene.add(cast(st)); });
+  // a soft cloud
+  const cloudMat = new THREE.MeshPhysicalMaterial({ color: 0xFFFFFF, roughness: 0.6, clearcoat: 0.3 });
+  const C = new THREE.Group(); [[0, 0, 0.32], [0.35, 0.08, 0.38], [0.72, 0, 0.28], [0.36, -0.12, 0.3]].forEach(([x, y, r]) => { const s = new THREE.Mesh(new THREE.SphereGeometry(r, 32, 24), cloudMat); s.position.set(x, y, 0); s.scale.z = 0.7; C.add(s); });
+  C.position.set(0.15, -0.85, 0.5); scene.add(cast(C));
+  cam.position.set(0.2, 0.3, 6.0); cam.lookAt(0.2, 0.05, 0);
+  return { scene, cam };
+}
+
+/* ---------- 7. Hands raised in dua ---------- */
+function hands() {
+  const { scene, cam, ground } = base(); ground.position.y = -0.95;
+  const skin = new THREE.MeshPhysicalMaterial({ color: 0xC98E62, roughness: 0.45, clearcoat: 0.3, sheen: 0.4, sheenColor: new THREE.Color(0xFFD1B0) });
+  const capsule = (r, l) => new THREE.Mesh(new THREE.CapsuleGeometry(r, l, 8, 24), skin);
+  const hand = (s) => {
+    const H = new THREE.Group();
+    const palm = new THREE.Mesh(new RoundedBoxGeometry(0.62, 0.72, 0.2, 6, 0.1), skin); H.add(palm);
+    [[-0.2, 0.52, 0.34, 0.05], [-0.068, 0.58, 0.42, 0.015], [0.068, 0.56, 0.4, -0.015], [0.2, 0.48, 0.32, -0.05]].forEach(([x, y, l, rz]) => { const f = capsule(0.07, l); f.position.set(x, y, 0.05); f.rotation.set(0.25, 0, rz); H.add(f); });
+    const th = capsule(0.075, 0.3); th.position.set(-s * -0.36, 0.0, 0.05); th.rotation.z = s * -0.75; H.add(th);
+    // a sleeve cuff
+    const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.3, 0.42, 32), new THREE.MeshPhysicalMaterial({ color: 0xF4F1EA, roughness: 0.8 })); cuff.position.y = -0.58; cuff.scale.z = 0.62; H.add(cuff);
+    return H;
+  };
+  const L = hand(-1), R = hand(1);
+  L.position.set(-0.36, 0, 0); L.rotation.set(-0.95, 0.42, 0.18);
+  R.position.set(0.36, 0, 0); R.rotation.set(-0.95, -0.42, -0.18);
+  // thumb on the outer side of each hand
+  L.children[5].position.x = -0.36; L.children[5].rotation.z = 0.75; R.children[5].position.x = 0.36; R.children[5].rotation.z = -0.75;
+  const G = new THREE.Group(); G.add(L, R); scene.add(cast(G));
+  // a little light rising from the palms
+  const sp = new THREE.MeshBasicMaterial({ color: 0xFFE9A8 });
+  [[0, 1.2, 0.05], [-0.25, 1.45, 0.025], [0.3, 1.55, 0.03], [0.05, 1.75, 0.02]].forEach(([x, y, r]) => { const d = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 12), sp); d.position.set(x, y, 0.1); scene.add(d); });
+  cam.position.set(0, 2.2, 5.0); cam.lookAt(0, 0.15, 0);
+  return { scene, cam };
+}
+
+/* ---------- 8. Munib's eight-point star ---------- */
+function star8() {
+  const { scene, cam, ground } = base(); ground.position.y = -1.15;
+  const sh = new THREE.Shape(); const R = 1, r = 0.76;
+  for (let i = 0; i < 16; i++) { const rr = i % 2 ? r : R; const a = (i * Math.PI) / 8 + Math.PI / 8; i ? sh.lineTo(Math.cos(a) * rr, Math.sin(a) * rr) : sh.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+  const em = new THREE.MeshPhysicalMaterial({ color: 0x17945F, roughness: 0.15, clearcoat: 1, clearcoatRoughness: 0.05 });
+  const s = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: 0.3, bevelEnabled: true, bevelThickness: 0.14, bevelSize: 0.1, bevelSegments: 10 }), em);
+  s.rotation.set(-0.15, 0.35, 0.0); scene.add(cast(s));
+  const inner = new THREE.Shape(); for (let i = 0; i < 16; i++) { const rr = i % 2 ? 0.27 : 0.4; const a = (i * Math.PI) / 8 + Math.PI / 8; i ? inner.lineTo(Math.cos(a) * rr, Math.sin(a) * rr) : inner.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+  const g = new THREE.Mesh(new THREE.ExtrudeGeometry(inner, { depth: 0.1, bevelEnabled: true, bevelThickness: 0.06, bevelSize: 0.04, bevelSegments: 6 }), gold()); g.position.z = 0.42; s.add(g);
+  cam.position.set(0, 0.2, 5.6); cam.lookAt(0, -0.05, 0);
+  return { scene, cam };
+}
+
+const MAKERS = { crescent: crescentLantern, mushaf, beads, kaaba, globe, moon, hands, star8 };
+window.draw = (name) => { const { scene, cam } = MAKERS[name](); renderer.render(scene, cam); return true; };
+window.ready = true;
+</script></body></html>

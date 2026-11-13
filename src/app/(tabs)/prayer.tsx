@@ -1,10 +1,11 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
 import { ExplainIntro, useExplain } from '@/components/Explain';
-import { Group, Row, Section } from '@/components/List';
+import { Group, Row, Section, Tile, TileGrid } from '@/components/List';
+import { ART } from '@/lib/art';
 import { CALC_ROWS, calcDay, hm, nextPrayer, until } from '@/lib/prayertimes';
 import { usePrefs } from '@/lib/store';
 import { fonts, mix, onColour, usePalette } from '@/lib/theme';
@@ -39,7 +40,8 @@ export default function PrayerTab() {
       </View>
       <ScrollView contentContainerStyle={styles.body}>
         <ExplainIntro id="salah" pal={pal} />
-        <Pressable onPress={() => router.push('/prayertimes')} style={({ pressed }) => [styles.card, { backgroundColor: hp.surface, opacity: pressed ? 0.8 : 1 }]} accessibilityRole="button">
+        <Pressable onPress={() => router.push('/prayertimes')} style={({ pressed }) => [styles.card, { overflow: 'hidden' }, { backgroundColor: hp.surface, opacity: pressed ? 0.8 : 1 }]} accessibilityRole="button">
+          <Image source={ART.crescent} style={styles.cardArt} resizeMode="contain" accessibilityIgnoresInvertColors />
           {day && next ? (
             <>
               <Text style={[styles.eyebrow, { color: hp.accent }]}>NEXT</Text>
@@ -60,7 +62,7 @@ export default function PrayerTab() {
               </View>
             </>
           ) : (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingRight: 64 }}>
               <View style={{ flex: 1, gap: 4 }}>
                 <Text style={[styles.eyebrow, { color: hp.accent }]}>PRAYER TIMES</Text>
                 <Text style={[styles.rowTitle, { color: hp.text }]}>Today’s times wherever you are, with alerts when each prayer begins</Text>
@@ -85,12 +87,14 @@ export default function PrayerTab() {
         </Group>
 
         <Section pal={pal} title="Every day" />
+        <TileGrid>
+          <Tile pal={pal} colour={pal.pop.amber} art="mushaf" title="Learn surahs" sub="Short ones for your prayer" onPress={() => router.push('/learn')} onInfo={() => explain('surahs')} />
+          <Tile pal={pal} colour={pal.pop.sky} art="kaaba" title="Qibla" sub="Which way to face Makkah" onPress={() => router.push('/qibla')} onInfo={() => explain('qibla')} />
+          <Tile pal={pal} colour={pal.pop.rose} art="hands" title="Find a dua" sub="For what’s happening" onPress={() => router.push('/duas')} onInfo={() => explain('dua')} />
+          <Tile pal={pal} colour={pal.pop.violet} art="beads" title="Tasbeeh" sub={tasbeehToday ? `${tasbeehToday} today` : 'Count your remembrance'} onPress={() => router.push('/tasbeeh')} onInfo={() => explain('dhikr')} />
+        </TileGrid>
         <Group pal={pal}>
-          <Row pal={pal} icon="mic" title="Surahs for your prayer" sub="Learn short surahs to recite, one ayah at a time" onPress={() => router.push('/learn')} onInfo={() => explain('surahs')} />
-          <Row pal={pal} icon="compass" title="Qibla" sub="Which way to face Makkah when you pray" onPress={() => router.push('/qibla')} onInfo={() => explain('qibla')} divider />
-          <Row pal={pal} icon="hands" title="Find a dua" sub="Words to ask Allah with, for what’s happening" onPress={() => router.push('/duas')} onInfo={() => explain('dua')} divider />
-          <Row pal={pal} icon="beads" title="Tasbeeh" sub="Count phrases that remember Allah, like SubhanAllah" onInfo={() => explain('dhikr')} value={tasbeehToday ? `${tasbeehToday} today` : undefined} onPress={() => router.push('/tasbeeh')} divider />
-          <Row pal={pal} icon="bell" title="Prayer times and alerts" sub={s.loc ? 'Calculation, Asr and alerts' : 'Set up for where you are'} onPress={() => router.push('/prayertimes')} onInfo={() => explain('prayertimes')} divider />
+          <Row pal={pal} icon="bell" title="Prayer times and alerts" sub={s.loc ? 'Calculation, Asr and alerts' : 'Set up for where you are'} onPress={() => router.push('/prayertimes')} onInfo={() => explain('prayertimes')} />
         </Group>
         <Pressable onPress={() => router.push('/explain')} style={styles.more} accessibilityRole="button">
           <Icon name="info" size={15} color={pal.accent} />
@@ -109,9 +113,10 @@ const styles = StyleSheet.create({
   head: { paddingHorizontal: 20, paddingBottom: 6 },
   title: { fontFamily: fonts.uiBold, fontSize: 34, letterSpacing: -0.8 },
   body: { padding: 16, gap: 12, paddingBottom: 30 },
-  card: { borderRadius: 16, padding: 16, gap: 2 },
+  card: { borderRadius: 22, padding: 16, gap: 2 },
+  cardArt: { position: 'absolute', right: -18, top: -16, width: 104, height: 104 },
   eyebrow: { fontFamily: fonts.uiBold, fontSize: 12, letterSpacing: 1.2 },
-  next: { fontFamily: fonts.uiBold, fontSize: 26, letterSpacing: -0.5, marginTop: 2 },
+  next: { fontFamily: fonts.uiBold, fontSize: 26, letterSpacing: -0.5, marginTop: 2, paddingRight: 84 },
   sub: { fontFamily: fonts.ui, fontSize: 14, lineHeight: 19 },
   rowTitle: { fontFamily: fonts.uiSemi, fontSize: 16, lineHeight: 22 },
   times: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, marginTop: 12, paddingTop: 10, gap: 4 },

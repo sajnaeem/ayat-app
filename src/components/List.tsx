@@ -1,5 +1,6 @@
 import type React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ART, ArtName } from '@/lib/art';
 import { Icon, IconName } from './Icon';
 import { fonts, mix, Palette, popFor } from '@/lib/theme';
 
@@ -47,6 +48,27 @@ export function Row({
   );
 }
 
+/** A bright square card with a 3D graphic, for a tab's main features (two per row inside TileGrid). */
+export function Tile({ pal, colour, title, sub, art, onPress, onInfo }: { pal: Palette; colour: string; title: string; sub?: string; art: ArtName; onPress: () => void; onInfo?: () => void }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={({ pressed }) => [styles.tile, { backgroundColor: colour, opacity: pressed ? 0.85 : 1 }]}>
+      <Image source={ART[art]} style={styles.tileArt} resizeMode="contain" accessibilityIgnoresInvertColors />
+      <View style={{ gap: 3, paddingRight: onInfo ? 26 : 0 }}>
+        <Text style={styles.tileTitle}>{title}</Text>
+        {!!sub && <Text style={styles.tileSub}>{sub}</Text>}
+      </View>
+      {!!onInfo && (
+        <Pressable onPress={onInfo} hitSlop={10} accessibilityRole="button" accessibilityLabel={`What is ${title}?`} style={styles.tileInfo}>
+          <Text style={styles.tileInfoText}>?</Text>
+        </Pressable>
+      )}
+    </Pressable>
+  );
+}
+export function TileGrid({ children }: { children: React.ReactNode }) {
+  return <View style={styles.tiles}>{children}</View>;
+}
+
 export const speedLabel = (x: number) => (x === 1 ? 'Normal' : `${x}×`);
 
 export function Choice({ pal, on, title, sub, onPress, box }: { pal: Palette; on: boolean; title: string; sub?: string; onPress: () => void; box?: boolean }) {
@@ -91,6 +113,13 @@ export function Stat({ pal, n, label }: { pal: Palette; n: number; label: string
 
 
 const styles = StyleSheet.create({
+  tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  tile: { width: '48.4%', minHeight: 158, borderRadius: 22, padding: 14, overflow: 'hidden' },
+  tileArt: { position: 'absolute', right: -10, bottom: -10, width: 104, height: 104 },
+  tileTitle: { fontFamily: fonts.uiBold, fontSize: 17, lineHeight: 21, color: '#FFFFFF', letterSpacing: -0.2 },
+  tileSub: { fontFamily: fonts.ui, fontSize: 12.5, lineHeight: 16, color: 'rgba(255,255,255,0.85)', maxWidth: '78%' },
+  tileInfo: { position: 'absolute', top: 10, right: 10, width: 22, height: 22, borderRadius: 11, borderWidth: 1.2, borderColor: 'rgba(255,255,255,0.7)', alignItems: 'center', justifyContent: 'center' },
+  tileInfoText: { fontFamily: fonts.uiBold, fontSize: 12, lineHeight: 15, color: '#FFFFFF' },
   info: { width: 24, height: 24, borderRadius: 12, borderWidth: 1.2, alignItems: 'center', justifyContent: 'center' },
   infoText: { fontFamily: fonts.uiBold, fontSize: 13, lineHeight: 16 },
   card: { borderRadius: 16, overflow: 'hidden' },

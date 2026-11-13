@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ART } from '@/lib/art';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from './Icon';
 import { EXPLAINERS } from '@/data/explainers';
@@ -143,9 +144,7 @@ export function JourneyFlow({ onDone }: { onDone: () => void }) {
     body = (
       <View style={[styles.intro, { paddingBottom: insets.bottom + 20 }]}>
         <View style={{ flex: 1, justifyContent: 'center', gap: 14 }}>
-          <View style={[styles.badge, { backgroundColor: pal.pop.emerald }]}>
-            <Text style={styles.badgeAr}>مُنِيب</Text>
-          </View>
+          <Image source={ART.star8} style={{ width: 150, height: 150, marginLeft: -8, marginBottom: 6 }} resizeMode="contain" accessibilityIgnoresInvertColors />
           <Text style={[styles.hero, { color: pal.text }]}>Welcome to Munib</Text>
           <Text style={[styles.lead, { color: pal.muted }]}>Munib means “one who turns back to Allah”. Wherever you’re starting from, you’re welcome here.</Text>
           <Text style={[styles.lead, { color: pal.muted }]}>Five quick questions so Munib fits where you are. It takes about a minute.</Text>
