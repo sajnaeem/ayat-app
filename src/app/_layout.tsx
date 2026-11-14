@@ -112,6 +112,7 @@ function Root() {
         <Stack.Screen name="pray/index" options={{ presentation: 'modal' }} />
         <Stack.Screen name="pray/[mode]" />
         <Stack.Screen name="live" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="watch" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="data" options={{ presentation: 'modal' }} />
         <Stack.Screen name="stats" options={{ presentation: 'modal' }} />
       </Stack>

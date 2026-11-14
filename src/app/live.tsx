@@ -1,5 +1,4 @@
 import { useRouter } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import { ActivityIndicator, Image, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
@@ -17,10 +16,10 @@ export default function Live() {
   const router = useRouter();
   const radio = useRadio();
 
+  // Plays inside Munib (src/app/watch.tsx).
   const watch = (c: TvChannel) => {
     radio.stop();
-    if (Platform.OS === 'web') Linking.openURL(c.url);
-    else WebBrowser.openBrowserAsync(c.url, { presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET }).catch(() => Linking.openURL(c.url));
+    router.push({ pathname: '/watch', params: { c: c.id } });
   };
 
   return (
@@ -50,7 +49,7 @@ export default function Live() {
           ))}
         </View>
         <Text style={[styles.small, { color: pal.muted, paddingHorizontal: 4 }]}>
-          Broadcast around the clock by the Saudi Broadcasting Authority: the prayers, the recitation and the people of the two Holy Mosques. Opens on YouTube.
+          Broadcast around the clock by the Saudi Broadcasting Authority: the prayers, the recitation and the people of the two Holy Mosques. Plays here in Munib, in YouTube’s player.
         </Text>
 
         {GROUPS.map((g) => {
