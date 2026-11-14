@@ -15,8 +15,7 @@ export const TABS: { name: string; label: string; icon: IconName }[] = [
   { name: 'prayer', label: 'Prayer', icon: 'mosque' },
   { name: 'together', label: 'Together', icon: 'people' },
 ];
-/** Tab screens with no button in the bar: You opens from the profile button (MeButton) at the top right. */
-export const HIDDEN_TABS = ['you'];
+
 
 /** Munib's bottom tab bar: quiet, with the chosen tab in emerald. */
 export function TabBar({ state, navigateToTab }: BottomTabBarProps) {

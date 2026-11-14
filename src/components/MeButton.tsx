@@ -15,7 +15,7 @@ export function MeButton({ size = 34, light }: { size?: number; /** on a dark pi
   const acct = useAccount();
   const signedIn = acct.status === 'signedIn' && !!acct.userId;
   return (
-    <Pressable onPress={() => router.navigate('/you')} hitSlop={8} accessibilityRole="button" accessibilityLabel="You: your profile, progress and settings">
+    <Pressable onPress={() => router.push('/you')} hitSlop={8} accessibilityRole="button" accessibilityLabel="You: your profile, progress and settings">
       {signedIn ? (
         <Avatar id={acct.userId!} name={acct.handle ?? '?'} size={size} />
       ) : (

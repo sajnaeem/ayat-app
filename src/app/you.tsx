@@ -99,15 +99,15 @@ export default function You() {
 
   return (
     <View style={[styles.root, { backgroundColor: pal.bg }]}>
-      <View style={[styles.head, { paddingTop: insets.top + 12, flexDirection: 'row', alignItems: 'center', gap: 10 }]}>
+      <View style={[styles.head, { paddingTop: insets.top + 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 10 }]}>
         {/* You has no tab of its own any more: this takes people back to where they came from. */}
-        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.navigate('/'))} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" style={{ transform: [{ rotate: '180deg' }] }}>
+        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" style={{ transform: [{ rotate: '180deg' }] }}>
           <Icon name="chevron" size={24} color={pal.text} />
         </Pressable>
         <Text style={[styles.title, { color: pal.text }]}>You</Text>
       </View>
 
-      <ScrollView contentContainerStyle={[styles.body, { paddingBottom: 30 }]}>
+      <ScrollView contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + 30 }]}>
         {acct.status !== 'signedIn' && (
           <Pressable
             onPress={() => router.push({ pathname: '/signin', params: { why: 'you' } })}
