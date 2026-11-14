@@ -49,12 +49,12 @@ const TIME: Opt<number>[] = [
 ];
 const GOAL_AYAT: Record<number, number> = { 2: 5, 5: 10, 10: 20, 20: 40 };
 
-export function JourneyFlow({ onDone }: { onDone: () => void }) {
+export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => void; /** 1 skips the intro (the welcome screen has already said hello) */ startAt?: number; onBack?: () => void }) {
   const pal = usePalette();
   const prefs = usePrefs();
   const insets = useSafeAreaInsets();
   const old = prefs.journey;
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(startAt);
   const [a, setA] = useState<Partial<JourneyAnswers>>(old ?? { goals: [] });
   const STEPS = 7; // intro, 5 questions, summary
 
@@ -215,7 +215,7 @@ export function JourneyFlow({ onDone }: { onDone: () => void }) {
     <View style={[styles.root, { backgroundColor: pal.bg, paddingTop: insets.top + 10 }]}>
       {step > 0 && (
         <View style={styles.top}>
-          <Pressable onPress={() => setStep((s) => s - 1)} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" style={styles.back}>
+          <Pressable onPress={() => (step <= startAt && onBack ? onBack() : setStep((s) => s - 1))} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" style={styles.back}>
             <View style={{ transform: [{ rotate: '180deg' }] }}>
               <Icon name="chevron" size={20} color={pal.text} />
             </View>

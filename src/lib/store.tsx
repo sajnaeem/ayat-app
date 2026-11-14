@@ -66,6 +66,8 @@ export type Prefs = {
   /** Answers to the first-open questions, if given. */
   journey: JourneyAnswers | null;
   journeySkipped: boolean;
+  /** First open (14 Nov 2026): welcome → (sign in) → journey → save your journey → done. Unset for people who had Munib before. */
+  firstRun?: 'welcome' | 'signin' | 'journey' | 'save' | 'done';
   /** Ayat a day the reader aimed for (from the journey questions); 0 = none. */
   dailyGoal: number;
   /** General prayer times, worked out on the phone from where you are (stored on the phone only). */

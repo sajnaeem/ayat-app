@@ -10,7 +10,8 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-const W = 1200, H = 1500;
+// 1200x1500 for the Prayer tab; a tall viewport (SIZE=900x1950) makes the welcome screen's backdrop.
+const W = innerWidth, H = innerHeight; const TALL = H / W > 1.6;
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
 renderer.setPixelRatio(1); renderer.setSize(W, H);
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -84,7 +85,7 @@ window.draw = (name) => {
   const m = mosque(L); m.position.set(0, 0, -6); m.rotation.y = -0.18; scene.add(m);
   // palms of light: a few soft lamps along the courtyard at night and dawn
   const cam = new THREE.PerspectiveCamera(42, W / H, 0.1, 200);
-  cam.position.set(0, 2.0, 15.5); cam.lookAt(0, 7.4, -6);
+  if (TALL) { cam.fov = 50; cam.updateProjectionMatrix(); cam.position.set(0, 2.2, 23); cam.lookAt(0, 4.6, -6); } else { cam.position.set(0, 2.0, 15.5); cam.lookAt(0, 7.4, -6); }
   composer.passes.length = 0; composer.setSize(W, H);
   composer.addPass(new RenderPass(scene, cam));
   composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), name === 'day' ? 0.25 : 0.55, 0.6, 0.82));

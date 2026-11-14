@@ -10,6 +10,7 @@ import React, { useEffect } from 'react';
 import { ActivityIndicator, AppState, Platform, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { JourneyFlow } from '@/components/Journey';
+import { FirstRun } from '@/components/Welcome';
 import { ChooseName } from '@/components/SignIn';
 import { ToastProvider } from '@/components/Toast';
 import { RadioProvider } from '@/lib/radio';
@@ -69,6 +70,8 @@ function Root() {
     );
   else if (acct.status === 'signedIn' && !acct.handle) gate = <ChooseName />;
   // First open: a few questions about where someone is on their journey (existing readers can take them from You).
+  // First open: the welcome screen, then the journey questions and an invitation to save them with an account.
+  else if (prefs.firstRun ? prefs.firstRun !== 'done' : !prefs.onboarded && !prefs.journey && !prefs.journeySkipped && (acct.status === 'signedOut' || acct.status === 'offline')) gate = <FirstRun />;
   else if (!prefs.onboarded && !prefs.journey && !prefs.journeySkipped) gate = <JourneyFlow onDone={() => {}} />;
   if (gate)
     return (
