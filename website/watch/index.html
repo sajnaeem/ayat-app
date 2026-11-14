@@ -24,25 +24,32 @@
     makkah: 'UCos52azQNBgW63_9uDJoPDA',   // KSA Qur'an TV (Saudi Broadcasting Authority), Masjid al-Haram
     madinah: 'UCROKYPep-UuODNwyipe6JMw'   // Sunnah TV (Saudi Broadcasting Authority), Masjid an-Nabawi
   };
-  var P = new URLSearchParams(location.search);
-  var c = P.get('c');
+  var c = new URLSearchParams(location.search).get('c');
   var id = CHANNELS[c];
-  // The app looks up which video the channel has on air and passes it here (v); YouTube's own "the channel's live
-  // stream" address (the fallback below) answers "This video is unavailable" for these channels (Nov 2026).
-  var v = /^[\w-]{11}$/.test(P.get('v') || '') ? P.get('v') : null;
   var q = 'autoplay=1&mute=0&playsinline=1&rel=0&modestbranding=1';
-  if (!id) {
-    document.body.innerHTML = '<p>This stream isn’t available.</p>';
-  } else if (P.get('off')) {
-    document.body.innerHTML = '<p>This broadcast isn’t on air on YouTube at the moment.<br>Please try again in a little while.</p>';
-  } else {
+  var say = function (html) { document.body.innerHTML = '<p>' + html + '</p>'; };
+  var play = function (src) {
     var f = document.createElement('iframe');
-    f.src = v ? 'https://www.youtube.com/embed/' + v + '?' + q : 'https://www.youtube.com/embed/live_stream?channel=' + id + '&' + q;
+    f.src = src;
     f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
     f.allowFullscreen = true;
     f.referrerPolicy = 'strict-origin-when-cross-origin';
     f.title = 'Live';
     document.body.appendChild(f);
+  };
+  // YouTube's own "the channel's live stream" address answers "This video is unavailable" for these channels
+  // (Nov 2026), so Munib's website says which video is on air (api/live.js) and that video is played.
+  var fallback = function () { play('https://www.youtube.com/embed/live_stream?channel=' + id + '&' + q); };
+  if (!id) {
+    say('This stream isn’t available.');
+  } else {
+    fetch('/api/live?c=' + c)
+      .then(function (r) { return r.json(); })
+      .then(function (v) {
+        if (v && /^[\w-]{11}$/.test(v.id || '')) play('https://www.youtube.com/embed/' + v.id + '?' + q);
+        else say('This broadcast isn’t on air on YouTube at the moment.<br>Please try again a little later.');
+      })
+      .catch(fallback);
   }
 </script>
 </body>
