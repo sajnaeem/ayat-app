@@ -4,6 +4,8 @@ import { ART, poseArt } from '@/lib/art';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from './Icon';
 import { HeavenSky, heavenly } from './Heaven';
+import { ArchLantern, FarToNear } from './JourneyArt';
+import { Statement, SwipeCards } from './SwipeCards';
 import { EXPLAINERS } from '@/data/explainers';
 import { Journey, JourneyAnswers, usePrefs } from '@/lib/store';
 import { usePlus } from '@/lib/plus';
@@ -36,6 +38,8 @@ const READING: Opt<JourneyAnswers['reading']>[] = [
   { id: 'weekly', label: 'Every week or so' },
   { id: 'daily', label: 'Most days' },
 ];
+/** Goals as picture tiles, each with one of Munib's own 3D objects. */
+const GOAL_ART: Record<string, keyof typeof ART> = { habit: 'mushaf', understand: 'star8', surahs: 'radio', pray: 'kaaba', close: 'hands', calm: 'moon', basics: 'crescent' };
 const GOALS: Opt<string>[] = [
   { id: 'habit', label: 'Read the Quran regularly' },
   { id: 'understand', label: 'Understand what I read' },
@@ -53,14 +57,61 @@ const TIME: Opt<number>[] = [
 ];
 const GOAL_AYAT: Record<number, number> = { 2: 5, 5: 10, 10: 20, 20: 40 };
 
+/**
+ * The pause after "Where are you on your journey?" (from another app's "You've already taken a powerful step"), made
+ * honest: no invented statistics, just a well-known ayah or hadith for where they are. All need a scholar's check.
+ */
+const REWARD: Record<Journey, { title: string; quote: string; src: string }> = {
+  returning: {
+    title: 'You’ve already taken the first step back',
+    quote: '“If he draws near to Me a hand’s span, I draw near to him an arm’s length… and if he comes to Me walking, I go to him running.”',
+    src: 'Hadith qudsi · Sahih al-Bukhari 7405, Sahih Muslim 2675',
+  },
+  new: {
+    title: 'Welcome. Your new beginning is a clean page',
+    quote: '“Do you not know that Islam wipes out whatever came before it?”',
+    src: 'The Prophet ﷺ · Sahih Muslim 121',
+  },
+  exploring: {
+    title: 'Thank you for coming to see for yourself',
+    quote: '“There shall be no compulsion in [acceptance of] the religion. The right course has become clear from the wrong.”',
+    src: 'Quran 2:256 · Saheeh International',
+  },
+  growing: {
+    title: 'May Allah increase you',
+    quote: '“…and say, ‘My Lord, increase me in knowledge.’”',
+    src: 'Quran 20:114 · Saheeh International',
+  },
+};
+
+/** "Is this true for you?" cards. Each answer fills in something we used to ask as its own question. */
+const FEELS = (j: Journey | undefined): Statement[] =>
+  j === 'exploring'
+    ? [
+        { id: 'read', text: 'I’ve read some of the Quran before' },
+        { id: 'basics', text: 'I’d like to know what Muslims believe' },
+        { id: 'understand', text: 'I want to understand, not just read' },
+        { id: 'calm', text: 'I’m looking for some calm' },
+      ]
+    : [
+        { id: 'read', text: 'I read the Quran most weeks' },
+        { id: 'understand', text: 'I want to understand what I’m reading' },
+        { id: 'close', text: 'I sometimes feel far from Allah' },
+        { id: 'pray', text: 'I’d like to pray on time, every time' },
+      ];
+
+/** The order of the screens. "ready" (the note) is kept but skipped (Saj: too much); "trial" only when Plus has a free week. */
+const SEQ = ['intro', 'name', 'gender', 'journey', 'reward', 'arabic', 'feel', 'goals', 'time', 'share'] as const;
+type StepId = (typeof SEQ)[number] | 'ready' | 'trial';
+
 export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => void; /** 1 skips the intro (the welcome screen has already said hello) */ startAt?: number; onBack?: () => void }) {
   const pal = heavenly(usePalette());
   const prefs = usePrefs();
   const insets = useSafeAreaInsets();
   const old = prefs.journey;
-  const [step, setStep] = useState(startAt);
+  const [step, setStep] = useState<StepId>(SEQ[startAt] ?? 'intro');
+  const go = (d: 1 | -1) => setStep((s) => SEQ[Math.max(0, Math.min(SEQ.length - 1, SEQ.indexOf(s as (typeof SEQ)[number]) + d))]);
   const [a, setA] = useState<Partial<JourneyAnswers>>(old ?? { goals: [] });
-  const STEPS = 10; // intro, name, brother/sister, 5 questions, (your note: skipped), sharing
   const plus = usePlus();
   const yearly = plus.plans.find((p) => p.id === 'yearly');
   // The free week is offered once, to everyone, at the end of first open (Saj, 14 Nov 2026), and only when Apple has the trial on sale.
@@ -73,7 +124,7 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
 
   const pick = <K extends keyof JourneyAnswers>(k: K, v: JourneyAnswers[K]) => {
     setA((x) => ({ ...x, [k]: v }));
-    setTimeout(() => setStep((s) => s + 1), 180);
+    setTimeout(() => go(1), 180);
   };
   const toggleGoal = (id: string) =>
     setA((x) => {
@@ -106,7 +157,7 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
       // New or curious: start on the gentle New to Islam feed rather than asking about feelings first.
       ...(fresh ? { mood: 'newmuslim', onboarded: true, feedMode: 'foryou' } : {}),
     });
-    if (canTrial) setStep(10);
+    if (canTrial) setStep('trial');
     else onDone();
   };
 
@@ -197,22 +248,22 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
     });
 
   let body: React.ReactNode;
-  if (step === 0)
+  if (step === 'intro')
     body = (
       <View style={[styles.intro, { paddingBottom: insets.bottom + 20 }]}>
         <View style={{ flex: 1, justifyContent: 'center', gap: 14 }}>
           <Image source={ART.star8} style={{ width: 150, height: 150, marginLeft: -8, marginBottom: 6 }} resizeMode="contain" accessibilityIgnoresInvertColors />
           <Text style={[styles.hero, { color: pal.text }]}>Welcome to Munib</Text>
           <Text style={[styles.lead, { color: pal.muted }]}>Munib means “one who turns back to Allah”. Wherever you’re starting from, you’re welcome here.</Text>
-          <Text style={[styles.lead, { color: pal.muted }]}>Five quick questions so Munib fits where you are. It takes about a minute.</Text>
+          <Text style={[styles.lead, { color: pal.muted }]}>A few quick questions so Munib fits where you are. It takes about a minute.</Text>
         </View>
-        <Big pal={pal} label="Let’s begin" onPress={() => setStep(1)} />
+        <Big pal={pal} label="Let’s begin" onPress={() => go(1)} />
         <Pressable onPress={skip} style={styles.skipBtn} accessibilityRole="button">
           <Text style={[styles.skipText, { color: pal.muted }]}>Skip for now</Text>
         </Pressable>
       </View>
     );
-  else if (step === 1)
+  else if (step === 'name')
     body = q(
       'What should we call you?',
       'Your first name is enough. It stays on this phone.',
@@ -227,13 +278,13 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
         textContentType="givenName"
         returnKeyType="next"
         maxLength={40}
-        onSubmitEditing={() => setStep(2)}
+        onSubmitEditing={() => go(1)}
         style={[styles.input, { color: pal.text, borderColor: pal.line, backgroundColor: pal.surface }]}
         accessibilityLabel="Your first name"
       />,
-      { label: nm ? `Next` : 'Skip this', on: () => setStep(2) },
+      { label: nm ? `Next` : 'Skip this', on: () => go(1) },
     );
-  else if (step === 2)
+  else if (step === 'gender')
     body = q(
       hi('Brother or sister') + '?',
       'So the prayer guide and anything just for sisters or brothers fits you.',
@@ -246,7 +297,7 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
                 key={g}
                 onPress={() => {
                   setGender(g);
-                  setTimeout(() => setStep(3), 180);
+                  setTimeout(() => go(1), 180);
                 }}
                 accessibilityRole="radio"
                 accessibilityState={{ selected: sel }}
@@ -258,19 +309,47 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
             );
           })}
         </View>
-        <Pressable onPress={() => { setGender('skip'); setStep(3); }} style={styles.skipBtn} accessibilityRole="button">
+        <Pressable onPress={() => { setGender('skip'); go(1); }} style={styles.skipBtn} accessibilityRole="button">
           <Text style={[styles.skipText, { color: pal.muted }]}>I’d rather not say</Text>
         </Pressable>
       </>,
     );
-  else if (step === 3) body = q(hi('Where are you on your journey') + '?', null, options(JOURNEY, a.journey, (v) => pick('journey', v)));
-  else if (step === 4) body = q('How easily can you read Arabic?', 'There’s no wrong answer. Munib shows pronunciation and meaning for every ayah.', options(ARABIC, a.arabic, (v) => pick('arabic', v)));
-  else if (step === 5) body = q('How often do you read the Quran at the moment?', 'Be honest: this is just for you.', options(READING, a.reading, (v) => pick('reading', v)));
-  else if (step === 6)
+  else if (step === 'journey') body = q(hi('Where are you on your journey') + '?', null, options(JOURNEY, a.journey, (v) => pick('journey', v)));
+  else if (step === 'reward') {
+    const r = REWARD[a.journey ?? 'returning'];
+    body = (
+      <View style={[styles.intro, { paddingBottom: 8 }]}>
+        <ScrollView contentContainerStyle={{ paddingTop: 8, gap: 14, alignItems: 'center' }}>
+          <ArchLantern size={170} />
+          <Text style={[styles.h1, { color: pal.text, textAlign: 'center' }]}>{nm ? `${nm}, ${r.title.charAt(0).toLowerCase()}${r.title.slice(1)}` : r.title}</Text>
+          <Text style={[styles.quote, { color: pal.text }]}>{r.quote}</Text>
+          <Text style={[styles.quoteSrc, { color: pal.muted }]}>{r.src}</Text>
+        </ScrollView>
+        <Big pal={pal} label="Continue" onPress={() => go(1)} />
+      </View>
+    );
+  } else if (step === 'arabic') body = q('How easily can you read Arabic?', 'There’s no wrong answer. Munib shows pronunciation and meaning for every ayah.', options(ARABIC, a.arabic, (v) => pick('arabic', v)));
+  else if (step === 'feel')
+    body = q(
+      'Is this true for you?',
+      'Swipe right if it is, left if not really. Be honest: it’s just for you.',
+      <SwipeCards
+        key={a.journey}
+        items={FEELS(a.journey)}
+        onDone={(ans) => {
+          // "Most weeks" stands in for the old how-often question; the rest pick goals for the next screen.
+          const goals = new Set(a.goals ?? []);
+          for (const id of ['understand', 'close', 'pray', 'basics', 'calm']) if (ans[id] && goals.size < 3) goals.add(id);
+          setA((x) => ({ ...x, reading: ans.read ? 'weekly' : 'rarely', goals: [...goals] }));
+          go(1);
+        }}
+      />,
+    );
+  else if (step === 'goals')
     body = q(
       nm ? `What would you like help with, ${nm}?` : 'What would you like help with?',
       'Choose up to three.',
-      <View style={styles.chips}>
+      <View style={styles.tiles}>
         {GOALS.map((g) => {
           const sel = (a.goals ?? []).includes(g.id);
           return (
@@ -279,22 +358,28 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
               onPress={() => toggleGoal(g.id)}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: sel }}
-              style={[styles.chip, { borderColor: sel ? pal.accent : pal.line, backgroundColor: sel ? 'rgba(184,134,59,0.16)' : 'rgba(255,255,255,0.6)' }]}
+              accessibilityLabel={g.label}
+              style={({ pressed }) => [styles.tile, { borderColor: sel ? pal.accent : 'rgba(184,134,59,0.22)', backgroundColor: sel ? 'rgba(184,134,59,0.14)' : 'rgba(255,255,255,0.72)', opacity: pressed ? 0.85 : 1 }]}
             >
-              {sel && <Icon name="check" size={14} color={pal.accent} strokeWidth={2.4} />}
-              <Text style={[styles.chipText, { color: pal.text }]}>{g.label}</Text>
+              <Text style={[styles.tileText, { color: pal.text }]}>{g.label}</Text>
+              <Image source={ART[GOAL_ART[g.id] ?? 'star8']} style={styles.tileArt} resizeMode="contain" accessibilityIgnoresInvertColors />
+              {sel && (
+                <View style={[styles.tick, { backgroundColor: pal.accent }]}>
+                  <Icon name="check" size={13} color="#FFFFFF" strokeWidth={2.6} />
+                </View>
+              )}
             </Pressable>
           );
         })}
       </View>,
-      { label: 'Next', on: () => setStep(7), disabled: !(a.goals ?? []).length },
+      { label: 'Next', on: () => go(1), disabled: !(a.goals ?? []).length },
     );
-  else if (step === 7)
+  else if (step === 'time')
     body = q('How much time can you give each day?', 'Small and steady is the Sunnah way. You can always read more.', options(TIME, a.minutes, (v) => {
       setA((x) => ({ ...x, minutes: v }));
-      setTimeout(() => setStep(9), 180); // the "Your Munib is ready" screen is skipped (Saj, 14 Nov 2026: too much)
+      setTimeout(() => go(1), 180); // the "Your Munib is ready" screen is skipped (Saj, 14 Nov 2026: too much)
     }));
-  else if (step === 8)
+  else if (step === 'ready')
     body = q(
       nm ? `Your Munib is ready, ${nm}` : 'Your Munib is ready',
       null,
@@ -316,9 +401,9 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
         ))}
         <Text style={[styles.privacy, { color: pal.muted }]}>You can change any of it from the You tab.</Text>
       </>,
-      { label: 'Continue', on: () => setStep(9) },
+      { label: 'Continue', on: () => setStep('share') },
     );
-  else if (step === 10 && yearly) {
+  else if (step === 'trial' && yearly) {
     const days = yearly.trialDays ?? 7;
     const remind = Math.max(1, days - 2);
     body = (
@@ -378,24 +463,28 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
   return (
     <View style={[styles.root, { backgroundColor: '#FBF6EC', paddingTop: insets.top + 10 }]}>
       <HeavenSky />
-      {step > 0 && (
+      {step !== 'intro' && (
         <View style={styles.top}>
-          <Pressable onPress={() => (step <= startAt && onBack ? onBack() : setStep((s) => (s === 9 ? 7 : s - 1)))} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" style={styles.back}>
+          <Pressable
+            onPress={() => (SEQ.indexOf(step as (typeof SEQ)[number]) <= startAt && onBack ? onBack() : step === 'trial' ? setStep('share') : go(-1))}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            style={styles.back}
+          >
             <View style={{ transform: [{ rotate: '180deg' }] }}>
               <Icon name="chevron" size={20} color={pal.text} />
             </View>
           </Pressable>
-          <View style={styles.bars}>
-            {Array.from({ length: STEPS - 1 }, (_, i) => (
-              <View key={i} style={[styles.bar, { backgroundColor: i < step ? pal.accent : 'rgba(184,134,59,0.2)' }]} />
-            ))}
+          <View style={{ flex: 1, alignItems: 'center' }}>
+            <FarToNear p={step === 'trial' ? 1 : Math.max(0, SEQ.indexOf(step as (typeof SEQ)[number])) / (SEQ.length - 1)} />
           </View>
-          <Pressable onPress={step === 10 ? noTrial : skip} hitSlop={10} accessibilityRole="button">
+          <Pressable onPress={step === 'trial' ? noTrial : skip} hitSlop={10} accessibilityRole="button">
             <Text style={[styles.skipTop, { color: pal.muted }]}>Skip</Text>
           </Pressable>
         </View>
       )}
-      <View style={{ flex: 1, paddingBottom: step > 0 ? insets.bottom + 12 : 0 }}>{body}</View>
+      <View style={{ flex: 1, paddingBottom: step !== 'intro' ? insets.bottom + 12 : 0 }}>{body}</View>
     </View>
   );
 }
@@ -433,6 +522,13 @@ const styles = StyleSheet.create({
   optLabel: { fontFamily: fonts.uiSemi, fontSize: 17, lineHeight: 22 },
   optSub: { fontFamily: fonts.ui, fontSize: 14, lineHeight: 19 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  tiles: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 },
+  tile: { width: '48.5%', height: 118, borderRadius: 18, borderWidth: 1.5, padding: 13, overflow: 'hidden', shadowColor: '#B8863B', shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
+  tileText: { fontFamily: fonts.read, fontSize: 15.5, lineHeight: 20, width: '78%' },
+  tileArt: { position: 'absolute', right: -6, bottom: -6, width: 70, height: 70 },
+  tick: { position: 'absolute', top: 10, right: 10, width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  quote: { fontFamily: fonts.read, fontStyle: 'italic', fontSize: 19, lineHeight: 29, textAlign: 'center', paddingHorizontal: 6 },
+  quoteSrc: { fontFamily: fonts.uiSemi, fontSize: 12.5, letterSpacing: 0.3, textAlign: 'center' },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1.5, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11 },
   chipText: { fontFamily: fonts.uiSemi, fontSize: 15 },
   foot: { paddingHorizontal: 22, paddingTop: 8 },
