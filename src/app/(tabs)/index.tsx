@@ -1,3 +1,4 @@
+import { MeButton } from '@/components/MeButton';
 import { stopRadio, useRadio } from '@/lib/radio';
 import { useAudioPlayer } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
@@ -1187,6 +1188,7 @@ function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palett
         <Pressable onPress={p.onTl} style={[pill, p.showTl && { borderColor: pal.accent }]} accessibilityRole="button" accessibilityLabel="Reading options: transliteration, text size, speed and auto scroll">
           <Text style={[styles.aa, { color: p.showTl ? pal.accent : pal.text }]}>Aa</Text>
         </Pressable>
+        <MeButton size={36} />
       </View>
     </Animated.View>
   );

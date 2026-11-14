@@ -9,6 +9,7 @@
     }
   },
   "exclude": [
-    "supabase/functions"
+    "supabase/functions",
+    "scripts"
   ]
 }

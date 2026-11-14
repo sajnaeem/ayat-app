@@ -7,14 +7,16 @@ import { ART } from '@/lib/art';
 import { useRadio } from '@/lib/radio';
 import { fonts, mix, usePalette } from '@/lib/theme';
 
-/** The tabs along the bottom, in order. `name` is the route in src/app/(tabs). */
+/** The tabs along the bottom, in order (Saj, 14 Nov 2026: Ask in the centre; You moved to the profile button). `name` is the route in src/app/(tabs). */
 export const TABS: { name: string; label: string; icon: IconName }[] = [
   { name: 'index', label: 'Home', icon: 'home' },
   { name: 'quran', label: 'Quran', icon: 'book' },
+  { name: 'ask', label: 'Ask', icon: 'ask' },
   { name: 'prayer', label: 'Prayer', icon: 'mosque' },
   { name: 'together', label: 'Together', icon: 'people' },
-  { name: 'you', label: 'You', icon: 'user' },
 ];
+/** Tab screens with no button in the bar: You opens from the profile button (MeButton) at the top right. */
+export const HIDDEN_TABS = ['you'];
 
 /** Munib's bottom tab bar: quiet, with the chosen tab in emerald. */
 export function TabBar({ state, navigateToTab }: BottomTabBarProps) {

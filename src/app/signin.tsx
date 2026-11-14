@@ -11,6 +11,7 @@ const REASONS: Record<string, string> = {
   together: 'Create a free account to read the Quran together with your family and keep track of each juz.',
   post: 'Create a free account to share reminders, benefits and short videos with the community.',
   keep: 'Create a free account to keep your saved ayat and your place, and to ask about any ayah.',
+  islam: 'Create a free account to ask anything about Islam. No question is silly.',
 };
 
 /** Sign-in, opened from the Quran tab when someone wants something that needs an account. */

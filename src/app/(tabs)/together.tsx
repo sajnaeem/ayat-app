@@ -1,3 +1,4 @@
+import { MeButton } from '@/components/MeButton';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -30,7 +31,10 @@ export default function TogetherTab() {
   return (
     <View style={[styles.root, { backgroundColor: pal.bg }]}>
       <View style={[styles.head, { paddingTop: insets.top + 12 }]}>
-        <Text style={[styles.title, { color: pal.text }]}>Together</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Text style={[styles.title, { color: pal.text }]}>Together</Text>
+          <MeButton />
+        </View>
         <Text style={[styles.lead, { color: pal.muted }]}>The Quran with the people you love, and an ummah that reminds each other.</Text>
       </View>
       <ScrollView contentContainerStyle={styles.body}>
