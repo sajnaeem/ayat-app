@@ -53,10 +53,17 @@ export function SignIn({ onClose, reason }: { onClose?: () => void; reason?: str
     if (busy) return;
     setBusy(true);
     setProblem('');
+    const started = Date.now();
     try {
       await fn();
     } catch (e) {
-      const m = authMessage(e);
+      let m = authMessage(e);
+      // A "cancel" that comes back almost at once means the Apple sheet never really opened: say so, with iOS's code.
+      if (!m && Date.now() - started < 2500) {
+        const code = String((e as { code?: string })?.code ?? '');
+        const msg = String((e as { message?: string })?.message ?? '');
+        m = `Sign-in closed before it started. Check you're signed in to iCloud in Settings, then try again. (${[code, msg].filter(Boolean).join(': ').slice(0, 140)})`;
+      }
       if (m) {
         setProblem(m);
         toast(m);
