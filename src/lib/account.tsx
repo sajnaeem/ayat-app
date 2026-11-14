@@ -21,7 +21,7 @@ type Ctx = {
   /** True once we know whether this account has a display name yet. */
   profileLoaded: boolean;
   setHandle: (h: string) => Promise<void>;
-  signInWithApple: () => Promise<void>;
+  signInWithApple: (step?: (s: string) => void) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   sendPhoneCode: (phone: string) => Promise<void>;
   verifyPhoneCode: (phone: string, code: string) => Promise<void>;
@@ -166,14 +166,21 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   }, [prefs.ready, userId]);
 
   /* ---------- sign-in methods ---------- */
-  const signInWithApple = useCallback(async () => {
-    if (!supabase) return;
-    const cred = await AppleAuthentication.signInAsync({
-      requestedScopes: [AppleAuthentication.AppleAuthenticationScope.FULL_NAME, AppleAuthentication.AppleAuthenticationScope.EMAIL],
-    });
+  const signInWithApple = useCallback(async (step?: (s: string) => void) => {
+    if (!supabase) throw new Error("This version of Munib isn't connected to its server (no Supabase settings).");
+    step?.('Asking Apple…');
+    // If Apple never answers, say so rather than waiting for ever.
+    const cred = await Promise.race([
+      AppleAuthentication.signInAsync({
+        requestedScopes: [AppleAuthentication.AppleAuthenticationScope.FULL_NAME, AppleAuthentication.AppleAuthenticationScope.EMAIL],
+      }),
+      new Promise<never>((_, no) => setTimeout(() => no(new Error("Apple didn't answer after 30 seconds (no sign-in panel).")), 30000)),
+    ]);
     if (!cred.identityToken) throw new Error('Apple did not return a sign-in token');
+    step?.('Apple said yes. Signing you in to Munib…');
     const { error } = await supabase.auth.signInWithIdToken({ provider: 'apple', token: cred.identityToken });
     if (error) throw error;
+    step?.('Signed in.');
   }, []);
 
   const signInWithGoogle = useCallback(async () => {

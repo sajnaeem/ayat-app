@@ -1,4 +1,5 @@
 import * as AppleAuthentication from 'expo-apple-authentication';
+import * as Updates from 'expo-updates';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -49,6 +50,8 @@ export function SignIn({ onClose, reason }: { onClose?: () => void; reason?: str
 
   // Shown on the screen itself: a toast can sit hidden behind this sign-in sheet.
   const [problem, setProblem] = useState('');
+  // What happened last with Apple sign-in, shown small under the buttons (to find out why it sometimes does nothing).
+  const [step, setStep] = useState('');
   const run = async (fn: () => Promise<void>) => {
     if (busy) return;
     setBusy(true);
@@ -99,7 +102,10 @@ export function SignIn({ onClose, reason }: { onClose?: () => void; reason?: str
                 buttonStyle={pal.dark ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
                 cornerRadius={10}
                 style={{ height: 52 }}
-                onPress={() => run(acct.signInWithApple)}
+                onPress={() => {
+                  setStep('Button pressed');
+                  run(() => acct.signInWithApple(setStep));
+                }}
               />
             )}
             {SHOW_GOOGLE && (
@@ -209,9 +215,14 @@ export function SignIn({ onClose, reason }: { onClose?: () => void; reason?: str
         )}
 
         {busy && <ActivityIndicator color={pal.accent} style={{ marginTop: 12 }} />}
+        {!!problem && mode !== 'email' && <Text style={{ fontFamily: fonts.ui, fontSize: 14, lineHeight: 20, color: '#E07A68', textAlign: 'center', marginTop: 12 }}>{problem}</Text>}
+        {!!step && <Text style={[styles.fine, { color: pal.muted, textAlign: 'center', marginTop: 10 }]}>{step}</Text>}
 
         <Text style={[styles.fine, { color: pal.muted, textAlign: 'center', marginTop: 'auto' }]}>
           Munib is free. Your account keeps your progress, saved ayat and reflections safe across phones.
+        </Text>
+        <Text style={[styles.fine, { color: pal.muted, textAlign: 'center', opacity: 0.6, fontSize: 11 }]}>
+          {`v${Updates.runtimeVersion ?? '?'} · ${Updates.createdAt ? Updates.createdAt.toISOString().slice(0, 16).replace('T', ' ') : 'built-in'}`}
         </Text>
       </ScrollView>
     </KeyboardAvoidingView>
