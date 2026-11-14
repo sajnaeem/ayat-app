@@ -62,6 +62,10 @@ export default function TogetherTab() {
         </View>
 
         <TileGrid>
+          <Tile pal={pal} colour={pal.pop.emerald} art="crescent" title="Ramadan together" sub="A juz a day" onPress={needs('circle', () => router.push({ pathname: '/circle', params: { kind: 'ramadan' } }))} />
+          <Tile pal={pal} colour={pal.pop.amber} art="star8" title="Family circle" sub="One ayah a day, shared" onPress={needs('circle', () => router.push({ pathname: '/circle', params: { kind: 'family' } }))} />
+        </TileGrid>
+        <TileGrid>
           <Tile pal={pal} colour={pal.pop.rose} art="hands" title="Ask for dua" sub="Pray for each other" onPress={() => router.push('/dua-requests')} onInfo={() => explain('duaothers')} />
           <Tile pal={pal} colour={pal.pop.sky} art="moon" title="Bedtime stories" sub="True stories for children" onPress={() => router.push('/stories')} />
         </TileGrid>

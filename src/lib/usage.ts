@@ -78,7 +78,7 @@ function addSeconds(n: number) {
 const ROUTES: [RegExp, string][] = [
   [/^\/$/, 'feed'], [/^\/quran$/, 'quran_tab'], [/^\/prayer$/, 'prayer_tab'], [/^\/together$/, 'together_tab'], [/^\/you$/, 'you_tab'],
   [/^\/pray\/learn/, 'pray_learn'], [/^\/pray\/(fajr|dhuhr|asr|maghrib|isha)/, 'pray_along'], [/^\/pray$/, 'pray'],
-  [/^\/learn\/\d+/, 'learn_surah'], [/^\/stories\/./, 'story'], [/^\/together\/./, 'khatm'], [/^\/profile\//, 'profile'],
+  [/^\/learn\/\d+/, 'learn_surah'], [/^\/stories\/./, 'story'], [/^\/together\/./, 'khatm'], [/^\/circle/, 'circle'], [/^\/profile\//, 'profile'],
   [/^\/k\//, 'khatm_invite'], [/^\/\d+\/\d+/, 'shared_link'],
 ];
 function featureOf(path: string) {
