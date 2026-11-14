@@ -101,8 +101,9 @@ const FEELS = (j: Journey | undefined): Statement[] =>
       ];
 
 /** The order of the screens. "ready" (the note) is kept but skipped (Saj: too much); "trial" only when Plus has a free week. */
-const SEQ = ['intro', 'name', 'gender', 'journey', 'reward', 'arabic', 'feel', 'goals', 'time', 'share'] as const;
-type StepId = (typeof SEQ)[number] | 'ready' | 'trial';
+// 'time' (how many minutes a day) was taken out (Saj, 14 Nov 2026); everyone starts on the default 5 minutes / 10 ayat.
+const SEQ = ['intro', 'name', 'gender', 'journey', 'reward', 'arabic', 'feel', 'goals', 'share'] as const;
+type StepId = (typeof SEQ)[number] | 'ready' | 'trial' | 'time';
 
 export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => void; /** 1 skips the intro (the welcome screen has already said hello) */ startAt?: number; onBack?: () => void }) {
   const pal = heavenly(usePalette());
