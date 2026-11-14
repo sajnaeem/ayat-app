@@ -144,6 +144,7 @@ function Welcome({ onStart, onLogin, onBrowse }: { onStart: () => void; onLogin:
           <Animated.Text style={[styles.arabic, { opacity: glow.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] }) }]}>مُنِيب</Animated.Text>
           <Text style={styles.meaning}>Munib: one who turns back{'\n'}to Allah (Quran 50:33)</Text>
         </Animated.View>
+        <Animated.Text style={[styles.forWho, { opacity: extras }]}>For new Muslims and lifelong ones</Animated.Text>
       </View>
 
       <View style={{ flex: 1 }} />
@@ -175,6 +176,7 @@ const styles = StyleSheet.create({
   line: { fontFamily: fonts.read, letterSpacing: -1.4, color: '#F7F3EA', textShadowColor: 'rgba(0,0,0,0.35)', textShadowRadius: 12, textShadowOffset: { width: 0, height: 2 } },
   meaning: { fontFamily: fonts.ui, fontSize: 13.5, lineHeight: 19, color: 'rgba(247,243,234,0.8)' },
   arabic: { fontFamily: fonts.arabic, fontSize: 30, lineHeight: 50, color: '#F5CD7A', textShadowColor: 'rgba(255,190,90,0.6)', textShadowRadius: 14, textShadowOffset: { width: 0, height: 0 } },
+  forWho: { fontFamily: fonts.uiSemi, fontSize: 12, letterSpacing: 1.6, textTransform: 'uppercase', color: '#F5CD7A', marginTop: 6 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, paddingHorizontal: 18, marginBottom: 16 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.24)', borderWidth: StyleSheet.hairlineWidth, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#F5CD7A' },
