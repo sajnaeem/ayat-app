@@ -1,7 +1,7 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { showFeed } from '@/lib/nav';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GuidelinesSheet } from '@/components/Guidelines';
 import { Icon } from '@/components/Icon';
@@ -17,6 +17,8 @@ import { askPermission, REMINDER_TIMES } from '@/lib/reminders';
 import { AUTO_PACES } from '@/components/ReadingSheet';
 import { FeedTopicsSheet } from '@/components/FeedTopicsSheet';
 import { feedSummary } from '@/lib/feedTopics';
+import { usePlus } from '@/lib/plus';
+import { ART } from '@/lib/art';
 import { SPEEDS, TEXT_SIZES, textScale, usePrefs } from '@/lib/store';
 import { profileCard, Profile } from '@/lib/profiles';
 import { amReviewer, deletePost, myPosts, Post, reviewQueue } from '@/lib/posts';
@@ -34,6 +36,7 @@ export default function You() {
   const router = useRouter();
   const prefs = usePrefs();
   const { progress } = useProgress();
+  const plus = usePlus();
   const hp = onColour(pal, pal.pop.sky);
   const acct = useAccount();
   const toast = useToast();
@@ -186,6 +189,13 @@ export default function You() {
         </Group>
 
         {/* Reading settings */}
+        <Pressable onPress={() => router.push('/plus')} accessibilityRole="button" style={({ pressed }) => [styles.plusCard, { backgroundColor: pal.pop.violet, opacity: pressed ? 0.88 : 1 }]}>
+          <Image source={ART.star8} style={styles.plusArt} resizeMode="contain" accessibilityIgnoresInvertColors />
+          <Text style={styles.plusEyebrow}>MUNIB PLUS</Text>
+          <Text style={styles.plusTitle}>{plus.active ? 'You’re a member. JazakAllahu khayran.' : 'Unlimited Ask, listen offline, every story'}</Text>
+          <Text style={styles.plusSub}>{plus.active ? (plus.lifetime ? 'Lifetime' : 'Manage your membership') : 'And you keep Munib free for everyone'}</Text>
+        </Pressable>
+
         <Section pal={pal} title="Learn" />
         <Group pal={pal}>
           <Row pal={pal} icon="sliders" title="Your journey" sub={prefs.journey ? 'Retake the questions to reshape Munib' : 'Five questions so Munib fits where you are'} onPress={() => router.push('/journey')} />
@@ -392,6 +402,11 @@ export default function You() {
 }
 
 const styles = StyleSheet.create({
+  plusCard: { borderRadius: 22, padding: 18, gap: 3, overflow: 'hidden', paddingRight: 110 },
+  plusArt: { position: 'absolute', right: -14, top: -6, width: 118, height: 118 },
+  plusEyebrow: { fontFamily: fonts.uiBold, fontSize: 11, letterSpacing: 1.2, color: 'rgba(255,255,255,0.8)' },
+  plusTitle: { fontFamily: fonts.uiBold, fontSize: 18, lineHeight: 23, color: '#FFFFFF' },
+  plusSub: { fontFamily: fonts.ui, fontSize: 13.5, color: 'rgba(255,255,255,0.88)' },
   root: { flex: 1 },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingBottom: 6 },
   title: { fontFamily: fonts.uiBold, fontSize: 34, letterSpacing: -0.8 },

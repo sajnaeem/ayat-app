@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
+import { FREE_STORIES, usePlus } from '@/lib/plus';
 import { NIGHT, SLEEP_DUA_ID, STORIES } from '@/data/bedtime';
 import { DUA_TOPICS } from '@/data/duas';
 import { SITE } from '@/lib/site';
@@ -26,7 +27,10 @@ export default function Story() {
   const { id, play, timer } = useLocalSearchParams<{ id: string; play?: string; timer?: string }>();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const ix = Math.max(0, STORIES.findIndex((s) => s.id === id));
+  const plus = usePlus();
+  const ix0 = Math.max(0, STORIES.findIndex((s) => s.id === id));
+  // A locked story opened by link falls back to the first free one.
+  const ix = ix0 >= FREE_STORIES && !plus.unlocked && plus.ready ? 0 : ix0;
   const st = STORIES[ix];
   const player = useAudioPlayer(`${SITE}/stories/${st.id}.mp3`, { updateInterval: 250 });
   const status = useAudioPlayerStatus(player);
@@ -72,7 +76,9 @@ export default function Story() {
   useEffect(() => {
     if (!status.didJustFinish) return;
     if (stopAt && Date.now() < stopAt - 30000) {
-      const next = STORIES[(ix + 1) % STORIES.length];
+      // Without Plus, carry on only through the free stories.
+      const pool = plus.unlocked ? STORIES.length : FREE_STORIES;
+      const next = STORIES[(ix + 1) % pool];
       const left = Math.max(1, Math.round((stopAt - Date.now()) / 60000));
       router.replace({ pathname: '/stories/[id]', params: { id: next.id, play: '1', timer: String(left) } });
     } else {

@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { usePlus } from '@/lib/plus';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,6 +18,9 @@ export default function Downloads() {
   const pal = usePalette();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const plus = usePlus();
+  // Listen offline is part of Munib Plus; files already downloaded keep working.
+  const gate = (go: () => void) => (plus.unlocked ? go() : router.push('/plus'));
   const prefs = usePrefs();
   const [r, setR] = useState<ReciterId>(prefs.reciter);
   const [q, setQ] = useState<QueueState>({ current: null, waiting: [], error: null });
@@ -39,6 +43,12 @@ export default function Downloads() {
         <Text style={[styles.lead, { color: pal.muted }]}>
           Download recitations to listen with no signal: on the Underground, on a plane, or to save data. Ayat you’ve downloaded play from your phone, in the feed and in page view.
         </Text>
+        {!plus.unlocked && (
+          <Pressable onPress={() => router.push('/plus')} accessibilityRole="button" style={{ backgroundColor: pal.pop.sky, borderRadius: 16, padding: 14, gap: 3 }}>
+            <Text style={{ fontFamily: fonts.uiBold, fontSize: 15.5, color: '#FFFFFF' }}>Listen offline is part of Munib Plus</Text>
+            <Text style={{ fontFamily: fonts.ui, fontSize: 13.5, color: 'rgba(255,255,255,0.88)' }}>Every recitation still plays online for free. Tap to see Plus.</Text>
+          </Pressable>
+        )}
         <View style={styles.chips}>
           {RECITERS.map((x) => {
             const on = x.id === r;
@@ -76,14 +86,14 @@ export default function Downloads() {
         {!!q.error && <Text style={[styles.small, { color: '#B4432F' }]}>{q.error}</Text>}
 
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Bundle pal={pal} title="Juz' ʿAmma" sub="Surahs 78 to 114" left={missing(JUZ_AMMA).length} onPress={() => enqueue(r, missing(JUZ_AMMA))} />
-          <Bundle pal={pal} title="Favourites" sub="Fatihah, Kahf, Yasin, Rahman, Waqiʿah, Mulk" left={missing(FAVOURITES).length} onPress={() => enqueue(r, missing(FAVOURITES))} />
+          <Bundle pal={pal} title="Juz' ʿAmma" sub="Surahs 78 to 114" left={missing(JUZ_AMMA).length} onPress={() => gate(() => enqueue(r, missing(JUZ_AMMA)))} />
+          <Bundle pal={pal} title="Favourites" sub="Fatihah, Kahf, Yasin, Rahman, Waqiʿah, Mulk" left={missing(FAVOURITES).length} onPress={() => gate(() => enqueue(r, missing(FAVOURITES)))} />
         </View>
         <Text style={[styles.h3, { color: pal.muted }]}>ALL 114 SURAHS</Text>
       </View>
     ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [pal, r, q, total, mine?.bytes, mine?.surahs],
+    [pal, r, q, total, mine?.bytes, mine?.surahs, plus.unlocked],
   );
 
   if (!offlineSupported) {
@@ -110,7 +120,7 @@ export default function Downloads() {
         contentContainerStyle={{ padding: 18, paddingBottom: insets.bottom + 40 }}
         ListFooterComponent={
           <View style={{ gap: 12, marginTop: 18 }}>
-            <Pressable onPress={() => enqueue(r, missing(SURAHS.map((_, i) => i + 1)))} style={[styles.btn, { borderColor: pal.line, borderWidth: 1 }]}>
+            <Pressable onPress={() => gate(() => enqueue(r, missing(SURAHS.map((_, i) => i + 1))))} style={[styles.btn, { borderColor: pal.line, borderWidth: 1 }]}>
               <Text style={[styles.btnText, { color: pal.text }]}>Download the whole Quran</Text>
             </Pressable>
             <Text style={[styles.small, { color: pal.muted, textAlign: 'center' }]}>The whole Quran is a large download (several hundred MB). Best on Wi-Fi.</Text>
@@ -142,7 +152,7 @@ export default function Downloads() {
                     { text: 'Cancel', style: 'cancel' },
                     { text: 'Remove', style: 'destructive', onPress: () => removeSurah(r, s) },
                   ]);
-                else if (!busy && !waiting) enqueue(r, [s]);
+                else if (!busy && !waiting) gate(() => enqueue(r, [s]));
               }}
               style={[styles.row, { borderColor: pal.line }]}
               accessibilityRole="button"

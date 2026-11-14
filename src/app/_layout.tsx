@@ -12,6 +12,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { JourneyFlow } from '@/components/Journey';
 import { ChooseName } from '@/components/SignIn';
 import { ToastProvider } from '@/components/Toast';
+import { PlusProvider } from '@/lib/plus';
 import { AccountProvider, useAccount } from '@/lib/account';
 import { ProgressProvider } from '@/lib/progress';
 import { PrefsProvider, usePrefs } from '@/lib/store';
@@ -103,6 +104,7 @@ function Root() {
         <Stack.Screen name="dua-requests" options={{ presentation: 'modal' }} />
         <Stack.Screen name="explain" options={{ presentation: 'modal' }} />
         <Stack.Screen name="journey" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="plus" options={{ presentation: 'modal' }} />
         <Stack.Screen name="learn/[s]" />
       </Stack>
     </>
@@ -126,9 +128,11 @@ export default function Layout() {
       <PrefsProvider>
         <ProgressProvider>
           <AccountProvider>
-            <ToastProvider>
-              <Root />
-            </ToastProvider>
+            <PlusProvider>
+              <ToastProvider>
+                <Root />
+              </ToastProvider>
+            </PlusProvider>
           </AccountProvider>
         </ProgressProvider>
       </PrefsProvider>

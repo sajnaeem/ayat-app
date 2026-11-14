@@ -9,7 +9,7 @@
 // are written once per ayah and kept in ask_cache, and served from there free and without counting towards the limit.
 // A daily limit per person (ask_usage, see 008_ask.sql) keeps costs in check.
 //
-// Secrets: ANTHROPIC_API_KEY (shared with "moderate"). Optional: ASK_MODEL, ASK_PER_DAY.
+// Secrets: ANTHROPIC_API_KEY (shared with "moderate"). Optional: ASK_MODEL, ASK_PER_DAY, REVENUECAT_SECRET (Munib Plus check), ASK_PLUS_PER_DAY, ASK_LIFETIME_PER_DAY.
 // Deployed with JWT verification on: signed-in people only.
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
@@ -17,6 +17,25 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 const KEY = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
 const MODEL = Deno.env.get('ASK_MODEL') ?? 'claude-sonnet-5-5';
 const PER_DAY = Number(Deno.env.get('ASK_PER_DAY') ?? 5);
+// Munib Plus (RevenueCat entitlement "plus"): unlimited for subscribers (a high fair-use cap), 20 a day for lifetime.
+const PLUS_PER_DAY = Number(Deno.env.get('ASK_PLUS_PER_DAY') ?? 200);
+const LIFETIME_PER_DAY = Number(Deno.env.get('ASK_LIFETIME_PER_DAY') ?? 20);
+const RC_SECRET = Deno.env.get('REVENUECAT_SECRET') ?? '';
+
+/** The person's daily limit: checks Munib Plus with RevenueCat (by Munib account id) only when they're past the free limit. */
+async function plusLimit(uid: string): Promise<number> {
+  if (!RC_SECRET) return PER_DAY;
+  try {
+    const r = await fetch(`https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(uid)}`, { headers: { Authorization: `Bearer ${RC_SECRET}` }, signal: AbortSignal.timeout(4000) });
+    if (!r.ok) return PER_DAY;
+    const ent = (await r.json())?.subscriber?.entitlements?.plus;
+    if (!ent) return PER_DAY;
+    if (ent.expires_date === null) return LIFETIME_PER_DAY;
+    return new Date(ent.expires_date).getTime() > Date.now() ? PLUS_PER_DAY : PER_DAY;
+  } catch {
+    return PER_DAY;
+  }
+}
 // Must match ASK_STARTERS in src/lib/ask.ts.
 const STARTERS = ['What does this ayah mean?', 'What was happening when it was revealed?', 'How can I live by this today?'];
 const URL_ = Deno.env.get('SUPABASE_URL')!;
@@ -64,7 +83,12 @@ Deno.serve(async (req) => {
     if (hit?.answer) return json({ answer: hit.answer, cached: true });
   } else {
     const { data: ok } = await admin.rpc('ask_take', { uid: who.user.id, max_per_day: PER_DAY });
-    if (!ok) return json({ error: 'limit', perDay: PER_DAY });
+    if (!ok) {
+      // Past the free limit: Munib Plus members get more. ask_take already counted this question, so check against the same count.
+      const limit = await plusLimit(who.user.id);
+      const { data: row } = await admin.from('ask_usage').select('count').eq('user_id', who.user.id).eq('day', new Date().toISOString().slice(0, 10)).maybeSingle();
+      if (limit <= PER_DAY || (row?.count ?? Infinity) > limit) return json({ error: 'limit', perDay: limit });
+    }
   }
 
   // The ayah and the ayat around it.

@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAccount } from '@/lib/account';
+import { usePlus } from '@/lib/plus';
 import { ASK_STARTERS, askAyah, reportAnswer } from '@/lib/ask';
 import { LangId, loadTafsir, loadWords, Tafsir } from '@/lib/quran';
 import { fonts, mix, Palette } from '@/lib/theme';
@@ -91,9 +92,10 @@ export function AskSheet({ verseKey, pal, onClose }: { verseKey: string | null; 
   const acct = useAccount();
   const router = useRouter();
   const toast = useToast();
+  const plus = usePlus();
   const [q, setQ] = useState('');
   const [asked, setAsked] = useState('');
-  const [state, setState] = useState<'idle' | 'loading' | { answer: string } | { error: string }>('idle');
+  const [state, setState] = useState<'idle' | 'loading' | { answer: string } | { error: string; limit?: boolean }>('idle');
   const [reported, setReported] = useState(false);
 
   useEffect(() => {
@@ -117,9 +119,12 @@ export function AskSheet({ verseKey, pal, onClose }: { verseKey: string | null; 
       setQ('');
     } else
       setState({
+        limit: r.error === 'limit' && !plus.active && plus.available,
         error:
           r.error === 'limit'
-            ? `You've asked your ${r.perDay ?? 5} questions for today. The three suggested questions still work, and you can ask more tomorrow, in sha Allah.`
+            ? plus.active || !plus.available
+              ? `You've reached today's ${r.perDay ?? 20} questions. You can ask more tomorrow, in sha Allah.`
+              : `You've asked your ${r.perDay ?? 5} free questions for today. The three suggested questions still work, and Munib Plus gives you unlimited questions.`
             : r.error === 'off'
               ? 'Asking questions isn’t switched on yet. It will be soon.'
               : 'Couldn’t get an answer. Check your connection and try again.',
@@ -168,6 +173,18 @@ export function AskSheet({ verseKey, pal, onClose }: { verseKey: string | null; 
             </View>
           )}
           {typeof state === 'object' && 'error' in state && <Text style={[styles.body, { color: pal.muted }]}>{state.error}</Text>}
+          {typeof state === 'object' && 'error' in state && state.limit && (
+            <Pressable
+              onPress={() => {
+                onClose();
+                setTimeout(() => router.push('/plus'), 300);
+              }}
+              accessibilityRole="button"
+              style={{ alignSelf: 'flex-start', backgroundColor: pal.text, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 10 }}
+            >
+              <Text style={{ fontFamily: fonts.uiBold, fontSize: 14, color: pal.bg }}>See Munib Plus</Text>
+            </Pressable>
+          )}
           {typeof state === 'object' && 'answer' in state && (
             <>
               {state.answer.split(/\n\s*\n/).map((para, i) => (

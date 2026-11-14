@@ -3,12 +3,14 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
 import { NIGHT, STORIES } from '@/data/bedtime';
+import { FREE_STORIES, usePlus } from '@/lib/plus';
 import { fonts } from '@/lib/theme';
 
 /** Bedtime stories: short, true stories from the Quran and hadith, read aloud or played. */
 export default function Stories() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const plus = usePlus();
   return (
     <View style={[styles.root, { backgroundColor: NIGHT.bg }]}>
       <FlatList
@@ -28,7 +30,7 @@ export default function Stories() {
         }
         renderItem={({ item, index }) => (
           <Pressable
-            onPress={() => router.push({ pathname: '/stories/[id]', params: { id: item.id } })}
+            onPress={() => (index < FREE_STORIES || plus.unlocked ? router.push({ pathname: '/stories/[id]', params: { id: item.id } }) : router.push('/plus'))}
             style={({ pressed }) => [styles.card, { backgroundColor: pressed ? '#232945' : NIGHT.card, borderColor: NIGHT.line }]}
             accessibilityRole="button"
             accessibilityLabel={`${item.title}, about ${item.about}, ${item.minutes} minutes`}
@@ -39,7 +41,7 @@ export default function Stories() {
             <View style={{ flex: 1, gap: 2 }}>
               <Text style={[styles.about, { color: NIGHT.accent }]}>{item.about.toUpperCase()}</Text>
               <Text style={[styles.name, { color: NIGHT.text }]}>{item.title}</Text>
-              <Text style={[styles.meta, { color: NIGHT.muted }]}>About {item.minutes} min</Text>
+              <Text style={[styles.meta, { color: NIGHT.muted }]}>About {item.minutes} min{index >= FREE_STORIES && !plus.unlocked ? '  ·  Munib Plus' : ''}</Text>
             </View>
             <Icon name="chevron" size={16} color={NIGHT.muted} />
           </Pressable>
