@@ -410,7 +410,7 @@ export function QuranIndex({ toPages = false, title = "Go to", close = false, ex
 }
 
 const styles = StyleSheet.create({
-  tabTitle: { fontSize: 30, letterSpacing: -0.6 },
+  tabTitle: { fontFamily: fonts.read, fontSize: 36, letterSpacing: -0.6 },
   root: { flex: 1 },
   head: {
     flexDirection: "row",

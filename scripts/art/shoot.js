@@ -5,7 +5,8 @@ srv.listen(0, '127.0.0.1', async () => {
   const port = srv.address().port;
   const b = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   for (const name of process.argv.slice(2)) {
-    const p = await b.newPage({ viewport: { width: 1024, height: 1024 } });
+    const [VW, VH] = (process.env.SIZE || '1024x1024').split('x').map(Number); /* SIZE=1200x1500 for sky.html */
+    const p = await b.newPage({ viewport: { width: VW, height: VH } });
     p.on('pageerror', (e) => console.log('ERR', e.message));
     await p.goto(`http://127.0.0.1:${port}/${PAGE}`); await p.waitForFunction(() => window.ready);
     await p.evaluate((n) => window.draw(n), name);

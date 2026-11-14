@@ -78,7 +78,7 @@ export default function TogetherTab() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   head: { paddingHorizontal: 20, paddingBottom: 6, gap: 6 },
-  title: { fontFamily: fonts.uiBold, fontSize: 34, letterSpacing: -0.8 },
+  title: { fontFamily: fonts.read, fontSize: 36, letterSpacing: -0.6 },
   lead: { fontFamily: fonts.read, fontSize: 15.5, lineHeight: 22 },
   body: { padding: 16, gap: 12, paddingBottom: 30 },
   ummah: { borderRadius: 24, padding: 18, gap: 4, overflow: 'hidden', paddingRight: 110 },

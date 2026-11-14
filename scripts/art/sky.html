@@ -1,0 +1,96 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000}canvas{display:block}</style>
+<script type="importmap">{ "imports": { "three": "./node_modules/three/build/three.module.js", "three/addons/": "./node_modules/three/examples/jsm/" } }</script></head>
+<body><script type="module">
+// Munib · time-of-day backdrops for the Prayer tab: a marble mosque under the sky at dawn, day, sunset and night.
+// draw('fajr' | 'day' | 'maghrib' | 'isha'). Shot with PAGE=sky.html node shoot.js (viewport is set by the page size).
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+const W = 1200, H = 1500;
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1); renderer.setSize(W, H);
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+const env = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+
+const LOOKS = {
+  // top of sky, middle, horizon, sun colour, sun height, light strength, ground, exposure, env strength
+  fajr:    { top: 0x1B2450, mid: 0x6A5A9A, hor: 0xF2A9A0, sun: 0xFFC2A0, sunPos: V(-3, 0.6, -30), light: 1.2, ground: 0x3B3552, exp: 0.95, env: 0.25, stars: 0.5 },
+  day:     { top: 0x3E7FC9, mid: 0x86B8E6, hor: 0xC4DCEC, sun: 0xFFF6E2, sunPos: V(8, 18, -30), light: 2.6, ground: 0xA9A08C, exp: 1.0, env: 0.6, stars: 0 },
+  maghrib: { top: 0x3B3A6E, mid: 0xC9736A, hor: 0xFFC069, sun: 0xFFB04A, sunPos: V(4, 1.2, -30), light: 2.2, ground: 0x5A3E3A, exp: 1.0, env: 0.3, stars: 0 },
+  isha:    { top: 0x060B1E, mid: 0x13224A, hor: 0x2E3F70, sun: 0xB9C8FF, sunPos: V(-6, 12, -30), light: 0.5, ground: 0x10162A, exp: 1.05, env: 0.12, stars: 1 },
+};
+
+function sky(L) {
+  const g = new THREE.SphereGeometry(80, 48, 32);
+  const m = new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, uniforms: { top: { value: new THREE.Color(L.top) }, mid: { value: new THREE.Color(L.mid) }, hor: { value: new THREE.Color(L.hor) } },
+    vertexShader: 'varying vec3 p; void main(){ p = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
+    fragmentShader: 'uniform vec3 top; uniform vec3 mid; uniform vec3 hor; varying vec3 p; void main(){ float h = clamp(p.y, -0.1, 1.); vec3 c = h < .18 ? mix(hor, mid, smoothstep(-.02, .18, h)) : mix(mid, top, smoothstep(.18, .7, h)); gl_FragColor = vec4(c, 1.); }' });
+  return new THREE.Mesh(g, m);
+}
+
+function mosque(L) {
+  const marble = new THREE.MeshPhysicalMaterial({ color: 0xF4EFE6, roughness: 0.35, clearcoat: 0.3 });
+  const gold = new THREE.MeshPhysicalMaterial({ color: 0xE9B44C, metalness: 1, roughness: 0.25 });
+  const shade = new THREE.MeshStandardMaterial({ color: 0x8C7A62, roughness: 0.8 });
+  const glow = new THREE.MeshBasicMaterial({ color: 0xFFC56E });
+  const G = new THREE.Group();
+  const night = L.stars > 0.7;
+  // base hall with arches
+  const hall = new THREE.Mesh(new RoundedBoxGeometry(7, 1.6, 3.2, 4, 0.06), marble); hall.position.y = 0.8; G.add(hall);
+  for (let i = 0; i < 9; i++) { const a = new THREE.Mesh(new RoundedBoxGeometry(0.42, 0.9, 0.05, 3, 0.18), night || L === LOOKS.fajr ? glow : shade); a.position.set(-3 + i * 0.75, 0.7, 1.61); G.add(a); }
+  const roof = new THREE.Mesh(new RoundedBoxGeometry(7.2, 0.14, 3.4, 3, 0.04), marble); roof.position.y = 1.65; G.add(roof);
+  // domes
+  const dome = (r, x, z, y) => { const drum = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.92, r * 0.95, r * 0.5, 16), marble); drum.position.set(x, y + r * 0.25, z); G.add(drum);
+    const d = new THREE.Mesh(new THREE.SphereGeometry(r, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2), marble); d.position.set(x, y + r * 0.5, z); d.scale.y = 1.12; G.add(d);
+    const f = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.05, r * 0.5, 8), gold); f.position.set(x, y + r * 1.62, z); G.add(f); };
+  dome(1.45, 0, -0.2, 1.7); dome(0.7, -2.4, 0.2, 1.7); dome(0.7, 2.4, 0.2, 1.7);
+  // minarets
+  const minaret = (x, z) => { const M = new THREE.Group(); M.position.set(x, 0, z);
+    const sh = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.26, 6.2, 12), marble); sh.position.y = 3.1; M.add(sh);
+    [2.6, 4.6].forEach((y) => { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.3, 0.16, 16), marble); b.position.y = y; M.add(b); });
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.18, 0.7, 12), marble); top.position.y = 6.5; M.add(top);
+    const c = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.8, 16), marble); c.position.y = 7.25; M.add(c);
+    const t = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 8), gold); t.position.y = 7.7; M.add(t);
+    if (night) { const l = new THREE.Mesh(new THREE.TorusGeometry(0.38, 0.03, 8, 32), glow); l.rotation.x = Math.PI / 2; l.position.y = 4.7; M.add(l); }
+    G.add(M); };
+  minaret(-4.3, -0.6); minaret(4.3, -0.6);
+  G.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+  return G;
+}
+
+const composer = new EffectComposer(renderer);
+window.draw = (name) => {
+  const L = LOOKS[name];
+  renderer.toneMappingExposure = L.exp;
+  const scene = new THREE.Scene(); scene.environment = env; scene.environmentIntensity = L.env;
+  scene.add(sky(L));
+  scene.fog = new THREE.Fog(L.hor, name === 'day' ? 45 : 30, name === 'day' ? 140 : 75);
+  const sun = new THREE.DirectionalLight(L.sun, L.light); sun.position.copy(L.sunPos).multiplyScalar(0.5); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+  Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12, far: 80 }); scene.add(sun);
+  scene.add(new THREE.HemisphereLight(L.mid, L.ground, name === 'isha' ? 0.35 : 0.7));
+  // the sun or moon in the sky
+  if (name !== 'isha') { const s = new THREE.Mesh(new THREE.SphereGeometry(name === 'day' ? 1.4 : 2.2, 32, 16), new THREE.MeshBasicMaterial({ color: new THREE.Color(L.sun).multiplyScalar(name === 'day' ? 2.2 : 1.8), fog: false })); s.position.copy(L.sunPos).setLength(70); s.position.y = name === 'fajr' ? 1.2 : name === 'maghrib' ? 4 : 30; s.position.x = name === 'maghrib' ? 9 : s.position.x; scene.add(s); }
+  else { const moon = new THREE.Mesh(new THREE.SphereGeometry(2.1, 48, 32), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xFFF3D6).multiplyScalar(1.6), fog: false })); moon.position.set(15, 36, -62); scene.add(moon); const bite = new THREE.Mesh(new THREE.SphereGeometry(2.0, 48, 32), new THREE.MeshBasicMaterial({ color: 0x0A1230, fog: false })); bite.position.set(15.8, 36.5, -61.2); scene.add(bite); }
+  if (L.stars) { const pts = []; for (let i = 0; i < 700; i++) { const a = Math.random() * Math.PI * 2, h = 0.15 + Math.random() * 0.85; const r = 78; pts.push(Math.cos(a) * r * Math.sqrt(1 - h * h), h * r, Math.sin(a) * r * Math.sqrt(1 - h * h)); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3)); scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0xFFFFFF, size: 0.22, transparent: true, opacity: 0.85 * L.stars, fog: false }))); }
+  const ground = new THREE.Mesh(new THREE.CircleGeometry(60, 64), new THREE.MeshStandardMaterial({ color: L.ground, roughness: 0.95 })); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+  const m = mosque(L); m.position.set(0, 0, -6); m.rotation.y = -0.18; scene.add(m);
+  // palms of light: a few soft lamps along the courtyard at night and dawn
+  const cam = new THREE.PerspectiveCamera(42, W / H, 0.1, 200);
+  cam.position.set(0, 2.0, 15.5); cam.lookAt(0, 7.4, -6);
+  composer.passes.length = 0; composer.setSize(W, H);
+  composer.addPass(new RenderPass(scene, cam));
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), name === 'day' ? 0.25 : 0.55, 0.6, 0.82));
+  composer.addPass(new OutputPass());
+  composer.render();
+  return true;
+};
+window.ready = true;
+</script></body></html>

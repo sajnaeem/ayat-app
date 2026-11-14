@@ -1,8 +1,10 @@
 import { useFocusEffect, useRouter } from 'expo-router';
+import { setStatusBarStyle } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
+import { Glass, hijriToday, sky, SkyHero, skyPhase } from '@/components/SkyHero';
 import { ExplainIntro, useExplain } from '@/components/Explain';
 import { Group, Row, Section, Tile, TileGrid } from '@/components/List';
 import { ART, poseArt } from '@/lib/art';
@@ -28,50 +30,59 @@ export default function PrayerTab() {
       return () => clearInterval(t);
     }, []),
   );
+  // Light status bar over the sky while this tab is open.
+  useFocusEffect(
+    useCallback(() => {
+      setStatusBarStyle('light');
+      return () => setStatusBarStyle(pal.dark ? 'light' : 'dark');
+    }, [pal.dark]),
+  );
   const day = calcDay(s, now);
   const next = nextPrayer(s, now);
   const today = new Date().toISOString().slice(0, 10);
+  const phase = skyPhase(now, day ? day.times : null);
+  const hijri = hijriToday(now);
+  const nextName = next ? (next.id === 'dhuhr' && next.at.getDay() === 5 ? 'Jumuʿah' : next.name) : '';
   const tasbeehToday = prefs.tasbeeh.day === today ? prefs.tasbeeh.today : 0;
 
   return (
     <View style={[styles.root, { backgroundColor: pal.bg }]}>
-      <View style={[styles.head, { paddingTop: insets.top + 12 }]}>
-        <Text style={[styles.title, { color: pal.text }]}>Prayer</Text>
-      </View>
-      <ScrollView contentContainerStyle={styles.body}>
-        <ExplainIntro id="salah" pal={pal} />
-        <Pressable onPress={() => router.push('/prayertimes')} style={({ pressed }) => [styles.card, { overflow: 'hidden' }, { backgroundColor: hp.surface, opacity: pressed ? 0.8 : 1 }]} accessibilityRole="button">
-          <Image source={ART.crescent} style={styles.cardArt} resizeMode="contain" accessibilityIgnoresInvertColors />
+      <ScrollView contentContainerStyle={{ paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
+        <SkyHero phase={phase} top={insets.top}>
+          <Text style={sky.title}>Prayer</Text>
+          <Text style={sky.eyebrow}>{[now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }), hijri].filter(Boolean).join('  ·  ')}</Text>
           {day && next ? (
-            <>
-              <Text style={[styles.eyebrow, { color: hp.accent }]}>NEXT</Text>
-              <Text style={[styles.next, { color: hp.text }]}>
-                {next.id === 'dhuhr' && next.at.getDay() === 5 ? 'Jumuʿah' : next.name} at {hm(next.at)}
-              </Text>
-              <Text style={[styles.sub, { color: hp.muted }]}>in {until(next.at.getTime() - now.getTime())}</Text>
-              <View style={[styles.times, { borderTopColor: hp.line }]}>
+            <Pressable onPress={() => router.push('/prayertimes')} style={{ flex: 1 }} accessibilityRole="button" accessibilityLabel={`Next: ${nextName} at ${hm(next.at)}, in ${until(next.at.getTime() - now.getTime())}`}>
+              <Text style={[sky.line, { marginTop: 26 }]}>Next prayer</Text>
+              <Text style={sky.big}>{nextName}</Text>
+              <Text style={sky.line}>{hm(next.at)}  ·  in {until(next.at.getTime() - now.getTime())}</Text>
+              <View style={{ flex: 1 }} />
+              <Glass style={styles.strip}>
                 {CALC_ROWS.filter((r) => r.id !== 'sunrise').map((r) => {
                   const on = next.id === r.id && next.at.toDateString() === now.toDateString();
                   return (
-                    <View key={r.id} style={[styles.time, on && { backgroundColor: (hp.bold ? 'rgba(255,255,255,0.18)' : mix(hp.surface, hp.accent, 0.12)) }]}>
-                      <Text style={[styles.timeName, { color: on ? hp.accent : hp.muted }]}>{r.name}</Text>
-                      <Text style={[styles.timeAt, { color: on ? hp.accent : hp.text }]}>{hm(day.times[r.id]).replace(/ (am|pm)$/, '')}</Text>
+                    <View key={r.id} style={[styles.time, on && { backgroundColor: 'rgba(255,255,255,0.92)' }]}>
+                      <Text style={[styles.timeName, { color: on ? '#14181A' : 'rgba(255,255,255,0.82)' }]}>{r.name}</Text>
+                      <Text style={[styles.timeAt, { color: on ? '#14181A' : '#FFFFFF' }]}>{hm(day.times[r.id]).replace(/ (am|pm)$/, '')}</Text>
                     </View>
                   );
                 })}
-              </View>
-            </>
+              </Glass>
+            </Pressable>
           ) : (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingRight: 64 }}>
-              <View style={{ flex: 1, gap: 4 }}>
-                <Text style={[styles.eyebrow, { color: hp.accent }]}>PRAYER TIMES</Text>
-                <Text style={[styles.rowTitle, { color: hp.text }]}>Today’s times wherever you are, with alerts when each prayer begins</Text>
-              </View>
-              <Icon name="chevron" size={18} color={hp.muted} />
-            </View>
+            <Pressable onPress={() => router.push('/prayertimes')} style={{ flex: 1 }} accessibilityRole="button">
+              <Text style={[sky.big, { marginTop: 26 }]}>Prayer times</Text>
+              <Text style={sky.line}>Today’s times wherever you are, with an alert as each prayer begins.</Text>
+              <View style={{ flex: 1 }} />
+              <Glass style={styles.setUp}>
+                <Text style={styles.setUpText}>Set up for where you are</Text>
+                <Icon name="chevron" size={16} color="#FFFFFF" />
+              </Glass>
+            </Pressable>
           )}
-        </Pressable>
-
+        </SkyHero>
+        <View style={[styles.sheet, { backgroundColor: pal.bg }]}>
+        <ExplainIntro id="salah" pal={pal} />
         <Pressable onPress={() => router.push('/pray')} style={({ pressed }) => [styles.learn, { backgroundColor: pal.surface, opacity: pressed ? 0.8 : 1 }]} accessibilityRole="button" accessibilityLabel="Learn to pray, step by step">
           <View style={[styles.learnArt, { backgroundColor: pal.bold ? mix(pal.surface, pal.pop.emerald, 0.14) : mix(pal.surface, pal.accent, 0.1) }]}>
             <Image source={poseArt(prefs.prayFigure ?? 'brother', 'ruku')} style={{ width: '100%', height: '100%' }} resizeMode="contain" accessibilityIgnoresInvertColors />
@@ -113,6 +124,7 @@ export default function PrayerTab() {
           <Icon name="info" size={15} color={pal.accent} />
           <Text style={[styles.moreText, { color: pal.accent }]}>New to this? Words and practices explained</Text>
         </Pressable>
+        </View>
       </ScrollView>
       {explainSheet}
     </View>
@@ -128,7 +140,10 @@ const styles = StyleSheet.create({
   moreText: { fontFamily: fonts.uiSemi, fontSize: 14 },
   head: { paddingHorizontal: 20, paddingBottom: 6 },
   title: { fontFamily: fonts.uiBold, fontSize: 34, letterSpacing: -0.8 },
-  body: { padding: 16, gap: 12, paddingBottom: 30 },
+  sheet: { marginTop: -28, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 16, paddingTop: 20, gap: 12 },
+  strip: { flexDirection: 'row', padding: 5, gap: 2 },
+  setUp: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14 },
+  setUpText: { fontFamily: fonts.uiSemi, fontSize: 15.5, color: '#FFFFFF' },
   card: { borderRadius: 22, padding: 16, gap: 2 },
   cardArt: { position: 'absolute', right: -18, top: -16, width: 104, height: 104 },
   eyebrow: { fontFamily: fonts.uiBold, fontSize: 12, letterSpacing: 1.2 },
@@ -136,7 +151,7 @@ const styles = StyleSheet.create({
   sub: { fontFamily: fonts.ui, fontSize: 14, lineHeight: 19 },
   rowTitle: { fontFamily: fonts.uiSemi, fontSize: 16, lineHeight: 22 },
   times: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, marginTop: 12, paddingTop: 10, gap: 4 },
-  time: { flex: 1, alignItems: 'center', gap: 2, borderRadius: 10, paddingVertical: 6 },
+  time: { flex: 1, alignItems: 'center', gap: 2, borderRadius: 17, paddingVertical: 9 },
   timeName: { fontFamily: fonts.uiSemi, fontSize: 12 },
   timeAt: { fontFamily: fonts.uiBold, fontSize: 15, fontVariant: ['tabular-nums'] },
 });

@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
   plusSub: { fontFamily: fonts.ui, fontSize: 13.5, color: 'rgba(255,255,255,0.88)' },
   root: { flex: 1 },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingBottom: 6 },
-  title: { fontFamily: fonts.uiBold, fontSize: 34, letterSpacing: -0.8 },
+  title: { fontFamily: fonts.read, fontSize: 36, letterSpacing: -0.6 },
   x: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   body: { padding: 16, gap: 12 },
   card: { borderRadius: 16, overflow: 'hidden' },
