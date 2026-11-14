@@ -10,10 +10,14 @@ import { useAccount } from '@/lib/account';
 import { flushUmmah, UmmahStats, ummahStats } from '@/lib/together-more';
 import { fonts, mix, usePalette } from '@/lib/theme';
 
-/** The Together tab: reading as a family, stories for children, and the community. */
+/** The Together tab: reading as a family, stories for children, and the community. */import { useTabBarSpace } from '@/components/TabBar';
+import { SkyWash } from '@/components/SkyWash';
+import { Flourish } from '@/components/Gold';
+
 export default function TogetherTab() {
   const pal = usePalette();
   const insets = useSafeAreaInsets();
+  const barSpace = useTabBarSpace();
   const router = useRouter();
   const acct = useAccount();
   const signedIn = acct.status === 'signedIn';
@@ -30,14 +34,16 @@ export default function TogetherTab() {
 
   return (
     <View style={[styles.root, { backgroundColor: pal.bg }]}>
+      <SkyWash pal={pal} />
       <View style={[styles.head, { paddingTop: insets.top + 12 }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Text style={[styles.title, { color: pal.text }]}>Together</Text>
           <MeButton />
         </View>
+        <Flourish pal={pal} />
         <Text style={[styles.lead, { color: pal.muted }]}>The Quran with the people you love, and an ummah that reminds each other.</Text>
       </View>
-      <ScrollView contentContainerStyle={styles.body}>
+      <ScrollView contentContainerStyle={[styles.body, { paddingBottom: barSpace + 20 }]}>
         <View style={[styles.ummah, { backgroundColor: pal.bold ? pal.pop.violet : pal.accent }]} accessibilityRole="summary">
           <Image source={ART.globe} style={styles.ummahArt} resizeMode="contain" accessibilityIgnoresInvertColors />
           <Text style={[styles.ummahEyebrow, { color: 'rgba(255,255,255,0.8)' }]}>THE UMMAH, READING TOGETHER</Text>

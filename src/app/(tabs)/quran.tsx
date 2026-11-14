@@ -17,6 +17,8 @@ import { useProgress } from '@/lib/progress';
 import { usePrefs } from '@/lib/store';
 import { fonts, mix, onColour, Palette, usePalette } from '@/lib/theme';
 
+import { useTabBarSpace } from '@/components/TabBar';
+
 /** The Quran tab: every surah, juz and page, with page view, search and offline listening on top. */
 export default function QuranTab() {
   const pal = usePalette();
@@ -28,6 +30,7 @@ export default function QuranTab() {
   const next = nextToLearn(progress);
   const lp = onColour(pal, pal.pop.amber);
   const insets = useSafeAreaInsets();
+  const barSpace = useTabBarSpace();
   const phase = skyPhase(new Date(), prefs.prayer.loc ? calcDay(prefs.prayer)?.times : null);
   useFocusEffect(
     useCallback(() => {
@@ -51,7 +54,7 @@ export default function QuranTab() {
         </SkyHero>
       }
       title="Quran"
-      bottomPad={24}
+      bottomPad={barSpace + 14}
       extra={
         <View style={{ gap: 10 }}>
         <Pressable

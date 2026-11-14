@@ -5,6 +5,7 @@ import Animated, { Easing, FadeIn, FadeOut, SharedValue, useAnimatedStyle, useRe
 import { arabicNumber, ayahWords, chapterTranslator, LANGS, LangId, liveVerse, loadChapter, loadedChapter, MOODS, MoodId, translationFor, Verse } from '@/lib/quran';
 import { fonts, mix, Palette, Tone } from '@/lib/theme';
 import { Icon } from './Icon';
+import { LikeBurst } from './LikeBurst';
 import { AskSheet, TafsirSheet, WordPick, WordSheet } from './Study';
 import { Pattern } from './Pattern';
 
@@ -413,7 +414,9 @@ export const VerseCard = memo(function VerseCard(props: Props) {
 
       <Animated.View style={[styles.rail, { bottom: bottomInset + 28 }, chromeStyle]} pointerEvents={props.chromeOn ? 'box-none' : 'none'}>
         <RailButton p={p} i={0} label={props.likeCount != null ? String(props.likeCount) : 'Like'} a11y="Like" onPress={props.onLike} color={liked ? tone.accent : text}>
-          <Icon name="heart" size={27} color={liked ? tone.accent : text} fill={liked} />
+          <LikeBurst liked={liked}>
+            <Icon name="heart" size={27} color={liked ? tone.accent : text} fill={liked} />
+          </LikeBurst>
         </RailButton>
         {props.onReflections && (
           <RailButton p={p} i={1} label={props.reflectionCount ? String(props.reflectionCount) : 'Reflect'} a11y="Reflections" onPress={props.onReflections} color={text}>

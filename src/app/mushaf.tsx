@@ -1,4 +1,5 @@
 import { stopRadio } from '@/lib/radio';
+import { celebrate, juzMoment, surahMoment } from '@/lib/moments';
 import { useAudioPlayer } from 'expo-audio';
 import * as ExpoFont from 'expo-font';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -83,11 +84,12 @@ export default function Mushaf() {
         const d = await loadPage(page);
         const keys = ayatOn(d);
         if (!keys.length) return;
-        prog.markRead(keys, 1);
+        const done = prog.markRead(keys, 1);
+        if (done.surahsCompleted.length) celebrate(surahMoment(done.surahsCompleted[0]));
         const [ls, la] = keys[keys.length - 1].split(':').map(Number);
         prefs.set({ place: { s: ls, a: la } });
         const ev = await noteQuranRead(keys);
-        ev.finished.forEach((f) => toast(`MashaAllah, juz ${f.juz} is finished for “${f.title}”`));
+        ev.finished.forEach((f) => celebrate(juzMoment(f.khatm, f.title, f.juz, true)));
       } catch {}
     }, READ_AFTER_MS);
     return () => clearTimeout(t);

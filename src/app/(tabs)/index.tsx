@@ -1,9 +1,14 @@
 import { MeButton } from '@/components/MeButton';
+import { celebrate, juzMoment, surahMoment } from '@/lib/moments';
+import { Glassy, hasGlass } from '@/components/Glassy';
+import { SkyWash } from '@/components/SkyWash';
+import { useTabBarSpace } from '@/components/TabBar';
 import { stopRadio, useRadio } from '@/lib/radio';
 import { useAudioPlayer } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import { useFocusEffect, useRouter } from 'expo-router';
+import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, ActivityIndicator, Alert, AppState, FlatList, Linking, Modal, Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import Animated, { SharedValue, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -255,6 +260,7 @@ const PACE = { slow: { ar: 0.9, wpm: 150 }, medium: { ar: 0.6, wpm: 200 }, fast:
 export default function Feed() {
   const pal = usePalette();
   const insets = useSafeAreaInsets();
+  const barSpace = useTabBarSpace();
   const router = useRouter();
   const prefs = usePrefs();
   const prog = useProgress();
@@ -589,7 +595,7 @@ export default function Feed() {
     (ev: { surahsCompleted: number[]; levelUp: number | null }) => {
       // The feed still stretches quietly as someone reads more (longer passages); no levels are shown (Saj, 13 Nov 2026).
       if (ev.levelUp && mode === 'foryou') refreshAhead(active + 1);
-      if (ev.surahsCompleted.length) toast(`MashaAllah, you've read all of ${SURAHS[ev.surahsCompleted[0] - 1][0]}`);
+      if (ev.surahsCompleted.length) celebrate(surahMoment(ev.surahsCompleted[0]));
     },
     [toast, refreshAhead, active, mode],
   );
@@ -604,7 +610,7 @@ export default function Feed() {
       if (it.ord) {
         prefs.set({ place: { s: it.v.s, a: it.v.b } });
         // Counts towards any juz this person is reading in a khatm (Read together).
-        noteQuranRead(ayahKeys(it.v)).then((ev) => ev.finished.forEach((f) => toast(`MashaAllah, juz ${f.juz} is finished for “${f.title}”`)));
+        noteQuranRead(ayahKeys(it.v)).then((ev) => ev.finished.forEach((f) => celebrate(juzMoment(f.khatm, f.title, f.juz, true))));
       }
     }, DWELL_MS);
 
@@ -722,6 +728,12 @@ export default function Feed() {
   const moodLabel = MOODS.find((m) => m.id === prefs.mood)?.label ?? 'Mood';
   const today = prog.progress.days[dayKey()] ?? 0;
 
+  // Videos and photo/video posts sit on a dark ground: switch the top bar to light text so it stays readable.
+  const onDark = (() => {
+    const it = items[active];
+    return !pal.dark && !!it && (it.kind === 'video' || (it.kind === 'post' && it.p.kind !== 'text'));
+  })();
+
   return (
     <View style={[styles.root, { backgroundColor: pal.bg }]} onLayout={(e) => setHeight(e.nativeEvent.layout.height)}>
       {items.length === 0 && (
@@ -745,7 +757,7 @@ export default function Feed() {
           keyExtractor={(x) => x.key}
           renderItem={({ item, index }) => {
             const tone = pal.tones[item.i % pal.tones.length];
-            if (item.kind === 'title') return <SurahStart pal={pal} tone={tone} height={height} s={item.s} />;
+            if (item.kind === 'title') return <SurahStart bottom={barSpace} pal={pal} tone={tone} height={height} s={item.s} />;
             if (item.kind === 'snip') {
               return (
                 <SnippetCard
@@ -754,7 +766,7 @@ export default function Feed() {
                   pal={pal}
                   tone={tone}
                   height={height}
-                  bottomInset={0}
+                  bottomInset={barSpace}
                   active={index === active && sheet !== 'mood'}
                   autoplay={prefs.sound && !held}
                 />
@@ -767,7 +779,7 @@ export default function Feed() {
                   pal={pal}
                   tone={tone}
                   height={height}
-                  bottomInset={0}
+                  bottomInset={barSpace}
                   onAction={(s, a) => (s === 0 ? switchMode('order') : openSurah(s, a))}
                 />
               );
@@ -779,7 +791,7 @@ export default function Feed() {
                   pal={pal}
                   tone={tone}
                   height={height}
-                  bottomInset={0}
+                  bottomInset={barSpace}
                   active={index === active && sheet !== 'mood'}
                   autoplay={prefs.sound && !held}
                   liked={postLikes.has(item.p.id)}
@@ -792,7 +804,7 @@ export default function Feed() {
                 />
               );
             }
-            if (item.kind === 'progress') return <ProgressCard read={Object.keys(prog.progress.ayat).length} pal={pal} tone={tone} height={height} bottomInset={0} />;
+            if (item.kind === 'progress') return <ProgressCard read={Object.keys(prog.progress.ayat).length} pal={pal} tone={tone} height={height} bottomInset={barSpace} />;
             if (item.kind === 'video') {
               return (
                 <VideoCard
@@ -800,7 +812,7 @@ export default function Feed() {
                   pal={pal}
                   tone={tone}
                   height={height}
-                  bottomInset={0}
+                  bottomInset={barSpace}
                   active={index === active && sheet !== 'mood'}
                   near={Math.abs(index - active) <= 1}
                   autoplay={prefs.sound && !held}
@@ -808,12 +820,12 @@ export default function Feed() {
               );
             }
             if (item.kind === 'join') {
-              return <JoinCard pal={pal} tone={tone} height={height} onJoin={() => router.push({ pathname: '/signin', params: { why: 'keep' } })} />;
+              return <JoinCard bottom={barSpace} pal={pal} tone={tone} height={height} onJoin={() => router.push({ pathname: '/signin', params: { why: 'keep' } })} />;
             }
             if (item.kind === 'cont') {
               const next = nextPlace(prefs.place);
               return (
-                <ContinueCard
+                <ContinueCard bottom={barSpace}
                   pal={pal}
                   tone={tone}
                   height={height}
@@ -826,7 +838,7 @@ export default function Feed() {
             }
             if (item.kind === 'off') {
               return (
-                <OffRamp
+                <OffRamp bottom={barSpace}
                   pal={pal}
                   tone={tone}
                   height={height}
@@ -850,7 +862,7 @@ export default function Feed() {
                 pal={pal}
                 height={height}
                 topInset={insets.top}
-                bottomInset={0}
+                bottomInset={barSpace}
                 active={index === active && sheet !== 'mood'}
                 lang={prefs.lang}
                 showTl={prefs.showTl}
@@ -922,15 +934,13 @@ export default function Feed() {
         </Pressable>
       )}
 
+      {/* The light of the prayer day over the top of the feed (not over videos and photos). */}
+      {!onDark && <SkyWash pal={pal} height={260} strength={0.8} />}
       <TopBar
         chrome={chrome}
         chromeOn={chromeOn}
         pal={pal}
-        onDark={(() => {
-          // Videos and photo/video posts sit on a dark ground: switch the top bar to light text so it stays readable.
-          const it = items[active];
-          return !pal.dark && !!it && (it.kind === 'video' || (it.kind === 'post' && it.p.kind !== 'text'));
-        })()}
+        onDark={onDark}
         top={insets.top}
         moodLabel={moodLabel}
         mode={mode}
@@ -1042,11 +1052,11 @@ export default function Feed() {
 
 /** The time-check card: shown once after 20 minutes of scrolling. Swipe past it to keep going. */
 /** In order: the opening card of each surah, with the basmalah (except at-Tawbah, which has none). */
-function SurahStart(p: { pal: Palette; tone: { bg: string; accent: string }; height: number; s: number }) {
+function SurahStart(p: { pal: Palette; tone: { bg: string; accent: string }; height: number; bottom: number; s: number }) {
   const { pal, tone, s } = p;
   const [name, arName, meaning, count] = SURAHS[s - 1];
   return (
-    <View style={[styles.off, { height: p.height, backgroundColor: tone.bg, alignItems: 'center' }]}>
+    <View style={[styles.off, { height: p.height, paddingBottom: p.bottom, backgroundColor: tone.bg, alignItems: 'center' }]}>
       <Text style={[styles.offEyebrow, { color: tone.accent }]}>SURAH {s}</Text>
       <Text style={[styles.titleAr, { color: pal.text }]}>{arName}</Text>
       <Text style={[styles.offTitle, { color: pal.text, textAlign: 'center' }]}>{name}</Text>
@@ -1068,10 +1078,10 @@ function nextPlace(place: { s: number; a: number } | null) {
 }
 
 /** For you without an account: an invitation, not a wall. Swiping past it simply carries on. */
-function JoinCard(p: { pal: Palette; tone: { bg: string; accent: string }; height: number; onJoin: () => void }) {
+function JoinCard(p: { pal: Palette; tone: { bg: string; accent: string }; height: number; bottom: number; onJoin: () => void }) {
   const { pal, tone } = p;
   return (
-    <View style={[styles.off, { height: p.height, backgroundColor: tone.bg }]}>
+    <View style={[styles.off, { height: p.height, paddingBottom: p.bottom, backgroundColor: tone.bg }]}>
       <Text style={[styles.offEyebrow, { color: tone.accent }]}>KEEP YOUR FEED</Text>
       <Text style={[styles.offTitle, { color: pal.text }]}>Make Munib yours.</Text>
       <Text style={[styles.offBody, { color: mix(tone.bg, pal.text, 0.75) }]}>
@@ -1085,12 +1095,12 @@ function JoinCard(p: { pal: Palette; tone: { bg: string; accent: string }; heigh
   );
 }
 
-function ContinueCard(p: { pal: Palette; tone: { bg: string; accent: string }; height: number; next: { s: number; a: number }; started: boolean; read: number; onRead: () => void }) {
+function ContinueCard(p: { pal: Palette; tone: { bg: string; accent: string }; height: number; bottom: number; next: { s: number; a: number }; started: boolean; read: number; onRead: () => void }) {
   const { pal, tone, next } = p;
   const [name, arName, meaning, count] = SURAHS[next.s - 1];
   const pct = Math.min(1, p.read / 6236);
   return (
-    <View style={[styles.off, { height: p.height, backgroundColor: tone.bg }]}>
+    <View style={[styles.off, { height: p.height, paddingBottom: p.bottom, backgroundColor: tone.bg }]}>
       <Text style={[styles.offEyebrow, { color: tone.accent }]}>CONTINUE THE QURAN</Text>
       <Text style={[styles.offTitle, { color: pal.text }]}>
         {p.started ? (next.a === 1 ? `Next: ${name}` : `${name}, from ayah ${next.a}`) : 'Begin with Al-Fatihah'}
@@ -1117,10 +1127,10 @@ function ContinueCard(p: { pal: Palette; tone: { bg: string; accent: string }; h
   );
 }
 
-function OffRamp(p: { pal: Palette; tone: { bg: string; accent: string }; height: number; ayat: number; minutes: number; surahName: string; onRead: (() => void) | null; onRest: () => void }) {
+function OffRamp(p: { pal: Palette; tone: { bg: string; accent: string }; height: number; bottom: number; ayat: number; minutes: number; surahName: string; onRead: (() => void) | null; onRest: () => void }) {
   const { pal, tone } = p;
   return (
-    <View style={[styles.off, { height: p.height, backgroundColor: tone.bg }]}>
+    <View style={[styles.off, { height: p.height, paddingBottom: p.bottom, backgroundColor: tone.bg }]}>
       <Text style={[styles.offEyebrow, { color: tone.accent }]}>TIME CHECK</Text>
       <Text style={[styles.offTitle, { color: pal.text }]}>
         You've read {p.ayat} ayat in {p.minutes} minute{p.minutes === 1 ? '' : 's'}.
@@ -1144,7 +1154,6 @@ function OffRamp(p: { pal: Palette; tone: { bg: string; accent: string }; height
 function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palette; onDark?: boolean; top: number; moodLabel: string; mode: 'foryou' | 'order'; onMode: (m: 'foryou' | 'order') => void; showTl: boolean; onMood: () => void; onTl: () => void; onRead: () => void; onPages: () => void }) {
   // On a dark card (a video, a photo post) switch to light text and dark see-through buttons, with a shadow under the tab names.
   const pal: Palette = p.onDark ? { ...p.pal, text: '#FFFFFF', muted: 'rgba(255,255,255,0.72)', surface: 'rgba(20,24,22,0.55)', line: 'rgba(255,255,255,0.28)', bg: '#121A16', accent: '#7FE0B5' } : p.pal;
-  const pill = [styles.pill, { borderColor: pal.line, backgroundColor: pal.surface }];
   const fade = useAnimatedStyle(() => ({ opacity: p.chrome.value }));
   return (
     <Animated.View style={[styles.top, { paddingTop: p.top + 10 }, fade]} pointerEvents={p.chromeOn ? 'box-none' : 'none'}>
@@ -1166,7 +1175,7 @@ function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palett
       </View>
       <View style={styles.topRight}>
         {p.mode === 'foryou' && (
-          <Pressable onPress={p.onMood} style={[pill, { maxWidth: 88, flexShrink: 1, overflow: 'hidden' }]} accessibilityRole="button" accessibilityLabel="Change what's on your heart">
+          <TopBtn pal={pal} onDark={p.onDark} onPress={p.onMood} style={{ maxWidth: 88, flexShrink: 1, overflow: 'hidden' }} label="Change what's on your heart">
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1, maxWidth: '100%' }}>
               <View style={{ flexShrink: 0 }}>
                 <Icon name="heart" size={13} color={pal.accent} strokeWidth={2} />
@@ -1175,22 +1184,39 @@ function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palett
                 {p.moodLabel}
               </Text>
             </View>
-          </Pressable>
+          </TopBtn>
         )}
         {p.mode === 'order' && (
-          <Pressable onPress={p.onPages} style={pill} accessibilityRole="button" accessibilityLabel="Page view: read the Quran as printed pages">
+          <TopBtn pal={pal} onDark={p.onDark} onPress={p.onPages} label="Page view: read the Quran as printed pages">
             <Icon name="book" size={17} color={pal.text} />
-          </Pressable>
+          </TopBtn>
         )}
-        <Pressable onPress={p.onRead} style={pill} accessibilityRole="button" accessibilityLabel="Search surahs, ayat, people and posts">
+        <TopBtn pal={pal} onDark={p.onDark} onPress={p.onRead} label="Search surahs, ayat, people and posts">
           <Icon name="search" size={17} color={pal.text} />
-        </Pressable>
-        <Pressable onPress={p.onTl} style={[pill, p.showTl && { borderColor: pal.accent }]} accessibilityRole="button" accessibilityLabel="Reading options: transliteration, text size, speed and auto scroll">
+        </TopBtn>
+        <TopBtn pal={pal} onDark={p.onDark} onPress={p.onTl} style={p.showTl && !hasGlass ? { borderColor: pal.accent } : undefined} label="Reading options: transliteration, text size, speed and auto scroll">
           <Text style={[styles.aa, { color: p.showTl ? pal.accent : pal.text }]}>Aa</Text>
-        </Pressable>
+        </TopBtn>
         <MeButton size={32} />
       </View>
     </Animated.View>
+  );
+}
+
+/** A round button in the feed's top bar: liquid glass where the phone has it, a solid circle otherwise. */
+function TopBtn(p: { pal: Palette; onDark?: boolean; onPress: () => void; label: string; style?: object; children: React.ReactNode }) {
+  if (hasGlass)
+    return (
+      <Glassy dark={p.pal.dark || p.onDark} interactive style={[styles.glassPill, p.style]}>
+        <Pressable onPress={p.onPress} style={styles.pillIn} accessibilityRole="button" accessibilityLabel={p.label}>
+          {p.children}
+        </Pressable>
+      </Glassy>
+    );
+  return (
+    <Pressable onPress={p.onPress} style={({ pressed }) => [styles.pill, { borderColor: p.pal.line, backgroundColor: p.pal.surface, opacity: pressed ? 0.7 : 1 }, p.style]} accessibilityRole="button" accessibilityLabel={p.label}>
+      {p.children}
+    </Pressable>
   );
 }
 
@@ -1207,7 +1233,9 @@ const styles = StyleSheet.create({
   tab: { fontFamily: fonts.uiBold, fontSize: 16, letterSpacing: -0.3 },
   tabShadow: { textShadowColor: 'rgba(0,0,0,0.6)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 6 },
   tabLine: { height: 2.5, borderRadius: 2, marginTop: 3, width: 18 },
-  pill: { minHeight: 36, minWidth: 36, paddingHorizontal: 10, borderWidth: 1, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  pill: { minHeight: 36, minWidth: 36, paddingHorizontal: 10, borderWidth: 1, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  glassPill: { minHeight: 36, minWidth: 36, borderRadius: 18, overflow: 'hidden' },
+  pillIn: { minHeight: 36, minWidth: 36, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center' },
   pillText: { fontFamily: fonts.uiSemi, fontSize: 13 },
   aa: { fontFamily: fonts.readItalic, fontSize: 15 },
   lead: { fontFamily: fonts.read, fontSize: 15, lineHeight: 22, marginBottom: 6 },

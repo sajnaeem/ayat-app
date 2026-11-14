@@ -17,7 +17,9 @@ export function MeButton({ size = 34, light }: { size?: number; /** on a dark pi
   return (
     <Pressable onPress={() => router.push('/you')} hitSlop={8} accessibilityRole="button" accessibilityLabel="You: your profile, progress and settings">
       {signedIn ? (
-        <Avatar id={acct.userId!} name={acct.handle ?? '?'} size={size} />
+        <View style={{ borderRadius: size, borderWidth: 1.5, borderColor: pal.gold, padding: 1.5 }}>
+          <Avatar id={acct.userId!} name={acct.handle ?? '?'} size={size - 6} />
+        </View>
       ) : (
         <View style={[styles.empty, { width: size, height: size, borderRadius: size / 2, borderColor: light ? 'rgba(255,255,255,0.6)' : pal.line, backgroundColor: light ? 'rgba(0,0,0,0.2)' : pal.surface }]}>
           <Icon name="user" size={size * 0.5} color={light ? '#FFFFFF' : pal.text} />

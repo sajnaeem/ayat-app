@@ -1,4 +1,5 @@
 import { stopRadio } from '@/lib/radio';
+import { celebrate, learnedMoment } from '@/lib/moments';
 import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus, useAudioRecorder, useAudioRecorderState } from 'expo-audio';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -138,8 +139,8 @@ export default function LearnSurahScreen() {
   const finish = () => {
     markMemorised(l.ayat.map((_, i) => key(i)));
     stop();
-    toast(`${l.name} is ready for your prayer`);
     router.back();
+    celebrate(learnedMoment(l.s)).catch(() => {});
   };
 
   return (

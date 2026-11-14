@@ -1,4 +1,5 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { celebrate, juzMoment } from '@/lib/moments';
 import { showFeed } from '@/lib/nav';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -385,6 +386,7 @@ export default function KhatmScreen() {
                       act(async () => {
                         await finishJuz(k.id, open.juz);
                         if (open.reader === me) await untrackPart(k.id, open.juz);
+                        celebrate(juzMoment(k.id, k.title, open.juz, false)).catch(() => {});
                       }, 'MashaAllah. Marked as finished')
                     }
                     style={[styles.btn, { borderColor: pal.accent, borderWidth: 1 }]}

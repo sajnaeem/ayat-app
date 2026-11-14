@@ -1,32 +1,21 @@
 import type { ReactNode } from 'react';
 import { Image, ImageBackground, Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { skyPhase, type SkyPhase } from '@/lib/sky';
 import { fonts } from '@/lib/theme';
+
+export { skyPhase, type SkyPhase };
 
 /**
  * The premium look (Saj, 14 Nov 2026): a full-bleed scene of a marble mosque under the sky as it is now
  * (dawn, day, sunset or night; Munib's own three.js renders in assets/art/sky, source scripts/art/sky.html),
  * a serif title, and frosted-glass panels. The rest of the screen slides up over it as a rounded sheet.
  */
-export type SkyPhase = 'fajr' | 'day' | 'maghrib' | 'isha';
 const SKY = {
   fajr: require('../../assets/art/sky/fajr.jpg'),
   day: require('../../assets/art/sky/day.jpg'),
   maghrib: require('../../assets/art/sky/maghrib.jpg'),
   isha: require('../../assets/art/sky/isha.jpg'),
 };
-
-/** Which sky to show: from today's prayer times when we have them, otherwise from the clock. */
-export function skyPhase(now: Date, t?: { fajr: Date; sunrise: Date; maghrib: Date; isha: Date } | null): SkyPhase {
-  if (t) {
-    const n = now.getTime();
-    if (n < t.fajr.getTime() || n >= t.isha.getTime()) return 'isha';
-    if (n < t.sunrise.getTime() + 45 * 60000) return 'fajr';
-    if (n >= t.maghrib.getTime() - 50 * 60000) return 'maghrib';
-    return 'day';
-  }
-  const h = now.getHours() + now.getMinutes() / 60;
-  return h < 4.5 || h >= 20 ? 'isha' : h < 7.5 ? 'fajr' : h >= 16.5 ? 'maghrib' : 'day';
-}
 
 /** Today's Islamic date (Umm al-Qura), e.g. "23 Jumada I 1448", if the phone can work it out. */
 export function hijriToday(d = new Date()): string | null {

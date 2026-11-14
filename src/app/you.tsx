@@ -29,6 +29,7 @@ import * as Updates from 'expo-updates';
 /** Juz' ʿAmma: surahs 78–114, 564 ayat. */
 const JUZ_AMMA_FIRST = 78;
 const JUZ_AMMA_AYAT = 564;
+import { SkyWash } from '@/components/SkyWash';
 
 export default function You() {
   const pal = usePalette();
@@ -99,6 +100,7 @@ export default function You() {
 
   return (
     <View style={[styles.root, { backgroundColor: pal.bg }]}>
+      <SkyWash pal={pal} />
       <View style={[styles.head, { paddingTop: insets.top + 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 10 }]}>
         {/* You has no tab of its own any more: this takes people back to where they came from. */}
         <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" style={{ transform: [{ rotate: '180deg' }] }}>
@@ -381,6 +383,8 @@ export default function You() {
           <Choice pal={pal} on={prefs.look === 'dark'} title="Bold dark" sub="Black background with bright colour" onPress={() => prefs.set({ look: 'dark' })} />
           <Choice pal={pal} on={prefs.look === 'light'} title="Quiet" sub="Soft and calm, Munib's original look" onPress={() => prefs.set({ look: 'light' })} />
           <Choice pal={pal} on={prefs.look === 'auto'} title="Match phone" sub="Bold, dark when your phone is in dark mode" onPress={() => prefs.set({ look: 'auto' })} />
+          <View style={{ height: 6 }} />
+          <Choice pal={pal} box on={prefs.skyLook !== false} title="Follow the prayer day" sub="Munib’s colours shift gently with the sky: rose at dawn, clear by day, amber at sunset, moonlit at night" onPress={() => prefs.set({ skyLook: prefs.skyLook === false })} />
         </View>
       </Sheet>
       <Sheet visible={pick === 'auto'} onClose={() => setPick(null)} title="Auto scroll" pal={pal}>

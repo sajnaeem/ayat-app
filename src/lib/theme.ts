@@ -1,4 +1,5 @@
 import { useColorScheme } from 'react-native';
+import { type SkyPhase, useSkyMaybe } from './sky';
 import { usePrefsMaybe } from './store';
 
 /** Quiet Modern: soft tinted grounds, one accent per card, ink-dark text. */
@@ -46,9 +47,14 @@ export type Palette = {
   onAccent: string;
   scrim: string;
   tones: Tone[];
+  /** Munib's gold, for fine accents (a star, a hairline, a glow): the thread from the welcome screens into the app. */
+  gold: string;
+  /** The prayer day: which part it is, and the colour of its light (null when the reader has switched it off). */
+  sky: { phase: SkyPhase; glow: string } | null;
 };
 
-const light: Palette = {
+type Base = Omit<Palette, 'gold' | 'sky'>;
+const light: Base = {
   dark: false,
   bold: false,
   pop: POP,
@@ -62,7 +68,7 @@ const light: Palette = {
   scrim: 'rgba(24,32,27,0.34)',
   tones: LIGHT_TONES,
 };
-const dark: Palette = {
+const dark: Base = {
   dark: true,
   bold: false,
   pop: POP,
@@ -78,7 +84,7 @@ const dark: Palette = {
 };
 
 /** Bold: near-black, white type, bright emerald and solid colour cards (Saj, 14 Nov 2026). */
-const bold: Palette = {
+const bold: Base = {
   dark: true,
   bold: true,
   pop: POP,
@@ -94,7 +100,7 @@ const bold: Palette = {
 };
 
 /** Bold on a light ground (Saj, 14 Nov 2026: "I don't like the black background"): the default. Same bright cards and graphics. */
-const boldLight: Palette = {
+const boldLight: Base = {
   dark: false,
   bold: true,
   pop: POP,
@@ -109,13 +115,49 @@ const boldLight: Palette = {
   tones: LIGHT_TONES,
 };
 
+/** The light of each part of the prayer day: what the grounds lean towards, and the colour of the glow. [light looks, dark looks] */
+const SKY: Record<SkyPhase, { tint: [string, string]; glow: [string, string] }> = {
+  fajr: { tint: ['#F6DDE3', '#2B1A28'], glow: ['#F2A99B', '#E79A8F'] },
+  day: { tint: ['#DFEEF7', '#0F1B24'], glow: ['#9CD0F0', '#5FB4E8'] },
+  maghrib: { tint: ['#F9E0C4', '#2C1A0D'], glow: ['#F2A35A', '#F0A050'] },
+  isha: { tint: ['#D9DDF3', '#0A0F28'], glow: ['#8E97DC', '#7F8BE0'] },
+};
+
+const made = new Map<string, Palette>();
+/** The look with the prayer day's light mixed in. Kept, so the same palette object comes back until something changes. */
+function withSky(key: string, base: Base, phase: SkyPhase | null): Palette {
+  const k = `${key}:${phase ?? 'off'}`;
+  const had = made.get(k);
+  if (had) return had;
+  const gold = base.dark ? '#E2B76A' : '#B8863B';
+  let pal: Palette;
+  if (!phase) pal = { ...base, gold, sky: null };
+  else {
+    const i = base.dark ? 1 : 0;
+    const tint = SKY[phase].tint[i];
+    pal = {
+      ...base,
+      gold,
+      bg: mix(base.bg, tint, base.dark ? 0.55 : 0.6),
+      line: mix(base.line, tint, 0.35),
+      tones: base.tones.map((t) => ({ bg: mix(t.bg, tint, base.dark ? 0.3 : 0.42), accent: t.accent })),
+      sky: { phase, glow: SKY[phase].glow[i] },
+    };
+  }
+  made.set(k, pal);
+  return pal;
+}
+
 export function usePalette(): Palette {
   const scheme = useColorScheme();
-  const look = usePrefsMaybe()?.look ?? 'bold';
-  if (look === 'bold') return boldLight;
-  if (look === 'dark') return bold;
-  if (look === 'light') return light;
-  return scheme === 'dark' ? bold : boldLight;
+  const prefs = usePrefsMaybe();
+  const now = useSkyMaybe();
+  const look = prefs?.look ?? 'bold';
+  const phase = prefs?.skyLook === false ? null : now;
+  if (look === 'bold') return withSky('boldLight', boldLight, phase);
+  if (look === 'dark') return withSky('bold', bold, phase);
+  if (look === 'light') return withSky('light', light, phase);
+  return scheme === 'dark' ? withSky('bold', bold, phase) : withSky('boldLight', boldLight, phase);
 }
 
 /** In the bold look, a palette for content sitting on a solid colour card (white type). Unchanged otherwise. */

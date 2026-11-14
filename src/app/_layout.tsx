@@ -13,12 +13,14 @@ import { JourneyFlow } from '@/components/Journey';
 import { FirstRun } from '@/components/Welcome';
 import { ChooseName } from '@/components/SignIn';
 import { ToastProvider } from '@/components/Toast';
+import { MomentHost } from '@/components/Moment';
 import { RadioProvider } from '@/lib/radio';
 import { useUsage } from '@/lib/usage';
 import { PlusProvider } from '@/lib/plus';
 import { AccountProvider, useAccount } from '@/lib/account';
 import { ProgressProvider } from '@/lib/progress';
 import { PrefsProvider, usePrefs } from '@/lib/store';
+import { SkyProvider } from '@/lib/sky';
 import { usePalette } from '@/lib/theme';
 import { flushUmmah } from '@/lib/together-more';
 import { useLiveUpdates } from '@/lib/updates';
@@ -138,17 +140,20 @@ export default function Layout() {
     <WebFrame>
     <SafeAreaProvider>
       <PrefsProvider>
+        <SkyProvider>
         <ProgressProvider>
           <AccountProvider>
             <PlusProvider>
               <RadioProvider>
               <ToastProvider>
                 <Root />
+                <MomentHost />
               </ToastProvider>
               </RadioProvider>
             </PlusProvider>
           </AccountProvider>
         </ProgressProvider>
+        </SkyProvider>
       </PrefsProvider>
     </SafeAreaProvider>
     </WebFrame>

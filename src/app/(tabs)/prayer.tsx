@@ -12,10 +12,12 @@ import { CALC_ROWS, calcDay, hm, nextPrayer, until } from '@/lib/prayertimes';
 import { usePrefs } from '@/lib/store';
 import { fonts, mix, onColour, usePalette } from '@/lib/theme';
 
-/** The Prayer tab: today's times, your mosque, Qibla, duas and tasbeeh. */
+/** The Prayer tab: today's times, your mosque, Qibla, duas and tasbeeh. */import { useTabBarSpace } from '@/components/TabBar';
+
 export default function PrayerTab() {
   const pal = usePalette();
   const insets = useSafeAreaInsets();
+  const barSpace = useTabBarSpace();
   const router = useRouter();
   const prefs = usePrefs();
   const s = prefs.prayer;
@@ -47,7 +49,7 @@ export default function PrayerTab() {
 
   return (
     <View style={[styles.root, { backgroundColor: pal.bg }]}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingBottom: barSpace + 20 }} showsVerticalScrollIndicator={false}>
         <SkyHero phase={phase} top={insets.top}>
           <Text style={sky.title}>{prefs.firstName ? `Salaam, ${prefs.firstName}` : 'Prayer'}</Text>
           <Text style={sky.eyebrow}>{[now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }), hijri].filter(Boolean).join('  ·  ')}</Text>

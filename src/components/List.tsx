@@ -51,7 +51,7 @@ export function Row({
 /** A bright square card with a 3D graphic, for a tab's main features (two per row inside TileGrid). */
 export function Tile({ pal, colour, title, sub, art, onPress, onInfo }: { pal: Palette; colour: string; title: string; sub?: string; art: ArtName; onPress: () => void; onInfo?: () => void }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={({ pressed }) => [styles.tile, { backgroundColor: colour, opacity: pressed ? 0.85 : 1 }]}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={({ pressed }) => [styles.tile, { backgroundColor: colour, opacity: pressed ? 0.92 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] }]}>
       <Image source={ART[art]} style={styles.tileArt} resizeMode="contain" accessibilityIgnoresInvertColors />
       <View style={{ gap: 3, paddingRight: onInfo ? 26 : 0 }}>
         <Text style={styles.tileTitle}>{title}</Text>
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
   infoText: { fontFamily: fonts.uiBold, fontSize: 13, lineHeight: 16 },
   card: { borderRadius: 16, overflow: 'hidden' },
   section: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 14, paddingHorizontal: 4 },
-  sectionTitle: { fontFamily: fonts.uiBold, fontSize: 20, letterSpacing: -0.4 },
+  sectionTitle: { fontFamily: fonts.read, fontSize: 21, letterSpacing: -0.4 },
   sub: { fontFamily: fonts.ui, fontSize: 13.5, lineHeight: 19 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 13 },
   icon: { width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },

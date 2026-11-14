@@ -1,8 +1,11 @@
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
-import { ActivityIndicator, Image, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Image, Keyboard, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useExplain } from '@/components/Explain';
+import { Flourish, GoldStar, ThinkingStar } from '@/components/Gold';
+import { SkyWash } from '@/components/SkyWash';
+import { useTabBarSpace } from '@/components/TabBar';
 import { Icon } from '@/components/Icon';
 import { MeButton } from '@/components/MeButton';
 import { useToast } from '@/components/Toast';
@@ -37,6 +40,17 @@ export default function AskTab() {
   const [busy, setBusy] = useState(false);
   const scroll = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const signedIn = acct.status === 'signedIn';
+  // The tab bar floats over the page: leave room for it, except while the keyboard covers it.
+  const barSpace = useTabBarSpace();
+  const [typing, setTyping] = useState(false);
+  useEffect(() => {
+    const a = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => setTyping(true));
+    const b = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setTyping(false));
+    return () => {
+      a.remove();
+      b.remove();
+    };
+  }, []);
 
   const send = async (q0?: string) => {
     const q = (q0 ?? text).trim();
@@ -97,9 +111,11 @@ export default function AskTab() {
 
   return (
     <KeyboardAvoidingView style={[styles.root, { backgroundColor: pal.bg }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <SkyWash pal={pal} />
       <View style={[styles.head, { paddingTop: insets.top + 12 }]}>
         <View style={{ flex: 1 }}>
           <Text style={[styles.title, { color: pal.text }]}>Ask</Text>
+          <Flourish pal={pal} />
           <Text style={[styles.lead, { color: pal.muted }]}>Anything about Islam. No question is silly.</Text>
         </View>
         <MeButton />
@@ -117,17 +133,33 @@ export default function AskTab() {
                 Ask anything, the way you’d ask a friend who knows. Where Munib has a source, it’s shown under the answer. For something about your own situation, your local imam is the best person to confirm with.
               </Text>
             </View>
-            {ISLAM_STARTERS.map((g) => (
-              <View key={g.title} style={{ gap: 8 }}>
-                <Text style={[styles.group, { color: pal.muted }]}>{g.title.toUpperCase()}</Text>
-                {g.qs.map((q) => (
-                  <Pressable key={q} onPress={() => send(q)} style={({ pressed }) => [styles.starter, { backgroundColor: pal.surface, borderColor: pal.line, opacity: pressed ? 0.7 : 1 }]} accessibilityRole="button">
-                    <Text style={[styles.starterText, { color: pal.text }]}>{q}</Text>
-                    <Icon name="chevron" size={15} color={pal.muted} />
-                  </Pressable>
-                ))}
-              </View>
-            ))}
+            {ISLAM_STARTERS.map((g, gi) => {
+              const colour = [pal.pop.teal, pal.pop.amber, pal.pop.violet][gi % 3];
+              return (
+                <View key={g.title} style={{ gap: 10 }}>
+                  <View style={styles.groupRow}>
+                    <GoldStar size={11} color={pal.gold} />
+                    <Text style={[styles.groupTitle, { color: pal.text }]}>{g.title}</Text>
+                  </View>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ paddingHorizontal: 16, gap: 10 }}>
+                    {g.qs.map((q) => (
+                      <Pressable
+                        key={q}
+                        onPress={() => send(q)}
+                        style={({ pressed }) => [styles.starter, { backgroundColor: mix(pal.surface, colour, pal.dark ? 0.24 : 0.1), borderColor: mix(pal.surface, colour, pal.dark ? 0.5 : 0.3), transform: [{ scale: pressed ? 0.97 : 1 }] }]}
+                        accessibilityRole="button"
+                        accessibilityLabel={q}
+                      >
+                        <Text style={[styles.starterText, { color: pal.text }]}>{q}</Text>
+                        <View style={[styles.starterGo, { backgroundColor: colour }]}>
+                          <Icon name="chevron" size={14} color="#FFFFFF" strokeWidth={2.4} />
+                        </View>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                </View>
+              );
+            })}
           </>
         )}
 
@@ -137,9 +169,9 @@ export default function AskTab() {
               <Text style={[styles.mineText, { color: pal.bold ? pal.bg : pal.onAccent }]}>{t.q}</Text>
             </View>
             {!t.res && !t.note && (
-              <View style={[styles.answer, { backgroundColor: pal.surface, flexDirection: 'row', gap: 10, alignItems: 'center' }]}>
-                <ActivityIndicator color={pal.accent} />
-                <Text style={[styles.small, { color: pal.muted }]}>Looking through the sources…</Text>
+              <View style={[styles.answer, { backgroundColor: pal.surface, flexDirection: 'row', gap: 12, alignItems: 'center' }]} accessibilityLabel="Munib is thinking">
+                <ThinkingStar pal={pal} />
+                <Thinking pal={pal} />
               </View>
             )}
             {t.note && (
@@ -204,7 +236,7 @@ export default function AskTab() {
         )}
       </ScrollView>
 
-      <View style={[styles.bar, { borderTopColor: pal.line, backgroundColor: pal.bg }]}>
+      <View style={[styles.bar, { borderTopColor: 'transparent', paddingBottom: typing ? 10 : barSpace }]}>
         <TextInput
           value={text}
           onChangeText={setText}
@@ -232,6 +264,17 @@ export default function AskTab() {
   );
 }
 
+/** What Munib says while it works on an answer; the line changes every couple of seconds. */
+function Thinking({ pal }: { pal: { muted: string } }) {
+  const LINES = ['Looking through the sources…', 'Reading the ayat…', 'Checking what the scholars say…', 'Putting it simply…'];
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setI((n) => (n + 1) % LINES.length), 2200);
+    return () => clearInterval(t);
+  }, [LINES.length]);
+  return <Text style={[styles.thinking, { color: pal.muted }]}>{LINES[i]}</Text>;
+}
+
 const styles = StyleSheet.create({
   root: { flex: 1 },
   head: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingHorizontal: 20, paddingBottom: 10 },
@@ -243,8 +286,12 @@ const styles = StyleSheet.create({
   introTitle: { fontFamily: fonts.read, fontSize: 22, lineHeight: 28, letterSpacing: -0.4 },
   introBody: { fontFamily: fonts.ui, fontSize: 13.5, lineHeight: 19 },
   group: { fontFamily: fonts.uiBold, fontSize: 11, letterSpacing: 1.2, paddingHorizontal: 4 },
-  starter: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: StyleSheet.hairlineWidth, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 13 },
-  starterText: { flex: 1, fontFamily: fonts.uiSemi, fontSize: 15, lineHeight: 20 },
+  groupRow: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 4 },
+  groupTitle: { fontFamily: fonts.read, fontSize: 19, letterSpacing: -0.3 },
+  starter: { width: 178, minHeight: 132, borderWidth: 1, borderRadius: 20, padding: 14, justifyContent: 'space-between', gap: 10 },
+  starterText: { fontFamily: fonts.read, fontSize: 16.5, lineHeight: 22, letterSpacing: -0.2 },
+  starterGo: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', alignSelf: 'flex-end' },
+  thinking: { fontFamily: fonts.readItalic, fontSize: 14.5, lineHeight: 20 },
   mine: { alignSelf: 'flex-end', maxWidth: '85%', borderRadius: 20, borderBottomRightRadius: 6, paddingHorizontal: 15, paddingVertical: 11 },
   mineText: { fontFamily: fonts.uiSemi, fontSize: 15, lineHeight: 21 },
   answer: { borderRadius: 20, borderBottomLeftRadius: 6, padding: 16 },

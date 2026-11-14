@@ -63,6 +63,8 @@ export type Prefs = {
   explained: string[];
   /** How Munib looks: bold (light ground, bright colour cards; the default), dark (bold on black), light (the original quiet look) or follow the phone (bold, light or dark). */
   look: 'bold' | 'dark' | 'light' | 'auto';
+  /** The app's colours follow the prayer day (dawn, day, sunset, night). On unless switched off. */
+  skyLook: boolean;
   /** Answers to the first-open questions, if given. */
   journey: JourneyAnswers | null;
   journeySkipped: boolean;
@@ -121,6 +123,7 @@ const DEFAULTS: Prefs = {
   feedHide: [],
   explained: [],
   look: 'bold',
+  skyLook: true,
   journey: null,
   journeySkipped: false,
   dailyGoal: 0,
