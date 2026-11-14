@@ -58,7 +58,7 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
   const old = prefs.journey;
   const [step, setStep] = useState(startAt);
   const [a, setA] = useState<Partial<JourneyAnswers>>(old ?? { goals: [] });
-  const STEPS = 10; // intro, name, brother/sister, 5 questions, your note, sharing
+  const STEPS = 10; // intro, name, brother/sister, 5 questions, (your note: skipped), sharing
   const [name, setName] = useState(prefs.firstName ?? '');
   const [gender, setGender] = useState<'brother' | 'sister' | 'skip' | undefined>(prefs.gender);
   const nm = name.trim().split(/\s+/)[0]?.slice(0, 24) ?? '';
@@ -263,7 +263,11 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
       </View>,
       { label: 'Next', on: () => setStep(7), disabled: !(a.goals ?? []).length },
     );
-  else if (step === 7) body = q('How much time can you give each day?', 'Small and steady is the Sunnah way. You can always read more.', options(TIME, a.minutes, (v) => pick('minutes', v)));
+  else if (step === 7)
+    body = q('How much time can you give each day?', 'Small and steady is the Sunnah way. You can always read more.', options(TIME, a.minutes, (v) => {
+      setA((x) => ({ ...x, minutes: v }));
+      setTimeout(() => setStep(9), 180); // the "Your Munib is ready" screen is skipped (Saj, 14 Nov 2026: too much)
+    }));
   else if (step === 8)
     body = q(
       nm ? `Your Munib is ready, ${nm}` : 'Your Munib is ready',
@@ -314,7 +318,7 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
       <HeavenSky />
       {step > 0 && (
         <View style={styles.top}>
-          <Pressable onPress={() => (step <= startAt && onBack ? onBack() : setStep((s) => s - 1))} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" style={styles.back}>
+          <Pressable onPress={() => (step <= startAt && onBack ? onBack() : setStep((s) => (s === 9 ? 7 : s - 1)))} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" style={styles.back}>
             <View style={{ transform: [{ rotate: '180deg' }] }}>
               <Icon name="chevron" size={20} color={pal.text} />
             </View>
