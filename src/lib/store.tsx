@@ -61,8 +61,8 @@ export type Prefs = {
   feedHide: string[];
   /** Explainers the reader has said they already know (the "New to this?" card becomes a small link). */
   explained: string[];
-  /** How Munib looks: bold (dark with bright colour, the default), light (the original Quiet Modern) or follow the phone. */
-  look: 'bold' | 'light' | 'auto';
+  /** How Munib looks: bold (light ground, bright colour cards; the default), dark (bold on black), light (the original quiet look) or follow the phone (bold, light or dark). */
+  look: 'bold' | 'dark' | 'light' | 'auto';
   /** Answers to the first-open questions, if given. */
   journey: JourneyAnswers | null;
   journeySkipped: boolean;

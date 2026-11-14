@@ -225,7 +225,7 @@ export function JourneyFlow({ onDone }: { onDone: () => void }) {
 }
 
 function Big({ pal, label, onPress, disabled }: { pal: ReturnType<typeof usePalette>; label: string; onPress: () => void; disabled?: boolean }) {
-  const bg = pal.bold ? '#FFFFFF' : pal.accent;
+  const bg = pal.bold ? pal.text : pal.accent;
   return (
     <Pressable
       onPress={onPress}
@@ -233,8 +233,8 @@ function Big({ pal, label, onPress, disabled }: { pal: ReturnType<typeof usePale
       accessibilityRole="button"
       style={({ pressed }) => [styles.big, { backgroundColor: bg, opacity: disabled ? 0.4 : pressed ? 0.85 : 1 }]}
     >
-      <Text style={[styles.bigText, { color: pal.bold ? '#0D0F0E' : pal.onAccent }]}>{label}</Text>
-      <Icon name="chevron" size={16} color={pal.bold ? '#0D0F0E' : pal.onAccent} />
+      <Text style={[styles.bigText, { color: pal.bold ? pal.bg : pal.onAccent }]}>{label}</Text>
+      <Icon name="chevron" size={16} color={pal.bold ? pal.bg : pal.onAccent} />
     </Pressable>
   );
 }

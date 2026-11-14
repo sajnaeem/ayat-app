@@ -18,7 +18,7 @@ export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
   const pal = usePalette();
   const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.bar, { backgroundColor: pal.bold ? '#0D0F0E' : pal.surface, borderTopColor: pal.line, paddingBottom: Math.max(insets.bottom - 6, 6) }]} accessibilityRole="tablist">
+    <View style={[styles.bar, { backgroundColor: pal.bold ? pal.bg : pal.surface, borderTopColor: pal.line, paddingBottom: Math.max(insets.bottom - 6, 6) }]} accessibilityRole="tablist">
       {state.routes.map((route, i) => {
         const tab = TABS.find((t) => t.name === route.name);
         if (!tab) return null;
@@ -28,8 +28,8 @@ export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
         };
         return (
           <Pressable key={route.key} onPress={press} style={styles.item} accessibilityRole="tab" accessibilityState={{ selected: on }} accessibilityLabel={tab.label}>
-            <Icon name={tab.icon} size={23} color={on ? (pal.bold ? '#FFFFFF' : pal.accent) : pal.muted} strokeWidth={on ? 2.1 : 1.7} />
-            <Text style={[styles.label, { color: on ? (pal.bold ? '#FFFFFF' : pal.accent) : pal.muted }]}>{tab.label}</Text>
+            <Icon name={tab.icon} size={23} color={on ? (pal.bold ? pal.text : pal.accent) : pal.muted} strokeWidth={on ? 2.1 : 1.7} />
+            <Text style={[styles.label, { color: on ? (pal.bold ? pal.text : pal.accent) : pal.muted }]}>{tab.label}</Text>
           </Pressable>
         );
       })}

@@ -93,12 +93,29 @@ const bold: Palette = {
   tones: BOLD_TONES,
 };
 
+/** Bold on a light ground (Saj, 14 Nov 2026: "I don't like the black background"): the default. Same bright cards and graphics. */
+const boldLight: Palette = {
+  dark: false,
+  bold: true,
+  pop: POP,
+  bg: '#F2F3EF',
+  surface: '#FFFFFF',
+  line: '#E1E4DF',
+  text: '#111412',
+  muted: '#5C6560',
+  accent: '#13865A',
+  onAccent: '#FFFFFF',
+  scrim: 'rgba(17,20,18,0.36)',
+  tones: LIGHT_TONES,
+};
+
 export function usePalette(): Palette {
   const scheme = useColorScheme();
   const look = usePrefsMaybe()?.look ?? 'bold';
-  if (look === 'bold') return bold;
+  if (look === 'bold') return boldLight;
+  if (look === 'dark') return bold;
   if (look === 'light') return light;
-  return scheme === 'dark' ? dark : light;
+  return scheme === 'dark' ? bold : boldLight;
 }
 
 /** In the bold look, a palette for content sitting on a solid colour card (white type). Unchanged otherwise. */

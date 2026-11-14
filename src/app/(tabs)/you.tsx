@@ -200,7 +200,7 @@ export default function You() {
           <Row pal={pal} icon="speed" title="Recitation speed" value={speedLabel(prefs.speed ?? 1)} onPress={() => setPick('speed')} divider />
           <Row pal={pal} icon="text" title="Text size" value={TEXT_SIZES.find((t) => t.id === (prefs.textSize ?? 'medium'))?.label} onPress={() => setPick('size')} divider />
           <Row pal={pal} icon="play" title="Auto scroll" value={AUTO_PACES.find((x) => x.id === (prefs.autoScroll ?? 'off'))?.label} onPress={() => setPick('auto')} divider />
-          <Row pal={pal} icon="text" title="Look" value={{ bold: 'Bold', light: 'Light', auto: 'Match phone' }[prefs.look ?? 'bold']} onPress={() => setPick('look')} divider />
+          <Row pal={pal} icon="text" title="Look" value={{ bold: 'Bold', dark: 'Bold dark', light: 'Quiet', auto: 'Match phone' }[prefs.look ?? 'bold']} onPress={() => setPick('look')} divider />
           <Row pal={pal} icon="sliders" title="Your For you page" value={feedSummary(prefs.feedHide)} onPress={() => setPick('topics')} divider />
         </Group>
 
@@ -350,9 +350,10 @@ export default function You() {
       <FeedTopicsSheet visible={pick === 'topics'} onClose={() => setPick(null)} pal={pal} />
       <Sheet visible={pick === 'look'} onClose={() => setPick(null)} title="Look" pal={pal}>
         <View style={{ gap: 8 }}>
-          <Choice pal={pal} on={(prefs.look ?? 'bold') === 'bold'} title="Bold" sub="Dark, with bright colour" onPress={() => prefs.set({ look: 'bold' })} />
-          <Choice pal={pal} on={prefs.look === 'light'} title="Light" sub="Soft and quiet, light grounds" onPress={() => prefs.set({ look: 'light' })} />
-          <Choice pal={pal} on={prefs.look === 'auto'} title="Match phone" sub="Light by day, dark when your phone is in dark mode" onPress={() => prefs.set({ look: 'auto' })} />
+          <Choice pal={pal} on={(prefs.look ?? 'bold') === 'bold'} title="Bold" sub="Light background with bright colour" onPress={() => prefs.set({ look: 'bold' })} />
+          <Choice pal={pal} on={prefs.look === 'dark'} title="Bold dark" sub="Black background with bright colour" onPress={() => prefs.set({ look: 'dark' })} />
+          <Choice pal={pal} on={prefs.look === 'light'} title="Quiet" sub="Soft and calm, Munib's original look" onPress={() => prefs.set({ look: 'light' })} />
+          <Choice pal={pal} on={prefs.look === 'auto'} title="Match phone" sub="Bold, dark when your phone is in dark mode" onPress={() => prefs.set({ look: 'auto' })} />
         </View>
       </Sheet>
       <Sheet visible={pick === 'auto'} onClose={() => setPick(null)} title="Auto scroll" pal={pal}>
