@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
 import { ExplainIntro, useExplain } from '@/components/Explain';
 import { Group, Row, Section, Tile, TileGrid } from '@/components/List';
-import { ART } from '@/lib/art';
+import { ART, poseArt } from '@/lib/art';
 import { CALC_ROWS, calcDay, hm, nextPrayer, until } from '@/lib/prayertimes';
 import { usePrefs } from '@/lib/store';
 import { fonts, mix, onColour, usePalette } from '@/lib/theme';
@@ -72,6 +72,18 @@ export default function PrayerTab() {
           )}
         </Pressable>
 
+        <Pressable onPress={() => router.push('/pray')} style={({ pressed }) => [styles.learn, { backgroundColor: pal.surface, opacity: pressed ? 0.8 : 1 }]} accessibilityRole="button" accessibilityLabel="Learn to pray, step by step">
+          <View style={[styles.learnArt, { backgroundColor: pal.bold ? mix(pal.surface, pal.pop.emerald, 0.14) : mix(pal.surface, pal.accent, 0.1) }]}>
+            <Image source={poseArt(prefs.prayFigure ?? 'brother', 'ruku')} style={{ width: '100%', height: '100%' }} resizeMode="contain" accessibilityIgnoresInvertColors />
+          </View>
+          <View style={{ flex: 1, gap: 3 }}>
+            <Text style={[styles.eyebrow, { color: pal.accent }]}>NEW TO PRAYER?</Text>
+            <Text style={[styles.learnTitle, { color: pal.text }]}>Learn to pray</Text>
+            <Text style={[styles.sub, { color: pal.muted }]}>Every position with pictures and the words to say, then pray along</Text>
+          </View>
+          <Icon name="chevron" size={18} color={pal.muted} />
+        </Pressable>
+
         <Section pal={pal} title="Your mosque" />
         <Group pal={pal}>
           <Row
@@ -108,6 +120,9 @@ export default function PrayerTab() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  learn: { flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: 22, padding: 12, paddingRight: 16 },
+  learnArt: { width: 96, height: 96, borderRadius: 16, overflow: 'hidden' },
+  learnTitle: { fontFamily: fonts.uiBold, fontSize: 20, letterSpacing: -0.4 },
   more: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'center', paddingVertical: 8 },
   moreText: { fontFamily: fonts.uiSemi, fontSize: 14 },
   head: { paddingHorizontal: 20, paddingBottom: 6 },

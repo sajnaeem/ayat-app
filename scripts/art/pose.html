@@ -1,0 +1,145 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:transparent}canvas{display:block}</style>
+<script type="importmap">{ "imports": { "three": "./node_modules/three/build/three.module.js", "three/addons/": "./node_modules/three/examples/jsm/" } }</script></head>
+<body><script type="module">
+// Munib · prayer positions for "Learn to pray". A faceless, modest 3D figure on a prayer mat, posed with two-bone IK.
+// draw('<figure>-<pose>'), e.g. draw('brother-ruku'). Figures: brother (long thobe), sister (abaya + khimar).
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+const N = 1024;
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1); renderer.setSize(N, N); renderer.setClearColor(0x000000, 0);
+renderer.toneMapping = THREE.NeutralToneMapping; renderer.toneMappingExposure = 1.0; renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+const env = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const mat = (c, o = {}) => new THREE.MeshPhysicalMaterial({ color: c, roughness: 0.55, clearcoat: 0.25, clearcoatRoughness: 0.4, ...o });
+const DOWN = V(0, -1, 0);
+
+const LOOKS = {
+  brother: { skin: 0xC69A74, top: 0xE6DCCB, legs: 0xE6DCCB, cap: 0xF7F4EE, feet: 0xB89C80 },
+  sister: { skin: 0xC69A74, top: 0x35606A, legs: 0x35606A, scarf: 0x6E4F6C, feet: 0xB89C80 },
+};
+
+function person(look, isSister) {
+  const cap = (r, len, m) => { const g = new THREE.Group(); const c = new THREE.Mesh(new THREE.CapsuleGeometry(r, len, 8, 20), m); c.position.y = -len / 2 - r * 0.2; g.add(c); return g; };
+  const mS = mat(look.skin, { roughness: 0.6, clearcoat: 0.1 }), mT = mat(look.top, { roughness: 0.7 }), mL = mat(look.legs, { roughness: 0.7 });
+  const root = new THREE.Group(); const hips = new THREE.Group(); root.add(hips);
+  const pelvis = new THREE.Mesh(new THREE.CapsuleGeometry(0.17, 0.14, 8, 16), mL); pelvis.rotation.z = Math.PI / 2; hips.add(pelvis);
+  const spine = new THREE.Group(); hips.add(spine);
+  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.2, 0.36, 8, 24), mT); torso.position.y = 0.3; torso.scale.set(1.12, 1, 0.84); spine.add(torso);
+  const neck = new THREE.Group(); neck.position.y = 0.62; spine.add(neck);
+  { const nk = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.062, 0.12, 16), mS); nk.position.y = 0.03; neck.add(nk); }
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.135, 40, 28), mS); head.position.y = 0.2; head.scale.set(0.92, 1.08, 1); neck.add(head);
+  if (isSister) {
+    const mK = mat(look.scarf, { roughness: 0.75 });
+    // khimar: a hood that leaves the (faceless) face open, and a soft cape over the shoulders
+    const hood = new THREE.Mesh(new THREE.SphereGeometry(0.158, 48, 32, Math.PI / 2 + 0.62, Math.PI * 2 - 1.24, 0, Math.PI * 0.86), mK); hood.material.side = THREE.DoubleSide; hood.position.set(0, 0.2, -0.008); hood.scale.set(0.98, 1.1, 1.04); neck.add(hood);
+    const cape = new THREE.Mesh(new THREE.SphereGeometry(0.29, 48, 24, 0, Math.PI * 2, 0, Math.PI * 0.6), mK); cape.material.side = THREE.DoubleSide; cape.position.set(0, -0.18, -0.01); cape.scale.set(1.16, 0.9, 0.98); neck.add(cape);
+  } else {
+    const kufi = new THREE.Mesh(new THREE.SphereGeometry(0.142, 40, 20, 0, Math.PI * 2, 0, Math.PI * 0.38), mat(look.cap, { roughness: 0.8 })); kufi.position.y = 0.215; kufi.rotation.x = -0.25; neck.add(kufi);
+    // the thobe flares a little below the waist
+    const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.24, 0.3, 32), mT); skirt.position.y = -0.12; hips.add(skirt);
+  }
+  if (isSister) { const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.26, 0.32, 32), mT); skirt.position.y = -0.12; hips.add(skirt); }
+  const arm = (side) => {
+    const sh = new THREE.Group(); sh.position.set(side * 0.25, 0.52, 0); spine.add(sh); sh.add(cap(0.068, 0.22, mT));
+    const el = new THREE.Group(); el.position.y = -0.3; sh.add(el); el.add(cap(0.058, 0.2, mT));
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.056, 20, 14), mS); hand.position.y = -0.3; hand.scale.set(0.8, 1.15, 1); el.add(hand);
+    return { sh, el, hand, a: 0.3, b: 0.3 };
+  };
+  const leg = (side) => {
+    const hp = new THREE.Group(); hp.position.set(side * 0.11, -0.02, 0); hips.add(hp); hp.add(cap(0.092, 0.31, mL));
+    const kn = new THREE.Group(); kn.position.y = -0.42; hp.add(kn); kn.add(cap(0.078, 0.31, mL));
+    const ft = new THREE.Mesh(new THREE.CapsuleGeometry(0.05, 0.13, 6, 14), mat(look.feet, { roughness: 0.6 })); ft.rotation.x = Math.PI / 2; ft.position.set(0, -0.44, 0.06); kn.add(ft);
+    return { sh: hp, el: kn, a: 0.42, b: 0.43 };
+  };
+  const p = { root, hips, spine, neck, L: arm(-1), R: arm(1), LL: leg(-1), RL: leg(1) };
+  root.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+  return p;
+}
+
+// two-bone IK: point the upper bone and lower bone so the end reaches `target`, bending towards `pole` (world space)
+function ik(limb, target, pole) {
+  const { sh, el, a, b } = limb; sh.parent.updateMatrixWorld(true);
+  const S = sh.getWorldPosition(V(0, 0, 0));
+  const toT = target.clone().sub(S); const d = Math.min(Math.max(toT.length(), 0.02), a + b - 0.002); const dir = toT.normalize();
+  const n = pole.clone().sub(S); n.sub(dir.clone().multiplyScalar(n.dot(dir))).normalize();
+  const alpha = Math.acos(Math.min(1, Math.max(-1, (a * a + d * d - b * b) / (2 * a * d))));
+  const u = dir.clone().multiplyScalar(Math.cos(alpha)).add(n.clone().multiplyScalar(Math.sin(alpha)));
+  const E = S.clone().add(u.clone().multiplyScalar(a)); const w = S.clone().add(dir.clone().multiplyScalar(d)).sub(E).normalize();
+  const pq = sh.parent.getWorldQuaternion(new THREE.Quaternion()).invert();
+  sh.quaternion.setFromUnitVectors(DOWN, u.clone().applyQuaternion(pq)); sh.updateMatrixWorld(true);
+  const eq = sh.getWorldQuaternion(new THREE.Quaternion()).invert();
+  el.quaternion.setFromUnitVectors(DOWN, w.clone().applyQuaternion(eq)); el.updateMatrixWorld(true);
+}
+
+// Poses. The figure faces +z (towards the Qibla, the top of the mat). Floor at y = 0.
+const STAND = 0.985;
+const POSES = {
+  // standing straight, arms by the sides (qiyam before the takbir; also i'tidal)
+  stand: (p) => { p.hips.position.set(0, STAND, 0); legsStand(p); [p.L, p.R].forEach((l, i) => { const s = i ? 1 : -1; ik(l, V(s * 0.29, STAND - 0.06, 0.05), V(s * 0.3, STAND + 0.3, -0.4)); }); },
+  // takbir: hands raised to the ears, palms forward
+  takbir: (p) => { p.hips.position.set(0, STAND, 0); legsStand(p); [p.L, p.R].forEach((l, i) => { const s = i ? 1 : -1; ik(l, V(s * 0.25, STAND + 0.74, 0.12), V(s * 0.45, STAND + 0.2, 0.15)); }); },
+  // standing with the right hand over the left on the chest
+  fold: (p) => { p.hips.position.set(0, STAND, 0); legsStand(p); ik(p.L, V(-0.03, STAND + 0.34, 0.24), V(-0.5, STAND + 0.1, 0.1)); ik(p.R, V(0.04, STAND + 0.37, 0.27), V(0.5, STAND + 0.1, 0.1)); },
+  // ruku: back flat, hands on the knees
+  ruku: (p) => {
+    p.hips.position.set(0, STAND - 0.01, -0.1); p.spine.rotation.x = 1.5; p.neck.rotation.x = 0.06;
+    [p.LL, p.RL].forEach((l, i) => { const s = i ? 1 : -1; ik(l, V(s * 0.12, 0.07, -0.02), V(s * 0.12, 0.5, 1)); });
+    [p.L, p.R].forEach((l, i) => { const s = i ? 1 : -1; ik(l, V(s * 0.15, 0.55, 0.05), V(s * 0.5, 1, 0.3)); });
+  },
+  // sujud: forehead, nose, palms, knees and toes on the ground
+  sujud: (p) => {
+    p.hips.position.set(0, 0.56, -0.04); p.spine.rotation.x = 2.04; p.neck.rotation.x = -0.32;
+    [p.LL, p.RL].forEach((l, i) => { const s = i ? 1 : -1; ik(l, V(s * 0.12, 0.1, -0.42), V(s * 0.12, 0.3, 1)); });
+    [p.L, p.R].forEach((l, i) => { const s = i ? 1 : -1; ik(l, V(s * 0.23, 0.06, 0.7), V(s * 0.6, 1.4, 0.3)); });
+  },
+  // sitting (between the two prostrations, and for the tashahhud): hands on the thighs
+  sit: (p) => { sitBase(p); },
+  // tashahhud: sitting, right index finger raised
+  tashahhud: (p) => { sitBase(p, true); },
+  // salam: sitting, head turned to the right
+  salam: (p) => { sitBase(p); p.neck.rotation.y = -1.05; },
+};
+function legsStand(p) { [p.LL, p.RL].forEach((l, i) => { const s = i ? 1 : -1; ik(l, V(s * 0.12, 0.07, 0.0), V(s * 0.12, 0.5, 1)); }); }
+function sitBase(p, finger) {
+  p.hips.position.set(0, 0.36, -0.1); p.spine.rotation.x = 0.06; p.neck.rotation.x = 0.1;
+  [p.LL, p.RL].forEach((l, i) => { const s = i ? 1 : -1; ik(l, V(s * 0.12, 0.08, -0.2), V(s * 0.12, 0.2, 1.4)); });
+  [p.L, p.R].forEach((l, i) => { const s = i ? 1 : -1; ik(l, V(s * 0.15, 0.37, 0.27), V(s * 0.5, 0.6, -0.4)); });
+  if (finger) {
+    const f = new THREE.Mesh(new THREE.CapsuleGeometry(0.014, 0.06, 4, 10), mat(LOOKS.brother.skin, { roughness: 0.6 }));
+    f.position.set(0, -0.05, 0.035); f.rotation.x = -0.5; f.castShadow = true; p.R.hand.add(f); p.R.hand.scale.set(0.8, 1.0, 1);
+  }
+}
+
+function mat_() {
+  const g = new THREE.Group();
+  const rug = new THREE.Mesh(new RoundedBoxGeometry(0.98, 0.03, 2.05, 4, 0.012), mat(0x1F6E52, { roughness: 0.9, clearcoat: 0 })); rug.position.set(0, 0.015, 0.28); rug.receiveShadow = true; g.add(rug);
+  const gold = new THREE.MeshPhysicalMaterial({ color: 0xE9B44C, metalness: 0.7, roughness: 0.35 });
+  const border = (w, d, x, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, 0.006, d), gold); m.position.set(x, 0.033, z); m.receiveShadow = true; g.add(m); };
+  border(0.86, 0.018, 0, 0.28 - 0.95); border(0.86, 0.018, 0, 0.28 + 0.95); border(0.018, 1.9, -0.42, 0.28); border(0.018, 1.9, 0.42, 0.28);
+  // a mihrab arch at the head of the mat
+  const arch = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.009, 8, 48, Math.PI), gold); arch.rotation.x = -Math.PI / 2; arch.position.set(0, 0.034, 0.92); g.add(arch);
+  [-0.22, 0.22].forEach((x) => border(0.018, 0.2, x, 0.82));
+  return g;
+}
+
+window.draw = (name) => {
+  const [fig, pose] = name.split('-');
+  const scene = new THREE.Scene(); scene.environment = env;
+  const key = new THREE.DirectionalLight(0xffffff, 2.2); key.position.set(3, 7, 3); key.castShadow = true; key.shadow.mapSize.set(2048, 2048);
+  Object.assign(key.shadow.camera, { left: -2.5, right: 2.5, top: 2.5, bottom: -2.5 }); key.shadow.radius = 6; key.shadow.bias = -0.0005; scene.add(key);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x334433, 0.55));
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(12, 12), new THREE.ShadowMaterial({ opacity: 0.16 })); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+  scene.add(mat_());
+  const p = person(LOOKS[fig], fig === 'sister'); scene.add(p.root);
+  POSES[pose](p);
+  // the brother's thobe: keep the hem skirt upright-ish when bent (it rides with the hips, which is fine)
+  const cam = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
+  cam.position.set(5.1, 1.9, 2.1); cam.lookAt(0, 0.86, 0.22);
+  renderer.render(scene, cam);
+};
+window.ready = true;
+</script></body></html>
