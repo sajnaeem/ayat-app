@@ -84,7 +84,10 @@ const REWARD: Record<Journey, { title: string; quote: string; src: string }> = {
   },
 };
 
-/** "Is this true for you?" cards. Each answer fills in something we used to ask as its own question. */
+/**
+ * "Is this true for you?" cards. They are the goals question too (Saj, 14 Nov 2026: the picture tiles repeated what the
+ * swipes had just asked), so every goal has a statement; "I read the Quran most weeks" stands in for how often.
+ */
 const FEELS = (j: Journey | undefined): Statement[] =>
   j === 'exploring'
     ? [
@@ -92,18 +95,22 @@ const FEELS = (j: Journey | undefined): Statement[] =>
         { id: 'basics', text: 'I’d like to know what Muslims believe' },
         { id: 'understand', text: 'I want to understand, not just read' },
         { id: 'calm', text: 'I’m looking for some calm' },
+        { id: 'close', text: 'I wonder about God, and where I fit' },
       ]
     : [
         { id: 'read', text: 'I read the Quran most weeks' },
         { id: 'understand', text: 'I want to understand what I’m reading' },
-        { id: 'close', text: 'I sometimes feel far from Allah' },
+        { id: 'surahs', text: 'I’d like to learn more surahs for my prayer' },
         { id: 'pray', text: 'I’d like to pray on time, every time' },
+        j === 'new' ? { id: 'basics', text: 'I’m still learning the basics of Islam' } : { id: 'close', text: 'I sometimes feel far from Allah' },
+        { id: 'calm', text: 'I could do with more calm in my life' },
       ];
 
 /** The order of the screens. "ready" (the note) is kept but skipped (Saj: too much); "trial" only when Plus has a free week. */
 // 'time' (how many minutes a day) was taken out (Saj, 14 Nov 2026); everyone starts on the default 5 minutes / 10 ayat.
-const SEQ = ['intro', 'name', 'gender', 'journey', 'reward', 'arabic', 'feel', 'goals', 'share'] as const;
-type StepId = (typeof SEQ)[number] | 'ready' | 'trial' | 'time';
+// 'goals' (picture tiles) was folded into the swipes (Saj, 14 Nov 2026: it repeated them); the screen is kept, unused.
+const SEQ = ['intro', 'name', 'gender', 'journey', 'reward', 'arabic', 'feel', 'share'] as const;
+type StepId = (typeof SEQ)[number] | 'ready' | 'trial' | 'time' | 'goals';
 
 export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => void; /** 1 skips the intro (the welcome screen has already said hello) */ startAt?: number; onBack?: () => void }) {
   const pal = heavenly(usePalette());
@@ -338,10 +345,11 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
         key={a.journey}
         items={FEELS(a.journey)}
         onDone={(ans) => {
-          // "Most weeks" stands in for the old how-often question; the rest pick goals for the next screen.
-          const goals = new Set(a.goals ?? []);
-          for (const id of ['understand', 'close', 'pray', 'basics', 'calm']) if (ans[id] && goals.size < 3) goals.add(id);
-          setA((x) => ({ ...x, reading: ans.read ? 'weekly' : 'rarely', goals: [...goals] }));
+          // "Most weeks" stands in for the old how-often question (and if not, building the habit becomes a goal);
+          // every other "True" is a goal.
+          const goals = ['understand', 'surahs', 'pray', 'close', 'basics', 'calm'].filter((id) => ans[id]);
+          if (!ans.read) goals.unshift('habit');
+          setA((x) => ({ ...x, reading: ans.read ? 'weekly' : 'rarely', goals }));
           go(1);
         }}
       />,
