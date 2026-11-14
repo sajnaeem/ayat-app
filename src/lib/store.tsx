@@ -76,6 +76,10 @@ export type Prefs = {
   shareInsights: boolean;
   /** Learn to pray: show the brother or the sister figure (also asked on first open: brother or sister). */
   prayFigure: 'brother' | 'sister';
+  /** The free-week offer at the end of onboarding was shown (once). */
+  trialOffered?: boolean;
+  /** When a free trial started here ends (ms), for the reminder card on You. */
+  trialEnds?: number;
   /** What the reader asked Munib to call them (first open). Phone only; never sent unless they make it their display name. */
   firstName?: string;
   /** Brother or sister, if they said (first open). Phone only. */

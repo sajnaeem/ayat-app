@@ -99,7 +99,7 @@ export async function cancelWhere(match: (id: string) => boolean) {
 export async function scheduleReminders(opts: { on: boolean; hour: number; minute: number; friday: boolean; lang: LangId; progress: Progress; name?: string }) {
   if (Platform.OS === 'web') return;
   // Only this daily check-in is replaced here; prayer alerts (identifiers starting "prayer-") are planned in mosque.ts.
-  await cancelWhere((id) => !id.startsWith('prayer-'));
+  await cancelWhere((id) => !id.startsWith('prayer-') && !id.startsWith('trial-'));
   if (!opts.on || !(await hasPermission())) return;
 
   const now = new Date();
@@ -116,4 +116,26 @@ export async function scheduleReminders(opts: { on: boolean; hour: number; minut
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: at },
     });
   }
+}
+
+/** Two days before a free trial ends: an honest heads-up (Saj, 14 Nov 2026), so nobody is charged by surprise. */
+export async function scheduleTrialReminder(ends: number, price: string, name?: string) {
+  if (Platform.OS === 'web') return;
+  const at = new Date(ends - 2 * 24 * 3600 * 1000);
+  if (at.getTime() < Date.now() + 60_000) return;
+  if (!(await hasPermission())) {
+    const r = await Notifications.requestPermissionsAsync().catch(() => null);
+    if (!r?.granted) return;
+  }
+  await Notifications.cancelScheduledNotificationAsync('trial-end').catch(() => {});
+  const day = new Date(ends).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+  await Notifications.scheduleNotificationAsync({
+    identifier: 'trial-end',
+    content: {
+      title: name ? `${name}, your free week ends in 2 days` : 'Your free week ends in 2 days',
+      body: `Munib Plus becomes ${price} a year on ${day}. To stop it, cancel in Settings → Apple ID → Subscriptions before then.`,
+      data: { to: 'mood' },
+    },
+    trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: at },
+  });
 }

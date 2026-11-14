@@ -21,7 +21,16 @@ const KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? '';
 export const FREE_STORIES = 3;
 
 export type PlanId = 'monthly' | 'yearly' | 'lifetime';
-export type Plan = { id: PlanId; price: string; perMonth?: string; pkg: unknown };
+/** trialDays: the free introductory offer Apple has on this plan (set in App Store Connect), if any. */
+export type Plan = { id: PlanId; price: string; perMonth?: string; trialDays?: number; pkg: unknown };
+
+/** Days in a free introductory offer (RevenueCat's introPrice), or undefined when there's no free trial. */
+function freeTrialDays(intro: any): number | undefined {
+  if (!intro || intro.price !== 0) return undefined;
+  const per: Record<string, number> = { DAY: 1, WEEK: 7, MONTH: 30, YEAR: 365 };
+  const d = (per[String(intro.periodUnit).toUpperCase()] ?? 0) * (intro.periodNumberOfUnits ?? 1);
+  return d > 0 ? d : undefined;
+}
 
 type PlusState = {
   /** Purchases work here (an iPhone with the key set). */
@@ -82,7 +91,7 @@ export function PlusProvider({ children }: { children: ReactNode }) {
         for (const id of ['yearly', 'monthly', 'lifetime'] as PlanId[]) {
           const p = pick(id);
           if (!p) continue;
-          out.push({ id, price: p.product.priceString, perMonth: id === 'yearly' ? p.product.pricePerMonthString ?? undefined : undefined, pkg: p });
+          out.push({ id, price: p.product.priceString, perMonth: id === 'yearly' ? p.product.pricePerMonthString ?? undefined : undefined, trialDays: freeTrialDays((p.product as any).introPrice), pkg: p });
         }
         if (!gone) setPlans(out);
       } catch {

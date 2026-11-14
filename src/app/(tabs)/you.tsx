@@ -192,8 +192,16 @@ export default function You() {
         <Pressable onPress={() => router.push('/plus')} accessibilityRole="button" style={({ pressed }) => [styles.plusCard, { backgroundColor: pal.pop.violet, opacity: pressed ? 0.88 : 1 }]}>
           <Image source={ART.star8} style={styles.plusArt} resizeMode="contain" accessibilityIgnoresInvertColors />
           <Text style={styles.plusEyebrow}>MUNIB PLUS</Text>
-          <Text style={styles.plusTitle}>{plus.active ? 'You’re a member. JazakAllahu khayran.' : 'Unlimited Ask, listen offline, every story'}</Text>
-          <Text style={styles.plusSub}>{plus.active ? (plus.lifetime ? 'Lifetime' : 'Manage your membership') : 'And you keep Munib free for everyone'}</Text>
+          <Text style={styles.plusTitle}>{plus.active && prefs.trialEnds && prefs.trialEnds > Date.now() ? 'You’re on your free week' : plus.active ? 'You’re a member. JazakAllahu khayran.' : 'Unlimited Ask, listen offline, every story'}</Text>
+          <Text style={styles.plusSub}>
+            {plus.active && prefs.trialEnds && prefs.trialEnds > Date.now()
+              ? `Free week ends ${new Date(prefs.trialEnds).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}. Tap to manage or cancel.`
+              : plus.active
+                ? plus.lifetime
+                  ? 'Lifetime'
+                  : 'Manage your membership'
+                : 'And you keep Munib free for everyone'}
+          </Text>
         </Pressable>
 
         <Section pal={pal} title="Learn" />

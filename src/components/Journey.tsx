@@ -6,6 +6,8 @@ import { Icon } from './Icon';
 import { HeavenSky, heavenly } from './Heaven';
 import { EXPLAINERS } from '@/data/explainers';
 import { Journey, JourneyAnswers, usePrefs } from '@/lib/store';
+import { usePlus } from '@/lib/plus';
+import { scheduleTrialReminder } from '@/lib/reminders';
 import { fonts, usePalette } from '@/lib/theme';
 
 /**
@@ -59,6 +61,11 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
   const [step, setStep] = useState(startAt);
   const [a, setA] = useState<Partial<JourneyAnswers>>(old ?? { goals: [] });
   const STEPS = 10; // intro, name, brother/sister, 5 questions, (your note: skipped), sharing
+  const plus = usePlus();
+  const yearly = plus.plans.find((p) => p.id === 'yearly');
+  // The free week is offered once, to everyone, at the end of first open (Saj, 14 Nov 2026), and only when Apple has the trial on sale.
+  const canTrial = !!yearly?.trialDays && plus.available && !plus.active && !prefs.trialOffered;
+  const [busy, setBusy] = useState(false);
   const [name, setName] = useState(prefs.firstName ?? '');
   const [gender, setGender] = useState<'brother' | 'sister' | 'skip' | undefined>(prefs.gender);
   const nm = name.trim().split(/\s+/)[0]?.slice(0, 24) ?? '';
@@ -99,6 +106,25 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
       // New or curious: start on the gentle New to Islam feed rather than asking about feelings first.
       ...(fresh ? { mood: 'newmuslim', onboarded: true, feedMode: 'foryou' } : {}),
     });
+    if (canTrial) setStep(10);
+    else onDone();
+  };
+
+  const startTrial = async () => {
+    if (!yearly || busy) return;
+    setBusy(true);
+    const r = await plus.buy('yearly');
+    setBusy(false);
+    prefs.set({ trialOffered: true });
+    if (r === 'done') {
+      const ends = Date.now() + (yearly.trialDays ?? 7) * 24 * 3600 * 1000;
+      prefs.set({ trialEnds: ends });
+      scheduleTrialReminder(ends, yearly.price, nm || undefined).catch(() => {});
+      onDone();
+    }
+  };
+  const noTrial = () => {
+    prefs.set({ trialOffered: true });
     onDone();
   };
 
@@ -292,7 +318,43 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
       </>,
       { label: 'Continue', on: () => setStep(9) },
     );
-  else {
+  else if (step === 10 && yearly) {
+    const days = yearly.trialDays ?? 7;
+    const remind = Math.max(1, days - 2);
+    body = (
+      <View style={[styles.intro, { paddingBottom: 8 }]}>
+        <ScrollView contentContainerStyle={{ paddingTop: 10, gap: 12 }}>
+          <Image source={ART.star8} style={{ width: 96, height: 96, marginLeft: -6 }} resizeMode="contain" accessibilityIgnoresInvertColors />
+          <Text style={[styles.h1, { color: pal.text }]}>{nm ? `${nm}, try Munib Plus free for ${days === 7 ? 'a week' : `${days} days`}` : `Try Munib Plus free for ${days === 7 ? 'a week' : `${days} days`}`}</Text>
+          <Text style={[styles.lead, { color: pal.muted }]}>Unlimited Ask about any ayah, listening offline, and every bedtime story. The Quran, prayer times and everything else in Munib stay free, always, whatever you choose.</Text>
+          <View style={[styles.letter, { backgroundColor: pal.surface, borderColor: 'rgba(184,134,59,0.45)', gap: 14 }]}>
+            {[
+              ['Today', 'Everything in Munib Plus, free.'],
+              [`Day ${remind}`, 'We remind you, with a notification, that your free week is ending.'],
+              [`Day ${days}`, `Your plan starts at ${yearly.price} a year${yearly.perMonth ? ` (${yearly.perMonth} a month)` : ''}, unless you cancel before then.`],
+            ].map(([d, t], i) => (
+              <View key={d} style={{ flexDirection: 'row', gap: 12 }}>
+                <View style={[styles.sumDot, { backgroundColor: i === 0 ? pal.accent : 'rgba(184,134,59,0.35)' }]}>
+                  <Icon name={i === 0 ? 'check' : i === 1 ? 'bell' : 'heart'} size={13} color="#FFFFFF" strokeWidth={2.4} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.optLabel, { color: pal.text, fontSize: 15.5 }]}>{d}</Text>
+                  <Text style={[styles.optSub, { color: pal.muted }]}>{t}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+          <Text style={[styles.privacy, { color: pal.muted }]}>Cancel any time in Settings → Apple ID → Subscriptions. Payment is taken by Apple when the free week ends.</Text>
+        </ScrollView>
+        <View style={{ gap: 10, paddingTop: 10 }}>
+          <Big pal={pal} label={busy ? 'One moment…' : 'Start my free week'} onPress={startTrial} disabled={busy} />
+          <Pressable onPress={noTrial} style={({ pressed }) => [styles.big, { borderWidth: 1.5, borderColor: pal.line, opacity: pressed ? 0.85 : 1 }]} accessibilityRole="button">
+            <Text style={[styles.bigText, { color: pal.text }]}>Not now</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  } else {
     // Sharing is asked plainly as its own question, with two equal answers (UK GDPR: consent must be a clear, active choice).
     const who = a.journey === 'new' ? 'people who are new to Islam' : a.journey === 'exploring' ? 'people curious about Islam' : a.journey === 'growing' ? 'people growing in their deen' : 'people coming back to Allah';
     body = (
@@ -328,7 +390,7 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
               <View key={i} style={[styles.bar, { backgroundColor: i < step ? pal.accent : 'rgba(184,134,59,0.2)' }]} />
             ))}
           </View>
-          <Pressable onPress={skip} hitSlop={10} accessibilityRole="button">
+          <Pressable onPress={step === 10 ? noTrial : skip} hitSlop={10} accessibilityRole="button">
             <Text style={[styles.skipTop, { color: pal.muted }]}>Skip</Text>
           </Pressable>
         </View>
