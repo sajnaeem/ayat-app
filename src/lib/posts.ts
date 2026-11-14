@@ -49,6 +49,8 @@ export async function createPost(p: {
   source?: string;
   moods: MoodId[];
   media?: { uri: string; mime: string };
+  /** The reader allowed an AI first check (aiConsent); otherwise a person reviews it without one. */
+  ai?: boolean;
 }): Promise<void> {
   if (!supabase) throw new Error('offline');
   let media_path: string | null = null;
@@ -75,7 +77,7 @@ export async function createPost(p: {
     if (media_path) supabase.storage.from('posts').remove([media_path]).then(() => {});
     throw error;
   }
-  if (data?.id) aiCheck(data.id).catch(() => {});
+  if (data?.id && p.ai) aiCheck(data.id).catch(() => {});
 }
 
 /** Approved posts for the For you feed, newest first. */

@@ -100,7 +100,7 @@ supabase/           schema.sql, 002_accounts.sql, 003_feedback.sql, 004_safety.s
 - **Build 1.2.0 also includes `ExpoGlassEffect`** (Apple's liquid-glass blur), usable for the premium look without a new build.
 - **Munib Plus setup:** Paid Apps agreement, bank and tax in App Store Connect; the 3 products; RevenueCat account; send the public `appl_` key; add `REVENUECAT_SECRET` to Supabase secrets himself.
 - **Try the Ask tab** on his iPhone (the cloud workspace can't sign in to call it): a few real questions, including one asking for a ruling and one off-topic, and report anything odd.
-- **Choose a more natural story voice** (Saj, 14 Nov 2026: Kokoro isn't natural enough). The cloud workspace can only reach GitHub and package registries, so better voices need either a voice service called from a Supabase function with Saj's own key in Supabase secrets (e.g. ElevenLabs), or a human narrator. Waiting for his choice; all 17 stories are narrated with Kokoro `bf_emma` until then.
+- **ElevenLabs for the stories** (Saj, 15 Nov 2026: "we will likely use ElevenLabs"): he signs up (Creator plan suggested for a month, commercial use), picks a voice and sends its Voice ID, and adds `ELEVENLABS_API_KEY` to Supabase secrets himself. Plan: a small edge function that narrates queued paragraphs (jobs in a service-only table, triggered with pg_net from SQL, audio read back through SQL) since the cloud workspace can't reach ElevenLabs directly. Earlier note: Kokoro isn't natural enough (14 Nov). The cloud workspace can only reach GitHub and package registries, so better voices need either a voice service called from a Supabase function with Saj's own key in Supabase secrets (e.g. ElevenLabs), or a human narrator. Waiting for his choice; all 17 stories are narrated with Kokoro `bf_emma` until then.
 - **Scholar review** of all religious content (see the flags throughout this file), and a Quran teacher for the letter recordings.
 
 ## One signature look (Saj, 14 Nov 2026, approved five design changes: "aesthetic, engaging and standout")
@@ -115,6 +115,16 @@ supabase/           schema.sql, 002_accounts.sql, 003_feedback.sql, 004_safety.s
 ## Parked ideas
 
 - **Prayer lock (Saj, 14 Nov 2026, parked):** lock apps the reader picks (TikTok, Instagram…) at prayer time, or if they haven't tapped "I've prayed" N minutes after it starts; a Munib shield screen with "I've prayed" / "Give me 5 minutes"; lifts by itself at the next prayer. Honour system (Munib can't know if someone prayed). Needs Apple's Family Controls (Screen Time) distribution entitlement (request form on the developer account, days to weeks), native extensions (DeviceActivity monitor, shield configuration/action) and a new build; not possible in Expo Go or on web. Leaning free (the clearest expression of the mission). Parked until Saj decides to request the entitlement.
+
+## App Store rules to keep (Saj, 15 Nov 2026: "build in line with Apple's policy")
+
+- **4.3 Spam / 4.3(b):** Quran and prayer apps are a crowded category, so the review notes and screenshots must lead with what is different (the ayah feed and moods, Read together, Ask, Surahs for your prayer, Learn to pray, page view). One app only (4.3(a)): no separate apps for stories, kids or regions. **4.2.6** doesn't apply (Munib is written for Saj, not made from a template or app-builder service, and is submitted from his own developer account), but never reuse a template's look or content.
+- **2.1 Completeness:** at review time everything visible must work: a demo account in the review notes; hide anything not switched on (e.g. Mosques near you without `GEOAPIFY_KEY`, Plus without products, Live TV channels that are off air); no "coming soon" or placeholder text; working contact email (hello@getmunib.com needs the domain).
+- **5.1.2(i) third-party AI (added built 15 Nov 2026):** `src/lib/aiConsent.ts` asks once ("Answers written by Claude": Allow / Not now, `prefs.aiConsent`) before Ask, Ask about this ayah, the Find a dua AI search and the AI first check on posts send anything to Anthropic; switch in You → Your data; privacy policy says so. Without it: Ask doesn't answer (asks again next time), Find a dua matches on the phone, posts get a human check only. **Any new AI feature must go through `askAiConsent`.**
+- **1.2 User content:** filter, report, block and published contact are in place; keep them on every new kind of user content (posts, reflections, dua requests).
+- **2.3.7 Metadata:** never name other apps (Muslim Pro etc.) in the App Store listing; that comparison is for marketing elsewhere only.
+- **5.2 Rights:** written permission still needed from mp3quran.net (radio) and for the Hisn al-Muslim reciter clips; ElevenLabs voices need a plan that allows commercial use.
+- **Updates over the air:** fine for fixes and improvements, but big new features should also go out in a reviewed build, and never change what the app is for.
 
 ## Launch checklist (iOS)
 

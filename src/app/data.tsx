@@ -57,6 +57,15 @@ export default function YourData() {
             sub="Adds your journey answers (for example new to Islam, how you read Arabic, your goals), never linked to you. Only totals from large groups are ever shown, including in research reports we may share with charities, mosques and researchers."
           />
         </View>
+        <Section pal={pal} title="AI answers" />
+        <Choice
+          pal={pal}
+          box
+          on={prefs.aiConsent === true}
+          onPress={() => prefs.set({ aiConsent: prefs.aiConsent !== true })}
+          title="Let Claude answer"
+          sub="Ask, Ask about this ayah, the Find a dua search and a first check of your posts send what you type to Anthropic, the company that makes the AI Claude. Never your name, email or account. Off: Ask won’t answer, Find a dua matches words on your phone, and posts are checked by a person only."
+        />
         <Text style={[styles.small, { color: pal.muted, paddingHorizontal: 4 }]}>
           Turn either off at any time; anything not yet sent is deleted from your phone. Answers to the journey questions only leave your phone if you turn on insights.
         </Text>

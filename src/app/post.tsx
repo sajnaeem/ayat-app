@@ -8,7 +8,9 @@ import { Icon } from '@/components/Icon';
 import { useToast } from '@/components/Toast';
 import { useAccount } from '@/lib/account';
 import { checkReflection } from '@/lib/moderation';
+import { askAiConsent } from '@/lib/aiConsent';
 import { createPost, PostKind } from '@/lib/posts';
+import { usePrefs } from '@/lib/store';
 import { MoodId, MOODS } from '@/lib/quran';
 import { fonts, mix, usePalette } from '@/lib/theme';
 
@@ -21,6 +23,7 @@ export default function NewPost() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const toast = useToast();
+  const prefs = usePrefs();
   const acct = useAccount();
   const [kind, setKind] = useState<PostKind>('text');
   const [media, setMedia] = useState<{ uri: string; mime: string } | null>(null);
@@ -57,7 +60,8 @@ export default function NewPost() {
     setSending(true);
     try {
       if (!acct.guidelinesAccepted) await acct.acceptGuidelines();
-      await createPost({ userId: acct.userId, kind, body, source, moods, media: media ?? undefined });
+      const ai = await askAiConsent(prefs, false);
+      await createPost({ userId: acct.userId, kind, body, source, moods, media: media ?? undefined, ai });
       toast('Sent for review. We check every post, usually within 24 hours');
       router.back();
     } catch (e) {

@@ -76,6 +76,8 @@ export type Prefs = {
   /** Anonymous usage stats (on unless switched off) and anonymous journey insights (only when switched on). */
   shareUsage: boolean;
   shareInsights: boolean;
+  /** Allowed sending what they type to Anthropic for AI answers (undefined = not asked yet). See aiConsent.ts. */
+  aiConsent?: boolean;
   /** Learn to pray: show the brother or the sister figure (also asked on first open: brother or sister). */
   prayFigure: 'brother' | 'sister';
   /** The free-week offer at the end of onboarding was shown (once). */

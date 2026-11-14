@@ -16,6 +16,7 @@ import { reportAnswer } from '@/lib/ask';
 import { askIslam, IslamAnswer, IslamSource, ISLAM_STARTERS } from '@/lib/islam';
 import { showFeed } from '@/lib/nav';
 import { usePlus } from '@/lib/plus';
+import { askAiConsent } from '@/lib/aiConsent';
 import { usePrefs } from '@/lib/store';
 import { fonts, mix, usePalette } from '@/lib/theme';
 
@@ -56,6 +57,7 @@ export default function AskTab() {
     const q = (q0 ?? text).trim();
     if (q.length < 3 || busy) return;
     if (!signedIn) return router.push({ pathname: '/signin', params: { why: 'islam' } });
+    if (!(await askAiConsent(prefs))) return;
     setText('');
     const history = turns.filter((t) => t.res).map((t) => ({ q: t.q, a: t.res!.answer }));
     setTurns((t) => [...t, { q }]);

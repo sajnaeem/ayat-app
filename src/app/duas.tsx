@@ -8,6 +8,7 @@ import { Icon } from '@/components/Icon';
 import type { Dua } from '@/data/duas';
 import { useAccount } from '@/lib/account';
 import { DuaResult, findDuas, picksFor, QUICK } from '@/lib/duas';
+import { askAiConsent } from '@/lib/aiConsent';
 import { textScale, usePrefs } from '@/lib/store';
 import { fonts, mix, Palette, usePalette } from '@/lib/theme';
 
@@ -29,7 +30,9 @@ export default function FindDua() {
     const t = q.trim();
     if (t.length < 3 || busy) return;
     setBusy(true);
-    setRes(await findDuas(t, acct.status === 'signedIn'));
+    // The smart search uses AI (Claude); without permission, the phone matches words itself.
+    const ai = acct.status === 'signedIn' && (await askAiConsent(prefs, false));
+    setRes(await findDuas(t, ai));
     setBusy(false);
     setTimeout(() => scroll.current?.scrollTo({ y: 0, animated: true }), 50);
   };
