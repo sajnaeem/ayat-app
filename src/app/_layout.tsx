@@ -12,6 +12,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { JourneyFlow } from '@/components/Journey';
 import { ChooseName } from '@/components/SignIn';
 import { ToastProvider } from '@/components/Toast';
+import { RadioProvider } from '@/lib/radio';
 import { PlusProvider } from '@/lib/plus';
 import { AccountProvider, useAccount } from '@/lib/account';
 import { ProgressProvider } from '@/lib/progress';
@@ -108,6 +109,7 @@ function Root() {
         <Stack.Screen name="learn/[s]" />
         <Stack.Screen name="pray/index" options={{ presentation: 'modal' }} />
         <Stack.Screen name="pray/[mode]" />
+        <Stack.Screen name="live" options={{ presentation: 'modal' }} />
       </Stack>
     </>
   );
@@ -131,9 +133,11 @@ export default function Layout() {
         <ProgressProvider>
           <AccountProvider>
             <PlusProvider>
+              <RadioProvider>
               <ToastProvider>
                 <Root />
               </ToastProvider>
+              </RadioProvider>
             </PlusProvider>
           </AccountProvider>
         </ProgressProvider>

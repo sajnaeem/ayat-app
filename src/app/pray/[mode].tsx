@@ -1,3 +1,4 @@
+import { stopRadio } from '@/lib/radio';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -189,6 +190,7 @@ function Recite({ pal, s }: { pal: Palette; s: number }) {
   const status = useAudioPlayerStatus(player);
   const [on, setOn] = useState<number | null>(null);
   const play = async (n: number) => {
+    stopRadio();
     setOn(n);
     try {
       const a = await ayahAudio('husary', s, n + 1);

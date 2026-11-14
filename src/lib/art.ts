@@ -11,6 +11,8 @@ export const ART = {
   moon: require('../../assets/art/moon.png'),
   hands: require('../../assets/art/hands.png'),
   star8: require('../../assets/art/star8.png'),
+  dome: require('../../assets/art/dome.png'),
+  radio: require('../../assets/art/radio.png'),
 } as const;
 export type ArtName = keyof typeof ART;
 

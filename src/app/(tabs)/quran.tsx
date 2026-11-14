@@ -41,6 +41,18 @@ export default function QuranTab() {
           </View>
           <Icon name="chevron" size={16} color={lp.muted} />
         </Pressable>
+        <Pressable onPress={() => router.push('/live')} style={({ pressed }) => [styles.live, { opacity: pressed ? 0.85 : 1 }]} accessibilityRole="button" accessibilityLabel="Live TV from Makkah and Madinah, and Quran radio">
+          <View style={{ flex: 1, gap: 4 }}>
+            <View style={styles.livePill}>
+              <View style={styles.liveDot} />
+              <Text style={styles.livePillText}>LIVE</Text>
+            </View>
+            <Text style={styles.liveTitle}>Makkah, Madinah and Quran radio</Text>
+            <Text style={styles.liveSub}>Watch the two Holy Mosques, or play a reciter all day</Text>
+          </View>
+          <Image source={ART.kaaba} style={{ width: 58, height: 58 }} resizeMode="contain" accessibilityIgnoresInvertColors />
+          <Image source={ART.dome} style={{ width: 50, height: 62, marginLeft: -10 }} resizeMode="contain" accessibilityIgnoresInvertColors />
+        </Pressable>
         <View style={styles.tools}>
           <Tool pal={pal} icon="book" label="Page view" onPress={() => router.push({ pathname: '/mushaf', params: { page: String(pageOf(at.s, at.a)) } })} />
           <Tool pal={pal} icon="search" label="Search" onPress={() => router.push({ pathname: '/search', params: { tab: 'quran' } })} />
@@ -65,6 +77,12 @@ function Tool({ pal, icon, label, onPress }: { pal: Palette; icon: IconName; lab
 
 const styles = StyleSheet.create({
   tools: { flexDirection: 'row', gap: 8 },
+  live: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 14, padding: 14, backgroundColor: '#16213A' },
+  livePill: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', backgroundColor: '#E5484D', borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2 },
+  liveDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: '#FFFFFF' },
+  livePillText: { fontFamily: fonts.uiBold, fontSize: 10.5, color: '#FFFFFF', letterSpacing: 0.8 },
+  liveTitle: { fontFamily: fonts.uiSemi, fontSize: 15.5, color: '#FFFFFF' },
+  liveSub: { fontFamily: fonts.ui, fontSize: 13, color: 'rgba(255,255,255,0.75)' },
   learn: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 14, padding: 12 },
   learnTitle: { fontFamily: fonts.uiSemi, fontSize: 15.5 },
   learnSub: { fontFamily: fonts.ui, fontSize: 13 },

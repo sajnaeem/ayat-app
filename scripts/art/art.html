@@ -215,7 +215,60 @@ function star8() {
   return { scene, cam };
 }
 
-const MAKERS = { crescent: crescentLantern, mushaf, beads, kaaba, globe, moon, hands, star8 };
+
+/* ---------- 9. The Green Dome and a minaret (Masjid an-Nabawi, Madinah) ---------- */
+function dome() {
+  const { scene, cam, ground } = base(); ground.position.y = -1.0;
+  const marble = new THREE.MeshPhysicalMaterial({ color: 0xF3EFE6, roughness: 0.3, clearcoat: 0.5 });
+  const green = new THREE.MeshPhysicalMaterial({ color: 0x1E8C5A, roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.08 });
+  const G = new THREE.Group();
+  const plinth = new THREE.Mesh(new RoundedBoxGeometry(1.7, 0.7, 1.5, 4, 0.05), marble); plinth.position.y = -0.65; G.add(plinth);
+  for (let i = 0; i < 3; i++) { const arch = new THREE.Mesh(new RoundedBoxGeometry(0.28, 0.4, 0.04, 3, 0.1), new THREE.MeshStandardMaterial({ color: 0xD9C9A6, roughness: 0.6 })); arch.position.set(-0.45 + i * 0.45, -0.68, 0.76); G.add(arch); }
+  const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.52, 0.32, 8), marble); drum.position.y = -0.14; G.add(drum);
+  const d = new THREE.Mesh(new THREE.SphereGeometry(0.52, 64, 32, 0, Math.PI * 2, 0, Math.PI / 2), green); d.position.y = 0.02; d.scale.set(1, 1.18, 1); G.add(d);
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.05, 0.16, 16), gold()); neck.position.y = 0.68; G.add(neck);
+  const ball = new THREE.Mesh(new THREE.SphereGeometry(0.06, 24, 16), gold()); ball.position.y = 0.8; G.add(ball);
+  const cr = new THREE.Shape(); cr.absarc(0, 0, 0.11, Math.PI * 0.2, Math.PI * 1.8, false); cr.absarc(0.05, 0, 0.09, Math.PI * 1.7, Math.PI * 0.3, true);
+  const cres = new THREE.Mesh(new THREE.ExtrudeGeometry(cr, { depth: 0.02, bevelEnabled: true, bevelThickness: 0.01, bevelSize: 0.01, bevelSegments: 2, curveSegments: 48 }), gold()); cres.position.set(0, 0.97, 0); cres.rotation.z = Math.PI / 2; G.add(cres);
+  // minaret
+  const M = new THREE.Group(); M.position.set(1.15, 0, -0.35);
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.17, 2.2, 8), marble); shaft.position.y = 0.1; M.add(shaft);
+  [0.55, 1.05].forEach((y) => { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.2, 0.08, 16), marble); b.position.y = y; M.add(b); const r = new THREE.Mesh(new THREE.TorusGeometry(0.235, 0.015, 8, 32), gold()); r.rotation.x = Math.PI / 2; r.position.y = y + 0.05; M.add(r); });
+  const top = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.13, 0.35, 8), marble); top.position.y = 1.38; M.add(top);
+  const cone = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.42, 16), green); cone.position.y = 1.76; M.add(cone);
+  const tip = new THREE.Mesh(new THREE.SphereGeometry(0.035, 16, 12), gold()); tip.position.y = 2.0; M.add(tip);
+  G.add(M);
+  G.rotation.y = -0.4; G.position.x = -0.25; scene.add(cast(G));
+  cam.position.set(0, 1.0, 7.4); cam.lookAt(0.05, 0.12, 0);
+  return { scene, cam };
+}
+
+/* ---------- 10. A radio ---------- */
+function radio() {
+  const { scene, cam, ground } = base(); ground.position.y = -0.85;
+  const G = new THREE.Group();
+  const em = new THREE.MeshPhysicalMaterial({ color: 0x17945F, roughness: 0.18, clearcoat: 1, clearcoatRoughness: 0.06 });
+  const body = new THREE.Mesh(new RoundedBoxGeometry(2.3, 1.45, 0.75, 6, 0.22), em); body.position.y = -0.12; G.add(body);
+  const face = new THREE.Mesh(new RoundedBoxGeometry(2.0, 1.15, 0.05, 4, 0.12), new THREE.MeshPhysicalMaterial({ color: 0xF5EFE2, roughness: 0.4, clearcoat: 0.4 })); face.position.set(0, -0.12, 0.38); G.add(face);
+  // speaker grille: gold dots in a circle
+  const dot = new THREE.SphereGeometry(0.028, 12, 8);
+  for (let r = 0.08; r <= 0.4; r += 0.08) { const n = Math.round((2 * Math.PI * r) / 0.085); for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2; const m = new THREE.Mesh(dot, gold()); m.position.set(-0.45 + Math.cos(a) * r, -0.12 + Math.sin(a) * r, 0.42); G.add(m); } }
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.47, 0.025, 12, 64), gold()); ring.position.set(-0.45, -0.12, 0.42); G.add(ring);
+  // dial window and knobs
+  const dial = new THREE.Mesh(new RoundedBoxGeometry(0.7, 0.3, 0.04, 3, 0.06), new THREE.MeshPhysicalMaterial({ color: 0xFFB648, emissive: 0xFF9A1F, emissiveIntensity: 0.45, roughness: 0.2, clearcoat: 1 })); dial.position.set(0.52, 0.12, 0.42); G.add(dial);
+  const needle = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.24, 0.02), new THREE.MeshStandardMaterial({ color: 0x8A2E14 })); needle.position.set(0.6, 0.12, 0.45); G.add(needle);
+  [0.33, 0.72].forEach((x) => { const k = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.12, 0.12, 32), gold()); k.rotation.x = Math.PI / 2; k.position.set(x, -0.38, 0.45); G.add(k); });
+  // handle and antenna
+  const handle = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.05, 16, 48, Math.PI), gold()); handle.position.set(0, 0.6, 0); G.add(handle);
+  const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.025, 1.2, 12), gold()); ant.position.set(0.85, 1.05, -0.1); ant.rotation.z = -0.45; G.add(ant);
+  const antTip = new THREE.Mesh(new THREE.SphereGeometry(0.045, 16, 12), gold()); antTip.position.set(1.11, 1.58, -0.1); G.add(antTip);
+  [-0.85, 0.85].forEach((x) => { const f = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.1, 16), gold()); f.position.set(x, -0.89, 0); G.add(f); });
+  G.rotation.set(0.05, -0.38, 0); scene.add(cast(G));
+  cam.position.set(0, 0.9, 7.2); cam.lookAt(0, 0.05, 0);
+  return { scene, cam };
+}
+
+const MAKERS = { crescent: crescentLantern, mushaf, beads, kaaba, globe, moon, hands, star8, dome, radio };
 window.draw = (name) => { const { scene, cam } = MAKERS[name](); renderer.render(scene, cam); return true; };
 window.ready = true;
 </script></body></html>

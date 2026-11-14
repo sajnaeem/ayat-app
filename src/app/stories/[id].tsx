@@ -1,3 +1,4 @@
+import { stopRadio } from '@/lib/radio';
 import type React from 'react';
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -43,6 +44,7 @@ export default function Story() {
 
   // Play on with the screen locked, and show the story on the lock screen.
   useEffect(() => {
+    stopRadio();
     setAudioModeAsync({ playsInSilentMode: true, shouldPlayInBackground: true, interruptionMode: 'doNotMix' }).catch(() => {});
     try {
       player.setActiveForLockScreen(true, { title: st.title, artist: 'Munib · Bedtime stories' });

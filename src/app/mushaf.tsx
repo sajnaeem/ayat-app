@@ -1,3 +1,4 @@
+import { stopRadio } from '@/lib/radio';
 import { useAudioPlayer } from 'expo-audio';
 import * as ExpoFont from 'expo-font';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -92,6 +93,7 @@ export default function Mushaf() {
       current.current = k;
       timings.current = [];
       setWord(null);
+      stopRadio();
       setPlaying(k);
       setPaused(false);
       const [s, a] = k.split(':').map(Number);

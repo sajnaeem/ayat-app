@@ -1,3 +1,4 @@
+import { stopRadio, useRadio } from '@/lib/radio';
 import { useAudioPlayer } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
@@ -471,6 +472,7 @@ export default function Feed() {
   /** Tap the card or the Listen button: pause, carry on from the same word, or start again if it had finished. */
   const togglePlay = useCallback(
     (item: Item, passes: number) => {
+      stopRadio();
       if (queue.current?.card === item.key) {
         if (paused) {
           player.play();
@@ -507,6 +509,7 @@ export default function Feed() {
 
   // Recitation stops when another tab is open, and the card starts again on coming back to Home.
   const [focused, setFocused] = useState(true);
+  const radio = useRadio();
   useFocusEffect(
     useCallback(() => {
       setFocused(true);
@@ -553,12 +556,14 @@ export default function Feed() {
   const activeKey = items[active]?.key;
   useEffect(() => {
     if (!focused) return stop();
+    // The radio is on: leave it playing until the reader taps a card.
+    if (radio.on) return stop();
     if (!items.length || sheet === 'mood' || resting) return;
     const it = items[active];
     if (prefs.sound && !heldRef.current) startCard(it, it?.kind === 'verse' ? (repeat[it.key] ?? 1) : 1);
     else stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeKey, prefs.sound, prefs.reciter, sheet === 'mood', resting, focused]);
+  }, [activeKey, prefs.sound, prefs.reciter, sheet === 'mood', resting, focused, radio.on]);
 
   // Each new card: controls visible while it arrives, then fade (after the translation and buttons have appeared).
   useEffect(() => {

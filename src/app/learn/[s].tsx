@@ -1,3 +1,4 @@
+import { stopRadio } from '@/lib/radio';
 import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus, useAudioRecorder, useAudioRecorderState } from 'expo-audio';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -48,6 +49,7 @@ export default function LearnSurahScreen() {
 
   const start = async (p: NonNullable<Play>) => {
     if (!l) return;
+    stopRadio();
     setPlay(p);
     setWord(null);
     if (p.mode === 'mine' || (p.mode === 'compare' && p.stage === 1)) {

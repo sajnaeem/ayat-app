@@ -128,7 +128,7 @@ export function onColour(pal: Palette, c: string): Palette {
 const ICON_POP: Record<string, keyof Pop> = {
   mosque: 'emerald', compass: 'sky', hands: 'violet', beads: 'amber', bell: 'coral', mic: 'rose', people: 'emerald', moon: 'violet',
   pen: 'coral', search: 'sky', user: 'teal', info: 'teal', book: 'emerald', download: 'sky', heart: 'rose', save: 'amber',
-  globe: 'sky', speed: 'amber', text: 'violet', play: 'emerald', sliders: 'rose', flag: 'coral', shield: 'teal', out: 'coral', chat: 'violet',
+  globe: 'sky', speed: 'amber', text: 'violet', play: 'emerald', sliders: 'rose', flag: 'coral', shield: 'teal', out: 'coral', chat: 'violet', tv: 'coral', radio: 'emerald',
 };
 export const popFor = (pal: Palette, icon: string) => pal.pop[ICON_POP[icon] ?? 'emerald'];
 

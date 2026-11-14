@@ -106,7 +106,8 @@ export default function PrayerTab() {
           <Tile pal={pal} colour={pal.pop.violet} art="beads" title="Tasbeeh" sub={tasbeehToday ? `${tasbeehToday} today` : 'Count your remembrance'} onPress={() => router.push('/tasbeeh')} onInfo={() => explain('dhikr')} />
         </TileGrid>
         <Group pal={pal}>
-          <Row pal={pal} icon="bell" title="Prayer times and alerts" sub={s.loc ? 'Calculation, Asr and alerts' : 'Set up for where you are'} onPress={() => router.push('/prayertimes')} onInfo={() => explain('prayertimes')} />
+          <Row pal={pal} icon="tv" title="Live from Makkah and Madinah" sub="The two Holy Mosques, and Quran radio" onPress={() => router.push('/live')} />
+          <Row pal={pal} icon="bell" title="Prayer times and alerts" sub={s.loc ? 'Calculation, Asr and alerts' : 'Set up for where you are'} onPress={() => router.push('/prayertimes')} onInfo={() => explain('prayertimes')} divider />
         </Group>
         <Pressable onPress={() => router.push('/explain')} style={styles.more} accessibilityRole="button">
           <Icon name="info" size={15} color={pal.accent} />
