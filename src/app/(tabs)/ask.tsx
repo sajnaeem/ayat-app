@@ -114,7 +114,7 @@ export default function AskTab() {
                 {prefs.firstName ? `What’s on your mind, ${prefs.firstName}?` : 'What’s on your mind?'}
               </Text>
               <Text style={[styles.introBody, { color: pal.bold ? 'rgba(255,255,255,0.85)' : pal.muted }]}>
-                Answers come only from the Quran, Tafsir Ibn Kathir and Munib’s checked library, with the sources shown. For a ruling about your own situation, your local imam is the right person to ask.
+                Ask anything, the way you’d ask a friend who knows. Where Munib has a source, it’s shown under the answer. For something about your own situation, your local imam is the best person to confirm with.
               </Text>
             </View>
             {ISLAM_STARTERS.map((g) => (
@@ -191,6 +191,7 @@ export default function AskTab() {
                     ))}
                   </View>
                 )}
+                {t.res.sources.length === 0 && <Text style={[styles.small, { color: pal.muted }]}>From general knowledge: check anything important with your local imam.</Text>}
                 <Pressable onPress={() => report(t)} hitSlop={6} accessibilityRole="button" style={{ alignSelf: 'flex-start' }}>
                   <Text style={[styles.small, { color: pal.muted, textDecorationLine: 'underline' }]}>Something wrong? Report this answer</Text>
                 </Pressable>
