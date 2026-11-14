@@ -40,6 +40,15 @@ module.exports = async (req, res) => {
     return res.end(JSON.stringify({ error: 'unknown channel' }));
   }
   let out = { id: null, live: false, checked: false };
+  if ((req.query || {}).debug) {
+    // What YouTube sent this server, in brief (no personal data): for finding out why a look-up fails.
+    try {
+      const html = await get(`https://www.youtube.com/channel/${channel}/live`);
+      return res.end(JSON.stringify({ len: html.length, title: (/<title>([^<]*)/.exec(html) || [])[1], canonical: (/<link rel="canonical" href="([^"]*)"/.exec(html) || [])[1], vd: (/"videoDetails":\{"videoId":"([\w-]{11})"/.exec(html) || [])[1], isLive: /"isLive":true/.test(html), isLiveNow: /"isLiveNow":true/.test(html), status: (/"playabilityStatus":\{"status":"([A-Z_]+)"/.exec(html) || [])[1], reason: (/"reason":"([^"]{0,120})/.exec(html) || [])[1], consent: /consent\.youtube|Before you continue/.test(html), ids: [...new Set([...html.matchAll(/"videoId":"([\w-]{11})"/g)].map((m) => m[1]))].slice(0, 5) }));
+    } catch (e) {
+      return res.end(JSON.stringify({ error: String(e && e.message) }));
+    }
+  }
   try {
     const v = await fromLivePage(channel);
     out = v ? { ...v, checked: true } : { id: null, live: false, checked: true };
