@@ -1,3 +1,4 @@
+import { Choice } from './List';
 import { useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ART } from '@/lib/art';
@@ -72,6 +73,7 @@ export function JourneyFlow({ onDone }: { onDone: () => void }) {
     onDone();
   };
 
+  const [share, setShare] = useState(!!prefs.shareInsights);
   const finish = () => {
     const ans = { journey: a.journey ?? 'returning', arabic: a.arabic ?? 'slow', reading: a.reading ?? 'rarely', goals: a.goals ?? [], minutes: a.minutes ?? 5, at: Date.now() } as JourneyAnswers;
     const hide = new Set(prefs.feedHide ?? []);
@@ -80,6 +82,7 @@ export function JourneyFlow({ onDone }: { onDone: () => void }) {
     const fresh = ans.journey === 'new' || ans.journey === 'exploring';
     prefs.set({
       journey: ans,
+      shareInsights: share,
       showTl: ans.arabic !== 'fluent',
       feedHide: [...hide],
       dailyGoal: GOAL_AYAT[ans.minutes] ?? 10,
@@ -195,7 +198,15 @@ export function JourneyFlow({ onDone }: { onDone: () => void }) {
             <Text style={[styles.sumText, { color: pal.text }]}>{s}</Text>
           </View>
         ))}
-        <Text style={[styles.privacy, { color: pal.muted }]}>Your answers stay on this phone. They’re only used to set up Munib for you, and never shared.</Text>
+        <Choice
+          pal={pal}
+          box
+          on={share}
+          onPress={() => setShare((v) => !v)}
+          title="Share my answers anonymously"
+          sub="Helps us understand who Munib serves. Never linked to you; only totals from large groups are used. Change it any time in You → Your data."
+        />
+        <Text style={[styles.privacy, { color: pal.muted }]}>Unless you tick this, your answers stay on this phone and are only used to set up Munib for you.</Text>
       </>,
       { label: 'Start reading', on: finish },
     );

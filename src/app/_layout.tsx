@@ -13,6 +13,7 @@ import { JourneyFlow } from '@/components/Journey';
 import { ChooseName } from '@/components/SignIn';
 import { ToastProvider } from '@/components/Toast';
 import { RadioProvider } from '@/lib/radio';
+import { useUsage } from '@/lib/usage';
 import { PlusProvider } from '@/lib/plus';
 import { AccountProvider, useAccount } from '@/lib/account';
 import { ProgressProvider } from '@/lib/progress';
@@ -29,6 +30,7 @@ function Root() {
   const { ready } = prefs;
   const acct = useAccount();
   useLiveUpdates();
+  useUsage();
   const [fontsLoaded, fontError] = useFonts({
     NotoNaskhArabic_400Regular,
     Literata_400Regular,
@@ -110,6 +112,8 @@ function Root() {
         <Stack.Screen name="pray/index" options={{ presentation: 'modal' }} />
         <Stack.Screen name="pray/[mode]" />
         <Stack.Screen name="live" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="data" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="stats" options={{ presentation: 'modal' }} />
       </Stack>
     </>
   );

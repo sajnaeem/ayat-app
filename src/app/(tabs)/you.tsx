@@ -214,6 +214,11 @@ export default function You() {
           <Row pal={pal} icon="sliders" title="Your For you page" value={feedSummary(prefs.feedHide)} onPress={() => setPick('topics')} divider />
         </Group>
 
+        <Section pal={pal} title="Privacy" />
+        <Group pal={pal}>
+          <Row pal={pal} icon="shield" title="Your data" sub={prefs.shareUsage === false ? 'Nothing shared' : prefs.shareInsights ? 'Anonymous stats and insights on' : 'Anonymous stats on'} onPress={() => router.push('/data')} />
+        </Group>
+
         {acct.online && (
           <>
             {/* Posts */}

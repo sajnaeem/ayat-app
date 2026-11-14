@@ -69,6 +69,9 @@ export type Prefs = {
   /** Ayat a day the reader aimed for (from the journey questions); 0 = none. */
   dailyGoal: number;
   /** General prayer times, worked out on the phone from where you are (stored on the phone only). */
+  /** Anonymous usage stats (on unless switched off) and anonymous journey insights (only when switched on). */
+  shareUsage: boolean;
+  shareInsights: boolean;
   /** Learn to pray: show the brother or the sister figure. */
   prayFigure: 'brother' | 'sister';
   prayer: { method: string; asr: 'standard' | 'hanafi'; loc: { lat: number; lon: number; label: string; at: number } | null; alerts: Record<'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha', boolean> };
@@ -112,6 +115,8 @@ const DEFAULTS: Prefs = {
   journeySkipped: false,
   dailyGoal: 0,
   prayFigure: 'brother',
+  shareUsage: true,
+  shareInsights: false,
   prayer: { method: 'MoonsightingCommittee', asr: 'standard', loc: null, alerts: { fajr: false, dhuhr: false, asr: false, maghrib: false, isha: false } },
 };
 

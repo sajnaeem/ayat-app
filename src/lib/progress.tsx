@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { levelFor, SURAHS } from './quran';
 import { countForUmmah } from './together-more';
+import { trackAyat } from './usage';
 
 /**
  * What the person has read, kept on the phone (synced to their account once accounts land).
@@ -77,6 +78,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     next.days[d] = (next.days[d] ?? 0) + keys.length;
     // Towards the ummah counter (anonymous totals only).
     countForUmmah(keys.length);
+    trackAyat(keys.length);
     ref.current = next;
     setProgress(next);
     setSessionAyat((n) => n + keys.length);
