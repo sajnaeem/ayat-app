@@ -90,7 +90,7 @@ supabase/           schema.sql, 002_accounts.sql, 003_feedback.sql, 004_safety.s
 
 ## Waiting on Saj (check this list at the start of a session and remind him)
 
-- **Publish the latest update from his Mac** (he was away from it on 14 Nov 2026; Learn to pray, Live TV and radio aren't on his phone yet). In Terminal: `cd ~/ayat-app && git pull && npm install && EAS_NO_VCS=1 npx eas-cli@latest update --channel production --environment production --message "Learn to pray, Live TV and radio"`. Goes to the 1.2.0 build (install it from TestFlight).
+- **Install build 1.2.0 (build 6) from TestFlight** (started 14 Nov 2026, auto-submitted). The update with Learn to pray, Live TV and radio, the premium look and anonymous stats was published to runtime 1.2.0 the same day.
 - **Test the radio on his iPhone** (the cloud workspace can't reach the stream servers, so no station has been heard playing yet): play a station, lock the phone, check it keeps going and the lock screen shows it.
 - **Email mp3quran.net before launch** for written permission to feature their radio streams in Munib (credited in the app).
 - **Next native build (whenever one is needed for something else):** add react-native-webview to play Live TV inside Munib instead of the YouTube sheet.
