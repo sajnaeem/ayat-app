@@ -30,7 +30,7 @@ const label = (s: number, a: number) => `${SURAHS[s - 1][0]} ${s}:${a}`;
  * Quran reading there. From page view (toPages) it turns the page view to that page instead.
  * `title` and `close` set the header; `extra` sits above the list (the Quran tab's tools).
  */
-export function QuranIndex({ toPages = false, title = "Go to", close = false, extra, bottomPad }: { toPages?: boolean; title?: string; close?: boolean; extra?: React.ReactNode; bottomPad?: number }) {
+export function QuranIndex({ toPages = false, title = "Go to", close = false, extra, bottomPad, hero }: { toPages?: boolean; title?: string; close?: boolean; extra?: React.ReactNode; bottomPad?: number; /** A scene at the top that scrolls with the list (the Quran tab); replaces the plain title. */ hero?: React.ReactNode }) {
   const pal = usePalette();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -252,9 +252,18 @@ export function QuranIndex({ toPages = false, title = "Go to", close = false, ex
     </View>
   );
 
+  const listHead = hero ? (
+    <>
+      {hero}
+      <View style={[styles.sheet, { backgroundColor: pal.bg }]}>{header}</View>
+    </>
+  ) : (
+    header
+  );
+
   return (
     <View style={[styles.root, { backgroundColor: pal.bg }]}>
-      <View
+      {!hero && <View
         style={[
           styles.head,
           { paddingTop: insets.top + 12, borderBottomColor: close ? pal.line : "transparent" },
@@ -272,7 +281,7 @@ export function QuranIndex({ toPages = false, title = "Go to", close = false, ex
           <Icon name="close" size={16} color={pal.text} />
         </Pressable>
         )}
-      </View>
+      </View>}
       {tab === "surah" ? (
         <FlatList
           key="surah"
@@ -281,7 +290,7 @@ export function QuranIndex({ toPages = false, title = "Go to", close = false, ex
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
           contentContainerStyle={{ paddingBottom: bottomPad ?? insets.bottom + 24 }}
-          ListHeaderComponent={header}
+          ListHeaderComponent={listHead}
           renderItem={({ item }) => {
             const done = surahDone(progress, item.s);
             const now = item.s === hereS;
@@ -346,7 +355,7 @@ export function QuranIndex({ toPages = false, title = "Go to", close = false, ex
           data={Array.from({ length: 30 }, (_, i) => i + 1)}
           keyExtractor={(j) => String(j)}
           contentContainerStyle={{ paddingBottom: bottomPad ?? insets.bottom + 24 }}
-          ListHeaderComponent={header}
+          ListHeaderComponent={listHead}
           renderItem={({ item: j }) => {
             const [s, a] = juzStart(j);
             const now = j === hereJuz;
@@ -410,6 +419,7 @@ export function QuranIndex({ toPages = false, title = "Go to", close = false, ex
 }
 
 const styles = StyleSheet.create({
+  sheet: { marginTop: -28, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingTop: 4 },
   tabTitle: { fontFamily: fonts.read, fontSize: 36, letterSpacing: -0.6 },
   root: { flex: 1 },
   head: {

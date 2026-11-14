@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ImageBackground, StyleSheet, Text, View } from 'react-native';
+import { Image, ImageBackground, Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { fonts } from '@/lib/theme';
 
 /**
@@ -39,6 +39,16 @@ export function hijriToday(d = new Date()): string | null {
 }
 
 export function SkyHero({ phase, top, height = 470, children }: { phase: SkyPhase; top: number; height?: number; children: ReactNode }) {
+  const { width } = useWindowDimensions();
+  const w = Platform.OS === 'web' ? Math.min(width, 520) : width;
+  if (height < 400)
+    // A short hero shows the bottom of the scene (the mosque), not the empty sky.
+    return (
+      <View style={{ height: height + top, overflow: 'hidden' }}>
+        <Image source={SKY[phase]} style={[styles.imgLow, { width: w, height: w * 1.25, bottom: -w * 1.25 * 0.1 }]} resizeMode="cover" accessibilityIgnoresInvertColors />
+        <View style={[styles.shade, { paddingTop: top + 12 }]}>{children}</View>
+      </View>
+    );
   return (
     <ImageBackground source={SKY[phase]} style={{ height: height + top }} imageStyle={styles.img} resizeMode="cover" accessibilityIgnoresInvertColors>
       <View style={[styles.shade, { paddingTop: top + 12 }]}>{children}</View>
@@ -60,6 +70,7 @@ export const sky = StyleSheet.create({
 
 const styles = StyleSheet.create({
   img: { width: '100%', height: '100%' },
+  imgLow: { position: 'absolute', left: 0 },
   shade: { flex: 1, paddingHorizontal: 20, paddingBottom: 40 },
   glass: { backgroundColor: 'rgba(16,20,36,0.26)', borderColor: 'rgba(255,255,255,0.3)', borderWidth: StyleSheet.hairlineWidth, borderRadius: 22 },
 });

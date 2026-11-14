@@ -82,7 +82,6 @@ export default function PrayerTab() {
           )}
         </SkyHero>
         <View style={[styles.sheet, { backgroundColor: pal.bg }]}>
-        <ExplainIntro id="salah" pal={pal} />
         <Pressable onPress={() => router.push('/pray')} style={({ pressed }) => [styles.learn, { backgroundColor: pal.surface, opacity: pressed ? 0.8 : 1 }]} accessibilityRole="button" accessibilityLabel="Learn to pray, step by step">
           <View style={[styles.learnArt, { backgroundColor: pal.bold ? mix(pal.surface, pal.pop.emerald, 0.14) : mix(pal.surface, pal.accent, 0.1) }]}>
             <Image source={poseArt(prefs.prayFigure ?? 'brother', 'ruku')} style={{ width: '100%', height: '100%' }} resizeMode="contain" accessibilityIgnoresInvertColors />
@@ -120,6 +119,7 @@ export default function PrayerTab() {
           <Row pal={pal} icon="tv" title="Live from Makkah and Madinah" sub="The two Holy Mosques, and Quran radio" onPress={() => router.push('/live')} />
           <Row pal={pal} icon="bell" title="Prayer times and alerts" sub={s.loc ? 'Calculation, Asr and alerts' : 'Set up for where you are'} onPress={() => router.push('/prayertimes')} onInfo={() => explain('prayertimes')} divider />
         </Group>
+        <ExplainIntro id="salah" pal={pal} />
         <Pressable onPress={() => router.push('/explain')} style={styles.more} accessibilityRole="button">
           <Icon name="info" size={15} color={pal.accent} />
           <Text style={[styles.moreText, { color: pal.accent }]}>New to this? Words and practices explained</Text>

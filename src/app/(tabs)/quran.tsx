@@ -1,4 +1,11 @@
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { setStatusBarStyle } from 'expo-status-bar';
+import { useCallback } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Glass, sky, SkyHero, skyPhase } from '@/components/SkyHero';
+import { calcDay } from '@/lib/prayertimes';
+import { showFeed } from '@/lib/nav';
+import { SURAHS } from '@/lib/quran';
 import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ART } from '@/lib/art';
 import { Icon, IconName } from '@/components/Icon';
@@ -20,8 +27,29 @@ export default function QuranTab() {
   const learned = learnedCount(progress);
   const next = nextToLearn(progress);
   const lp = onColour(pal, pal.pop.amber);
+  const insets = useSafeAreaInsets();
+  const phase = skyPhase(new Date(), prefs.prayer.loc ? calcDay(prefs.prayer)?.times : null);
+  useFocusEffect(
+    useCallback(() => {
+      setStatusBarStyle('light');
+      return () => setStatusBarStyle(pal.dark ? 'light' : 'dark');
+    }, [pal.dark]),
+  );
   return (
     <QuranIndex
+      hero={
+        <SkyHero phase={phase} top={insets.top} height={230}>
+          <Text style={sky.title}>Quran</Text>
+          <Text style={sky.eyebrow}>{SURAHS[at.s - 1]?.[0] ?? ''} · ayah {at.a} · page {pageOf(at.s, at.a)}</Text>
+          <View style={{ flex: 1 }} />
+          <Pressable onPress={() => { prefs.readAt(at.s, at.a); showFeed(router); }} accessibilityRole="button" accessibilityLabel="Continue reading where you left off">
+            <Glass style={styles.cont}>
+              <Icon name="play" size={14} color="#FFFFFF" fill />
+              <Text style={styles.contText}>{prefs.place ? 'Continue reading' : 'Start reading'}</Text>
+            </Glass>
+          </Pressable>
+        </SkyHero>
+      }
       title="Quran"
       bottomPad={24}
       extra={
@@ -77,6 +105,8 @@ function Tool({ pal, icon, label, onPress }: { pal: Palette; icon: IconName; lab
 
 const styles = StyleSheet.create({
   tools: { flexDirection: 'row', gap: 8 },
+  cont: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start', paddingHorizontal: 16, paddingVertical: 11, borderRadius: 999 },
+  contText: { fontFamily: fonts.uiSemi, fontSize: 15, color: '#FFFFFF' },
   live: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 14, padding: 14, backgroundColor: '#16213A' },
   livePill: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', backgroundColor: '#E5484D', borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2 },
   liveDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: '#FFFFFF' },
