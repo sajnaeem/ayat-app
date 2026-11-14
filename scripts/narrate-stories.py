@@ -17,6 +17,7 @@ FIX = {
     'Allah': 'əlˈɑː', 'Allah’s': 'əlˈɑːz', 'Quran': 'kʊɹˈɑːn', 'Yunus': 'jˈuːnʊs', 'Nuh': 'nˈuːh', 'Ibrahim': 'ɪbɹɑːhˈiːm',
     'Musa': 'mˈuːsɑː', 'Sulayman': 'sʊlaɪmˈɑːn', 'Maryam': 'mˈɑːɹjam', 'Isa': 'ˈiːsɑː', 'al-Judi': 'ɐl dʒˈuːdiː',
     'Bismillah': 'bɪsmɪlˈɑː', 'Israel': 'ɪsɹɑːˈiːl', 'Bani': 'bˈani',
+    'Yusuf': 'jˈuːsʊf', 'Yaqub': 'jɑːkˈuːb', 'Ayyub': 'ɐjˈuːb', 'Zakariyya': 'zækɐɹˈiːjɑː', 'Yahya': 'jˈɑːhjɑː', 'minbar': 'mˈɪnbɑː', 'Madinah': 'mɐdˈiːnɐ',
 }
 FIXP = [(k.tokenizer.phonemize(a, LANG).strip(), b) for a, b in sorted(FIX.items(), key=lambda x: -len(x[0]))]
 

@@ -17,7 +17,7 @@ import { fonts } from '@/lib/theme';
  * Munib's website (website/watch/?c=makkah), shown in Expo's built-in web view (@expo/dom-webview, already
  * in build 1.2.0). If that view isn't in the build, it falls back to the in-app browser sheet.
  */
-const hasWebView = Platform.OS === 'web' || !!requireOptionalNativeModule('DomWebViewModule');
+const hasWebView = Platform.OS === 'web' || !!requireOptionalNativeModule('ExpoDomWebViewModule');
 // Loaded lazily so a build without the native view never touches it.
 const WebView: any = hasWebView ? require('@expo/dom-webview').WebView : null;
 
