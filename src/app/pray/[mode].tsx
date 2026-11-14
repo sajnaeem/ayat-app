@@ -1,12 +1,14 @@
 import { stopRadio } from '@/lib/radio';
-import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
+import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
 import { LEARN } from '@/data/learn';
-import { Beat, LEARN_ORDER, PRAYERS, prayerBeats, STEPS, Words } from '@/data/salah';
+import { Beat, LEARN_ORDER, PRAYERS, prayerBeats, SalahStep, STEPS, Words } from '@/data/salah';
+import { SITE } from '@/lib/site';
 import { poseArt } from '@/lib/art';
 import { ayahAudio } from '@/lib/audio';
 import { isLearned } from '@/lib/learn';
@@ -50,6 +52,78 @@ export default function PrayStepper() {
     setI((x) => Math.min(Math.max(x + d, 0), beats.length - 1));
   };
   useEffect(() => scroller.current?.scrollTo({ y: 0, animated: false }), [i]);
+
+  /* ---------- Guide me: the whole prayer recited step by step, moving on by itself (a learning aid) ---------- */
+  const [guide, setGuide] = useState<'off' | 'on' | 'paused'>('off');
+  const [now, setNow] = useState<{ ayah?: number; clip?: string } | null>(null);
+  const player = useAudioPlayer(null, { updateInterval: 250 });
+  const status = useAudioPlayerStatus(player);
+  const queue = useRef<{ items: Item[]; at: number; token: number }>({ items: [], at: 0, token: 0 });
+  const hold = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearHold = () => {
+    if (hold.current) clearTimeout(hold.current);
+    hold.current = null;
+  };
+  const playItem = (q: typeof queue.current) => {
+    const it = q.items[q.at];
+    if (!it) {
+      // Everything for this step has been said: give a moment to move, then the next step.
+      setNow(null);
+      clearHold();
+      hold.current = setTimeout(() => go(1), holdFor(step));
+      return;
+    }
+    setNow(it.ayah != null ? { ayah: it.ayah } : { clip: it.clip });
+    player.replace({ uri: it.url });
+    try {
+      player.setPlaybackRate(prefs.speed ?? 1, 'high');
+    } catch {}
+    player.play();
+  };
+  useEffect(() => {
+    if (guide !== 'on') return;
+    const token = ++queue.current.token;
+    clearHold();
+    stopRadio();
+    (async () => {
+      const items = await stepItems(step, surah);
+      if (queue.current.token !== token) return;
+      queue.current = { items, at: 0, token };
+      playItem(queue.current);
+    })();
+    return () => {
+      clearHold();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guide, i]);
+  useEffect(() => {
+    if (guide !== 'on' || !status.didJustFinish) return;
+    queue.current.at += 1;
+    playItem(queue.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status.didJustFinish]);
+  useEffect(() => {
+    if (guide === 'off') {
+      try { player.pause(); } catch {}
+      clearHold();
+      setNow(null);
+      deactivateKeepAwake('pray').catch?.(() => {});
+      return;
+    }
+    if (guide === 'paused') {
+      try { player.pause(); } catch {}
+      clearHold();
+      return;
+    }
+    setAudioModeAsync({ playsInSilentMode: true, interruptionMode: 'doNotMix' }).catch(() => {});
+    activateKeepAwakeAsync('pray').catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guide]);
+  useEffect(() => () => { clearHold(); deactivateKeepAwake('pray').catch?.(() => {}); }, []);
+  // Leaving the last step ends the guide.
+  useEffect(() => {
+    if (done) setGuide('off');
+  }, [done]);
 
   const top = prayer ? `${prayer.name} · Rakʿah ${beat.rakah} of ${prayer.rakahs}` : `Step ${i + 1} of ${beats.length}`;
 
@@ -97,6 +171,28 @@ export default function PrayStepper() {
       </View>
 
       <ScrollView ref={scroller} contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 120 + insets.bottom }}>
+        {!!prayer && (
+          <View style={[styles.guideCard, { backgroundColor: guide === 'off' ? pal.surface : mix(pal.surface, pal.accent, 0.1) }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.rowTitle, { color: pal.text }]}>{guide === 'off' ? 'Guide me with recitation' : guide === 'on' ? 'Guiding you' : 'Paused'}</Text>
+                <Text style={[styles.small, { color: pal.muted }]}>{guide === 'off' ? 'Hear each step recited, moving on by itself' : now?.ayah != null ? `Reciting ayah ${now.ayah + 1}` : now?.clip ? 'Listen and say it with the recording' : 'Moving to the next step…'}</Text>
+              </View>
+              <Pressable onPress={() => setGuide((g) => (g === 'on' ? 'paused' : 'on'))} style={[styles.listen, { backgroundColor: pal.text }]} accessibilityRole="button" accessibilityLabel={guide === 'on' ? 'Pause the guide' : 'Start the guide'}>
+                <Icon name={guide === 'on' ? 'pause' : 'play'} size={16} color={pal.bg} fill={guide !== 'on'} />
+                <Text style={[styles.listenText, { color: pal.bg }]}>{guide === 'off' ? 'Start' : guide === 'on' ? 'Pause' : 'Resume'}</Text>
+              </Pressable>
+              {guide !== 'off' && (
+                <Pressable onPress={() => setGuide('off')} hitSlop={8} accessibilityRole="button" accessibilityLabel="Stop the guide">
+                  <Icon name="close" size={18} color={pal.muted} />
+                </Pressable>
+              )}
+            </View>
+            <Text style={[styles.tiny, { color: pal.muted }]}>
+              A learning aid while you memorise the words. Many scholars say you shouldn’t follow a recording as if it were an imam, so practise with it, move on to praying from memory as soon as you can, and ask your local imam how best to use it while you learn.
+            </Text>
+          </View>
+        )}
         <View style={[styles.art, { backgroundColor: mix(pal.surface, pal.accent, pal.dark ? 0.16 : 0.09) }]}>
           <Image source={poseArt(fig, step.pose)} style={{ width: '100%', height: '100%' }} resizeMode="contain" accessibilityLabel={`${step.name}: ${step.title}`} />
           <View style={styles.figSwitch}>
@@ -115,7 +211,7 @@ export default function PrayStepper() {
           <Text style={[styles.body, { color: pal.text }]}>{step.how}</Text>
         </View>
 
-        {step.recite === 'fatihah' && <Recite pal={pal} s={1} />}
+        {step.recite === 'fatihah' && <Recite pal={pal} s={1} guided={guide !== 'off' ? now?.ayah ?? -1 : undefined} />}
         {step.recite === 'surah' && (
           <View style={{ gap: 10 }}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
@@ -129,10 +225,10 @@ export default function PrayStepper() {
                 );
               })}
             </ScrollView>
-            <Recite pal={pal} s={surah} key={surah} />
+            <Recite pal={pal} s={surah} key={surah} guided={guide !== 'off' ? now?.ayah ?? -1 : undefined} />
           </View>
         )}
-        {step.say?.map((w, k) => <Say key={k} pal={pal} w={w} />)}
+        {step.say?.map((w, k) => <Say key={k} pal={pal} w={w} lit={!!w.clip && now?.clip === w.clip} />)}
 
         {!!step.differs && (
           <View style={[styles.differs, { borderColor: pal.line }]}>
@@ -160,13 +256,13 @@ function nextLabel(next: Beat, now: Beat, along: boolean) {
 }
 
 /** What to say: Arabic, transliteration, English, how many times. */
-function Say({ pal, w }: { pal: Palette; w: Words }) {
+function Say({ pal, w, lit }: { pal: Palette; w: Words; lit?: boolean }) {
   const prefs = usePrefs();
   const k = textScale(prefs.textSize);
   return (
-    <View style={[styles.say, { backgroundColor: pal.surface }]}>
+    <View style={[styles.say, { backgroundColor: lit ? mix(pal.surface, pal.accent, 0.12) : pal.surface }]}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text style={[styles.diffHead, { color: pal.accent }]}>SAY</Text>
+        <Text style={[styles.diffHead, { color: pal.accent }]}>{lit ? 'SAY IT WITH THE RECORDING' : 'SAY'}</Text>
         {!!w.times && (
           <View style={[styles.times, { backgroundColor: mix(pal.surface, pal.accent, 0.14) }]}>
             <Text style={[styles.timesText, { color: pal.accent }]}>{w.times === 2 ? 'Twice' : `${w.times} times`}</Text>
@@ -182,7 +278,7 @@ function Say({ pal, w }: { pal: Palette; w: Words }) {
 }
 
 /** A surah to recite, ayah by ayah, with al-Husary's recitation (the word-perfect teaching reciter). */
-function Recite({ pal, s }: { pal: Palette; s: number }) {
+function Recite({ pal, s, guided }: { pal: Palette; s: number; /** the ayah the guide is reciting (index), when the guide is on */ guided?: number }) {
   const l = LEARN.find((x) => x.s === s)!;
   const prefs = usePrefs();
   const k = textScale(prefs.textSize);
@@ -229,7 +325,7 @@ function Recite({ pal, s }: { pal: Palette; s: number }) {
         </Pressable>
       </View>
       {l.ayat.map((a, n) => (
-        <Pressable key={n} onPress={() => play(n)} style={[styles.ayah, { borderTopColor: pal.line, backgroundColor: on === n ? mix(pal.surface, pal.accent, 0.1) : 'transparent' }]} accessibilityRole="button" accessibilityLabel={`Ayah ${n + 1}: ${a.tl}`}>
+        <Pressable key={n} onPress={() => play(n)} style={[styles.ayah, { borderTopColor: pal.line, backgroundColor: on === n || guided === n ? mix(pal.surface, pal.accent, 0.12) : 'transparent' }]} accessibilityRole="button" accessibilityLabel={`Ayah ${n + 1}: ${a.tl}`}>
           <Text style={[styles.ar, { color: pal.text, fontSize: 23 * k, lineHeight: 44 * k }]}>{a.ar}</Text>
           <Text style={[styles.tl, { color: pal.text, fontSize: 15 * k, lineHeight: 22 * k }]}>{a.tl}</Text>
           <Text style={[styles.small, { color: pal.muted }]}>{a.en}</Text>
@@ -240,7 +336,35 @@ function Recite({ pal, s }: { pal: Palette; s: number }) {
   );
 }
 
+type Item = { url: string; ayah?: number; clip?: string };
+const clipUrl = (id: string) => `${SITE}/salah/${id}.mp3`;
+/** What the guide plays for a step: the surah ayah by ayah (al-Husary), then the words to say. */
+async function stepItems(step: SalahStep, surah: number): Promise<Item[]> {
+  const out: Item[] = [];
+  const s = step.recite === 'fatihah' ? 1 : step.recite === 'surah' ? surah : 0;
+  if (s) {
+    const l = LEARN.find((x) => x.s === s);
+    for (let n = 0; n < (l?.ayat.length ?? 0); n++) {
+      try {
+        out.push({ url: (await ayahAudio('husary', s, n + 1)).url, ayah: n });
+      } catch {}
+    }
+  }
+  for (const w of step.say ?? []) if (w.clip) out.push({ url: clipUrl(w.clip), clip: w.clip });
+  return out;
+}
+/** How long to wait after a step before moving on (time to get into position, or for steps said quietly). */
+function holdFor(step: SalahStep) {
+  if (step.id === 'niyyah') return 5000;
+  if (step.id === 'refuge') return 4000;
+  if (step.id === 'salam') return 7000;
+  if (step.id === 'fatihah') return 2500; // Ameen
+  return 2200;
+}
+
 const styles = StyleSheet.create({
+  guideCard: { borderRadius: 20, padding: 14, gap: 8 },
+  tiny: { fontFamily: fonts.ui, fontSize: 12, lineHeight: 17 },
   root: { flex: 1 },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 10 },
   x: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },

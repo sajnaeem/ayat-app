@@ -123,7 +123,7 @@ export default function LearnToPray() {
         <Text style={[styles.small, { color: pal.muted, paddingHorizontal: 4 }]}>Wudu is broken by using the toilet, passing wind and deep sleep; the schools differ on some other things. When wudu is broken, make it again before your next prayer. Ask your local imam about anything you’re unsure of.</Text>
 
         <Text style={[styles.small, { color: pal.muted, paddingHorizontal: 4, marginTop: 8 }]}>
-          This guide shows the way the prayer is commonly done. Muslims pray in a few slightly different ways, all followed by sincere scholars; where it matters, we say so. Your local mosque will be glad to show you. Being checked by scholars. Prayer words from Hisn al-Muslim.
+          This guide shows the way the prayer is commonly done. Muslims pray in a few slightly different ways, all followed by sincere scholars; where it matters, we say so. Your local mosque will be glad to show you. Being checked by scholars. Prayer words from Hisn al-Muslim, recited by Hamad Al-Durayhim; Quran recited by Mahmoud Khalil al-Husary.
         </Text>
       </ScrollView>
       {sheet}
