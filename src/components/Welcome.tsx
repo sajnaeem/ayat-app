@@ -1,3 +1,4 @@
+import { createAudioPlayer } from 'expo-audio';
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -66,6 +67,30 @@ function Welcome({ onStart, onLogin, onBrowse }: { onStart: () => void; onLogin:
   const zoom = useRef(new Animated.Value(0)).current;
   const glow = useRef(new Animated.Value(0)).current;
   const twinkle = useRef(SPARKS.map(() => new Animated.Value(0))).current;
+
+  // A soft breeze of light as the scene appears (Saj, 14 Nov 2026: "a nice pleasant sound effect"). Made by
+  // scripts/make-welcome-sound.py from filtered noise only: no musical notes or instruments. Quiet, once, and the
+  // phone's silent switch is respected (the default audio mode doesn't play in silent mode).
+  useEffect(() => {
+    let player: ReturnType<typeof createAudioPlayer> | null = null;
+    const t = setTimeout(() => {
+      try {
+        player = createAudioPlayer(require('../../assets/sounds/welcome.mp3'));
+        player.volume = 0.7;
+        player.play();
+      } catch {
+        // no sound is fine
+      }
+    }, 250);
+    return () => {
+      clearTimeout(t);
+      try {
+        player?.remove();
+      } catch {
+        // already gone
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const loop = (v: Animated.Value, ms: number, delay = 0) =>
