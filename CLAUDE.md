@@ -102,6 +102,10 @@ supabase/           schema.sql, 002_accounts.sql, 003_feedback.sql, 004_safety.s
 - **Try the Ask tab** on his iPhone (the cloud workspace can't sign in to call it): a few real questions, including one asking for a ruling and one off-topic, and report anything odd.
 - **Scholar review** of all religious content (see the flags throughout this file), and a Quran teacher for the letter recordings.
 
+## Parked ideas
+
+- **Prayer lock (Saj, 14 Nov 2026, parked):** lock apps the reader picks (TikTok, Instagram…) at prayer time, or if they haven't tapped "I've prayed" N minutes after it starts; a Munib shield screen with "I've prayed" / "Give me 5 minutes"; lifts by itself at the next prayer. Honour system (Munib can't know if someone prayed). Needs Apple's Family Controls (Screen Time) distribution entitlement (request form on the developer account, days to weeks), native extensions (DeviceActivity monitor, shield configuration/action) and a new build; not possible in Expo Go or on web. Leaning free (the clearest expression of the mission). Parked until Saj decides to request the entitlement.
+
 ## Launch checklist (iOS)
 
 Saj: Apple Developer account (Individual or Organisation), getmunib.com, Supabase Pro at public launch ($25/month, backups and no pausing), optional UK trademark.
