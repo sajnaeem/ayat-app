@@ -2,7 +2,7 @@
 <script type="importmap">{ "imports": { "three": "./node_modules/three/build/three.module.js", "three/addons/": "./node_modules/three/examples/jsm/" } }</script></head>
 <body><script type="module">
 // Munib · time-of-day backdrops for the Prayer tab: a marble mosque under the sky at dawn, day, sunset and night.
-// draw('fajr' | 'day' | 'maghrib' | 'isha'). Shot with PAGE=sky.html node shoot.js (viewport is set by the page size).
+// draw('fajr' | 'day' | 'maghrib' | 'isha' | 'welcome'). Shot with PAGE=sky.html node shoot.js (viewport is set by the page size).
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
@@ -10,6 +10,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { Reflector } from 'three/addons/objects/Reflector.js';
 // 1200x1500 for the Prayer tab; a tall viewport (SIZE=900x1950) makes the welcome screen's backdrop.
 const W = innerWidth, H = innerHeight; const TALL = H / W > 1.6;
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
@@ -25,6 +26,7 @@ const LOOKS = {
   fajr:    { top: 0x1B2450, mid: 0x6A5A9A, hor: 0xF2A9A0, sun: 0xFFC2A0, sunPos: V(-3, 0.6, -30), light: 1.2, ground: 0x3B3552, exp: 0.95, env: 0.25, stars: 0.5 },
   day:     { top: 0x3E7FC9, mid: 0x86B8E6, hor: 0xC4DCEC, sun: 0xFFF6E2, sunPos: V(8, 18, -30), light: 2.6, ground: 0xA9A08C, exp: 1.0, env: 0.6, stars: 0 },
   maghrib: { top: 0x3B3A6E, mid: 0xC9736A, hor: 0xFFC069, sun: 0xFFB04A, sunPos: V(4, 1.2, -30), light: 2.2, ground: 0x5A3E3A, exp: 1.0, env: 0.3, stars: 0 },
+  welcome: { top: 0x040818, mid: 0x0E2A4E, hor: 0x2C6A78, sun: 0xC9D6FF, sunPos: V(6, 14, -30), light: 0.45, ground: 0x0C1A24, exp: 1.0, env: 0.14, stars: 1 },
   isha:    { top: 0x060B1E, mid: 0x13224A, hor: 0x2E3F70, sun: 0xB9C8FF, sunPos: V(-6, 12, -30), light: 0.5, ground: 0x10162A, exp: 1.05, env: 0.12, stars: 1 },
 };
 
@@ -36,34 +38,134 @@ function sky(L) {
   return new THREE.Mesh(g, m);
 }
 
+// A pointed (Islamic) arch outline: straight sides up to `h`, then two curves meeting at a point.
+function archShape(w, h, y = 0) {
+  const a = w / 2, s = new THREE.Shape();
+  s.moveTo(-a, y); s.lineTo(-a, y + h);
+  s.quadraticCurveTo(-a, y + h + a * 1.05, 0, y + h + a * 1.5);
+  s.quadraticCurveTo(a, y + h + a * 1.05, a, y + h);
+  s.lineTo(a, y); s.lineTo(-a, y);
+  return s;
+}
+// Onion dome profile, turned on a lathe.
+function domeGeo(R, seg = 64) {
+  const pts = [[0.94, 0], [1.0, 0.18], [1.07, 0.48], [1.02, 0.78], [0.84, 1.05], [0.56, 1.3], [0.28, 1.5], [0.08, 1.66], [0.0, 1.72]].map(([x, y]) => new THREE.Vector2(x * R, y * R));
+  return new THREE.LatheGeometry(new THREE.SplineCurve(pts).getPoints(48), seg);
+}
+
 function mosque(L) {
-  const marble = new THREE.MeshPhysicalMaterial({ color: 0xF4EFE6, roughness: 0.35, clearcoat: 0.3 });
-  const gold = new THREE.MeshPhysicalMaterial({ color: 0xE9B44C, metalness: 1, roughness: 0.25 });
-  const shade = new THREE.MeshStandardMaterial({ color: 0x8C7A62, roughness: 0.8 });
-  const glow = new THREE.MeshBasicMaterial({ color: 0xFFC56E });
+  const lit = L.stars > 0.4;
+  const marble = new THREE.MeshPhysicalMaterial({ color: 0xF4EFE6, roughness: 0.32, clearcoat: 0.35, clearcoatRoughness: 0.4 });
+  const trim = new THREE.MeshPhysicalMaterial({ color: 0xE6D8BE, roughness: 0.45 });
+  const gold = new THREE.MeshPhysicalMaterial({ color: 0xE9B44C, metalness: 1, roughness: 0.22 });
+  const tile = new THREE.MeshPhysicalMaterial({ color: 0x1F6E66, roughness: 0.35, clearcoat: 0.6 });
+  const recess = lit ? new THREE.MeshBasicMaterial({ color: 0xFFC56E }) : new THREE.MeshStandardMaterial({ color: 0x3A2F28, roughness: 0.9 });
+  const recessDeep = lit ? new THREE.MeshBasicMaterial({ color: 0xFFB04F }) : new THREE.MeshStandardMaterial({ color: 0x2A221D, roughness: 0.9 });
   const G = new THREE.Group();
-  const night = L.stars > 0.7;
-  // base hall with arches
-  const hall = new THREE.Mesh(new RoundedBoxGeometry(7, 1.6, 3.2, 4, 0.06), marble); hall.position.y = 0.8; G.add(hall);
-  for (let i = 0; i < 9; i++) { const a = new THREE.Mesh(new RoundedBoxGeometry(0.42, 0.9, 0.05, 3, 0.18), night || L === LOOKS.fajr ? glow : shade); a.position.set(-3 + i * 0.75, 0.7, 1.61); G.add(a); }
-  const roof = new THREE.Mesh(new RoundedBoxGeometry(7.2, 0.14, 3.4, 3, 0.04), marble); roof.position.y = 1.65; G.add(roof);
-  // domes
-  const dome = (r, x, z, y) => { const drum = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.92, r * 0.95, r * 0.5, 16), marble); drum.position.set(x, y + r * 0.25, z); G.add(drum);
-    const d = new THREE.Mesh(new THREE.SphereGeometry(r, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2), marble); d.position.set(x, y + r * 0.5, z); d.scale.y = 1.12; G.add(d);
-    const f = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.05, r * 0.5, 8), gold); f.position.set(x, y + r * 1.62, z); G.add(f); };
-  dome(1.45, 0, -0.2, 1.7); dome(0.7, -2.4, 0.2, 1.7); dome(0.7, 2.4, 0.2, 1.7);
-  // minarets
-  const minaret = (x, z) => { const M = new THREE.Group(); M.position.set(x, 0, z);
-    const sh = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.26, 6.2, 12), marble); sh.position.y = 3.1; M.add(sh);
-    [2.6, 4.6].forEach((y) => { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.3, 0.16, 16), marble); b.position.y = y; M.add(b); });
-    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.18, 0.7, 12), marble); top.position.y = 6.5; M.add(top);
-    const c = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.8, 16), marble); c.position.y = 7.25; M.add(c);
-    const t = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 8), gold); t.position.y = 7.7; M.add(t);
-    if (night) { const l = new THREE.Mesh(new THREE.TorusGeometry(0.38, 0.03, 8, 32), glow); l.rotation.x = Math.PI / 2; l.position.y = 4.7; M.add(l); }
-    G.add(M); };
-  minaret(-4.3, -0.6); minaret(4.3, -0.6);
+  const add = (geo, mat, x = 0, y = 0, z = 0, parent = G) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); parent.add(m); return m; };
+  // an arch: glowing or shaded opening with a carved frame and sill, facing +z
+  const arch = (w, h, x, y, z, parent = G, fill = recess, t = 0.07, frameMat = trim, ry = 0) => {
+    const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; parent.add(g);
+    add(new THREE.ShapeGeometry(archShape(w, h)), fill, 0, 0, 0.005, g);
+    const outer = archShape(w + t * 2, h + t * 0.4, -t * 0.6); outer.holes.push(archShape(w, h));
+    add(new THREE.ExtrudeGeometry(outer, { depth: 0.05, bevelEnabled: false, curveSegments: 16 }), frameMat, 0, 0, 0, g);
+    return g;
+  };
+  const BASE = 0.32;
+  // plinth and steps
+  add(new RoundedBoxGeometry(10.4, BASE, 5.6, 2, 0.03), trim, 0, BASE / 2, 0);
+  for (let i = 0; i < 3; i++) add(new THREE.BoxGeometry(2.8 + i * 0.3, BASE / 3, 0.22), trim, 0, BASE / 3 * (2.5 - i) - BASE / 6, 2.9 + i * 0.22);
+  // prayer hall
+  const HH = 2.0, HD = 3.4, HW = 7.6, front = HD / 2;
+  add(new RoundedBoxGeometry(HW, HH, HD, 3, 0.04), marble, 0, BASE + HH / 2, 0);
+  add(new THREE.BoxGeometry(HW + 0.12, 0.12, HD + 0.12), trim, 0, BASE + HH, 0); // cornice
+  add(new THREE.BoxGeometry(HW + 0.04, 0.08, HD + 0.04), tile, 0, BASE + HH - 0.2, 0); // tile frieze
+  // arcade either side of the portal: two tiers of arches
+  [-1, 1].forEach((side) => { for (let i = 0; i < 3; i++) { const x = side * (1.75 + i * 0.68);
+    arch(0.46, 0.62, x, BASE + 0.12, front, G, recess); arch(0.26, 0.22, x, BASE + 1.2, front, G, recessDeep, 0.045); } });
+  // side walls get arches too
+  [-1, 1].forEach((side) => { for (let i = 0; i < 3; i++) arch(0.42, 0.6, side * (HW / 2), BASE + 0.12, -1.0 + i * 1.0, G, recess, 0.06, trim, side * Math.PI / 2); });
+  // crenellations (merlons) along the roofline
+  for (let x = -HW / 2 + 0.18; x <= HW / 2 - 0.1; x += 0.32) { if (Math.abs(x) < 1.35) continue; add(new THREE.BoxGeometry(0.14, 0.2, 0.08), marble, x, BASE + HH + 0.16, front - 0.02); }
+  // the grand portal (pishtaq) with a deep pointed arch
+  const PW = 2.5, PH = 3.7, pz = front + 0.22;
+  add(new RoundedBoxGeometry(PW, PH, 0.7, 3, 0.03), marble, 0, BASE + PH / 2, front - 0.1);
+  // tile border framing the portal
+  [[-PW / 2 + 0.12, 0.08, PH - 0.3], [PW / 2 - 0.12, 0.08, PH - 0.3]].forEach(([x, w, h]) => add(new THREE.BoxGeometry(w, h, 0.03), tile, x, BASE + 0.15 + h / 2, pz + 0.26));
+  add(new THREE.BoxGeometry(PW - 0.16, 0.08, 0.03), tile, 0, BASE + PH - 0.15, pz + 0.26);
+  add(new THREE.BoxGeometry(PW - 0.5, 0.06, 0.03), gold, 0, BASE + PH - 0.36, pz + 0.26);
+  arch(1.46, 1.55, 0, BASE + 0.02, pz + 0.24, G, recessDeep, 0.12, gold);
+  arch(0.5, 0.72, 0, BASE + 0.02, pz + 0.02, G, lit ? new THREE.MeshBasicMaterial({ color: 0xFFE2A8 }) : recessDeep, 0.05, trim); // the door inside
+  for (let i = -2; i <= 2; i++) arch(0.16, 0.12, i * 0.3, BASE + 0.95, pz + 0.03, G, recess, 0.03, trim); // small windows in the recess
+  for (let x = -PW / 2 + 0.15; x <= PW / 2 - 0.1; x += 0.27) add(new THREE.BoxGeometry(0.12, 0.18, 0.1), marble, x, BASE + PH + 0.09, pz); // portal crenellations
+  // main dome on a windowed drum
+  const R = 1.5, DZ = -0.35, drumY = BASE + HH + 0.06, DRH = 0.8;
+  add(new THREE.CylinderGeometry(R * 0.98, R * 1.02, DRH, 48), marble, 0, drumY + DRH / 2, DZ);
+  for (let i = 0; i < 16; i++) { const a = (i / 16) * Math.PI * 2; arch(0.2, 0.28, Math.sin(a) * R * 1.0, drumY + 0.18, DZ + Math.cos(a) * R * 1.0, G, recess, 0.04, trim, a); }
+  add(new THREE.TorusGeometry(R * 1.01, 0.05, 8, 64), gold, 0, drumY + DRH, DZ).rotation.x = Math.PI / 2;
+  add(new THREE.CylinderGeometry(R * 1.04, R * 1.04, 0.08, 48), tile, 0, drumY + DRH - 0.1, DZ);
+  add(domeGeo(R), marble, 0, drumY + DRH, DZ);
+  // finial: stacked gold and a crescent
+  const finial = (y, z, s, x = 0) => { add(new THREE.SphereGeometry(0.1 * s, 16, 12), gold, x, y + 0.06 * s, z); add(new THREE.CylinderGeometry(0.025 * s, 0.035 * s, 0.35 * s, 8), gold, x, y + 0.3 * s, z); add(new THREE.SphereGeometry(0.07 * s, 16, 12), gold, x, y + 0.42 * s, z);
+    const c = add(new THREE.TorusGeometry(0.13 * s, 0.025 * s, 8, 32, Math.PI * 1.35), gold, x, y + 0.66 * s, z); c.rotation.z = Math.PI * 0.82; };
+  finial(drumY + DRH + R * 1.72, DZ, 1.4);
+  // side domes and little kiosks (chhatri)
+  [-1, 1].forEach((side) => { const x = side * 2.55, z = -0.2, y = BASE + HH + 0.06;
+    add(new THREE.CylinderGeometry(0.66, 0.68, 0.36, 32), marble, x, y + 0.18, z);
+    for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; arch(0.12, 0.14, x + Math.sin(a) * 0.67, y + 0.07, z + Math.cos(a) * 0.67, G, recess, 0.025, trim, a); }
+    add(domeGeo(0.64, 40), marble, x, y + 0.36, z); finial(y + 0.36 + 0.64 * 1.72, z, 0.7, x);
+    // corner kiosks
+    [-1, 1].forEach((d) => { const kx = side * 3.45, kz = d * 1.35, ky = BASE + HH + 0.06;
+      for (let i = 0; i < 4; i++) { const a = (i / 4) * Math.PI * 2 + Math.PI / 4; add(new THREE.CylinderGeometry(0.025, 0.025, 0.42, 6), marble, kx + Math.sin(a) * 0.17, ky + 0.21, kz + Math.cos(a) * 0.17); }
+      add(new THREE.CylinderGeometry(0.24, 0.24, 0.05, 16), marble, kx, ky + 0.44, kz); add(domeGeo(0.2, 24), marble, kx, ky + 0.46, kz); });
+  });
+  // minarets: octagonal, three balconies, a lantern and an onion cap
+  const minaret = (x, z, h) => { const M = new THREE.Group(); M.position.set(x, 0, z); G.add(M);
+    add(new RoundedBoxGeometry(0.78, 0.9, 0.78, 2, 0.03), marble, 0, BASE + 0.45, 0, M);
+    add(new THREE.BoxGeometry(0.84, 0.08, 0.84), trim, 0, BASE + 0.92, 0, M);
+    const seg = [[0.27, 0.32, h * 0.42], [0.23, 0.27, h * 0.3], [0.19, 0.23, h * 0.16]]; let y = BASE + 0.96;
+    seg.forEach(([rt, rb, sh], k) => {
+      add(new THREE.CylinderGeometry(rt, rb, sh, 8), marble, 0, y + sh / 2, 0, M);
+      if (k === 0) for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2 + Math.PI / 8; arch(0.08, 0.16, Math.sin(a) * (rb - 0.01), y + sh * 0.55, Math.cos(a) * (rb - 0.01), M, recessDeep, 0.02, trim, a); }
+      y += sh;
+      // balcony: corbel (muqarnas-like cone), floor, railing posts and rail
+      add(new THREE.CylinderGeometry(rt + 0.18, rt, 0.22, 16), trim, 0, y - 0.04, 0, M);
+      add(new THREE.CylinderGeometry(rt + 0.2, rt + 0.2, 0.05, 16), marble, 0, y + 0.09, 0, M);
+      for (let i = 0; i < 14; i++) { const a = (i / 14) * Math.PI * 2; add(new THREE.CylinderGeometry(0.012, 0.012, 0.16, 4), marble, Math.sin(a) * (rt + 0.18), y + 0.19, Math.cos(a) * (rt + 0.18), M); }
+      const rail = add(new THREE.TorusGeometry(rt + 0.18, 0.018, 6, 32), lit ? new THREE.MeshBasicMaterial({ color: 0xFFC56E }) : marble, 0, y + 0.27, 0, M); rail.rotation.x = Math.PI / 2;
+      y += 0.12;
+    });
+    // lantern: open columns with light inside
+    for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; add(new THREE.CylinderGeometry(0.02, 0.02, 0.5, 6), marble, Math.sin(a) * 0.17, y + 0.25, Math.cos(a) * 0.17, M); }
+    add(new THREE.CylinderGeometry(0.12, 0.12, 0.42, 12), lit ? new THREE.MeshBasicMaterial({ color: 0xFFD08A }) : recessDeep, 0, y + 0.25, 0, M);
+    add(new THREE.CylinderGeometry(0.24, 0.24, 0.05, 16), marble, 0, y + 0.52, 0, M);
+    const cap = add(domeGeo(0.22, 32), marble, 0, y + 0.54, 0, M); cap.scale.y = 1.25;
+    finial(y + 0.54 + 0.22 * 1.72 * 1.25, 0, 0.75);
+    return M; };
+  [[-4.6, 1.9, 7.2], [4.6, 1.9, 7.2], [-4.6, -2.2, 6.0], [4.6, -2.2, 6.0]].forEach(([x, z, h]) => {
+    const before = G.children.length; const M = minaret(x, z, h);
+    // finial meshes were added to G at x=0, z=0: shift them onto this minaret
+    G.children.slice(before).forEach((c) => { if (c !== M) { c.position.x += x; c.position.z += z; } });
+  });
   G.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
   return G;
+}
+
+// A soft round glow (for the moon's halo and lamp lights).
+function glowSprite(color, size, opacity = 1) {
+  const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d');
+  const g = x.createRadialGradient(64, 64, 0, 64, 64, 64); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.25, 'rgba(255,255,255,0.45)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+  x.fillStyle = g; x.fillRect(0, 0, 128, 128);
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), color, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+  s.scale.set(size, size, 1); return s;
+}
+// A crescent moon facing the camera.
+function crescent(r, color) {
+  // outer edge: left half of the moon; inner edge: an arc of a larger circle through the tips
+  const k = 0.62, cx = ((1 - k * k) / (2 * k)) * r, rho = cx + k * r, t = Math.atan2(r, -cx), s = new THREE.Shape();
+  s.absarc(0, 0, r, Math.PI / 2, Math.PI * 1.5, false);
+  s.absarc(cx, 0, rho, -t, t, true);
+  return new THREE.Mesh(new THREE.ShapeGeometry(s, 64), new THREE.MeshBasicMaterial({ color, fog: false, side: THREE.DoubleSide }));
 }
 
 const composer = new EffectComposer(renderer);
@@ -75,20 +177,40 @@ window.draw = (name) => {
   scene.fog = new THREE.Fog(L.hor, name === 'day' ? 45 : 30, name === 'day' ? 140 : 75);
   const sun = new THREE.DirectionalLight(L.sun, L.light); sun.position.copy(L.sunPos).multiplyScalar(0.5); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
   Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12, far: 80 }); scene.add(sun);
-  scene.add(new THREE.HemisphereLight(L.mid, L.ground, name === 'isha' ? 0.35 : 0.7));
+  scene.add(new THREE.HemisphereLight(L.mid, L.ground, name === 'isha' || name === 'welcome' ? 0.35 : 0.7));
   // the sun or moon in the sky
-  if (name !== 'isha') { const s = new THREE.Mesh(new THREE.SphereGeometry(name === 'day' ? 1.4 : 2.2, 32, 16), new THREE.MeshBasicMaterial({ color: new THREE.Color(L.sun).multiplyScalar(name === 'day' ? 2.2 : 1.8), fog: false })); s.position.copy(L.sunPos).setLength(70); s.position.y = name === 'fajr' ? 1.2 : name === 'maghrib' ? 4 : 30; s.position.x = name === 'maghrib' ? 9 : s.position.x; scene.add(s); }
+  if (name === 'welcome') {
+    // a great crescent with a soft halo, above and to the right of the dome
+    const mp = V(8.6, 34.2, -44); const halo = glowSprite(0xCFE0FF, 11, 0.4); halo.position.copy(mp); scene.add(halo);
+    const c = crescent(2.5, new THREE.Color(0xFFF4DA).multiplyScalar(2.6)); c.position.copy(mp); c.rotation.z = -0.5; scene.add(c);
+  } else if (name !== 'isha') { const s = new THREE.Mesh(new THREE.SphereGeometry(name === 'day' ? 1.4 : 2.2, 32, 16), new THREE.MeshBasicMaterial({ color: new THREE.Color(L.sun).multiplyScalar(name === 'day' ? 2.2 : 1.8), fog: false })); s.position.copy(L.sunPos).setLength(70); s.position.y = name === 'fajr' ? 1.2 : name === 'maghrib' ? 4 : 30; s.position.x = name === 'maghrib' ? 9 : s.position.x; scene.add(s); }
   else { const moon = new THREE.Mesh(new THREE.SphereGeometry(2.1, 48, 32), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xFFF3D6).multiplyScalar(1.6), fog: false })); moon.position.set(15, 36, -62); scene.add(moon); const bite = new THREE.Mesh(new THREE.SphereGeometry(2.0, 48, 32), new THREE.MeshBasicMaterial({ color: 0x0A1230, fog: false })); bite.position.set(15.8, 36.5, -61.2); scene.add(bite); }
   if (L.stars) { const pts = []; for (let i = 0; i < 700; i++) { const a = Math.random() * Math.PI * 2, h = 0.15 + Math.random() * 0.85; const r = 78; pts.push(Math.cos(a) * r * Math.sqrt(1 - h * h), h * r, Math.sin(a) * r * Math.sqrt(1 - h * h)); }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3)); scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0xFFFFFF, size: 0.22, transparent: true, opacity: 0.85 * L.stars, fog: false }))); }
   const ground = new THREE.Mesh(new THREE.CircleGeometry(60, 64), new THREE.MeshStandardMaterial({ color: L.ground, roughness: 0.95 })); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
-  const m = mosque(L); m.position.set(0, 0, -6); m.rotation.y = -0.18; scene.add(m);
+  const m = mosque(L); m.position.set(0, 0, -6); m.rotation.y = name === 'welcome' ? 0 : -0.18; scene.add(m);
+  // courtyard and a reflecting pool in front of the portal
+  const paving = new THREE.Mesh(new THREE.PlaneGeometry(16, 34), new THREE.MeshStandardMaterial({ color: new THREE.Color(0xE9E1D2).lerp(new THREE.Color(L.ground), L.stars > 0.7 ? 0.82 : 0.35), roughness: 0.6 })); paving.rotation.x = -Math.PI / 2; paving.position.set(0, 0.01, 16.6); paving.receiveShadow = true; m.add(paving);
+  const pool = new Reflector(new THREE.PlaneGeometry(2.4, 12.5), { textureWidth: W, textureHeight: H, color: name === 'day' ? 0x9DB6C4 : 0x8FA3B0, clipBias: 0.003 }); pool.rotation.x = -Math.PI / 2; pool.position.set(0, 0.035, 9.6); m.add(pool);
+  [-1.3, 1.3].forEach((x) => { const e = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.09, 12.7), new THREE.MeshStandardMaterial({ color: 0xF1EADF, roughness: 0.5 })); e.position.set(x, 0.045, 9.6); e.receiveShadow = true; m.add(e); });
+  // cypress-like trees along the pool
+  const leaf = new THREE.MeshStandardMaterial({ color: name === 'day' ? 0x2F5A3A : 0x1B3528, roughness: 0.85 });
+  if (name !== 'welcome') for (let i = 0; i < 4; i++) [-3.6, 3.6].forEach((x) => { const t = new THREE.Mesh(new THREE.SphereGeometry(0.26, 16, 12), leaf); t.scale.y = 2.2; t.position.set(x, 0.58, 4.6 + i * 2.2); t.castShadow = true; m.add(t); });
+  // lamps along the water at dawn and night, and floodlights on the dome
+  if (L.stars > 0.4) {
+    for (let i = 0; i < 6; i++) [-1.75, 1.75].forEach((x) => { const z = 4.2 + i * 2.0 + 1.0;
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 0.6, 8), new THREE.MeshStandardMaterial({ color: 0x2B2A28 })); post.position.set(x, 0.3, z); m.add(post);
+      const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.08, 12, 8), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xFFD08A).multiplyScalar(2) })); lamp.position.set(x, 0.66, z); m.add(lamp);
+      const g = glowSprite(0xFFB45A, 0.9, 0.7); g.position.set(x, 0.66, z); m.add(g); });
+    const warm = new THREE.PointLight(0xFFB868, 3, 8, 1.6); warm.position.set(0, 1.4, 3.2); m.add(warm);
+    [-1, 1].forEach((sd) => { const sp = new THREE.SpotLight(0xFFE7C2, 9, 24, 0.4, 0.7, 1.2); sp.position.set(sd * 3, 0.3, 5.5); sp.target.position.set(0, 5.2, -0.4); m.add(sp); m.add(sp.target); });
+  }
   // palms of light: a few soft lamps along the courtyard at night and dawn
   const cam = new THREE.PerspectiveCamera(42, W / H, 0.1, 200);
   if (TALL) { cam.fov = 50; cam.updateProjectionMatrix(); cam.position.set(0, 2.2, 23); cam.lookAt(0, 4.6, -6); } else { cam.position.set(0, 2.0, 15.5); cam.lookAt(0, 7.4, -6); }
   composer.passes.length = 0; composer.setSize(W, H);
   composer.addPass(new RenderPass(scene, cam));
-  composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), name === 'day' ? 0.25 : 0.55, 0.6, 0.82));
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), name === 'day' ? 0.25 : name === 'welcome' ? 0.7 : 0.55, 0.5, 0.85));
   composer.addPass(new OutputPass());
   composer.render();
   return true;
