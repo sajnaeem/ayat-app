@@ -74,8 +74,12 @@ export type Prefs = {
   /** Anonymous usage stats (on unless switched off) and anonymous journey insights (only when switched on). */
   shareUsage: boolean;
   shareInsights: boolean;
-  /** Learn to pray: show the brother or the sister figure. */
+  /** Learn to pray: show the brother or the sister figure (also asked on first open: brother or sister). */
   prayFigure: 'brother' | 'sister';
+  /** What the reader asked Munib to call them (first open). Phone only; never sent unless they make it their display name. */
+  firstName?: string;
+  /** Brother or sister, if they said (first open). Phone only. */
+  gender?: 'brother' | 'sister' | 'skip';
   prayer: { method: string; asr: 'standard' | 'hanafi'; loc: { lat: number; lon: number; label: string; at: number } | null; alerts: Record<'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha', boolean> };
 };
 export type TextSize = 'small' | 'medium' | 'large' | 'xl';

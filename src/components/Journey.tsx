@@ -1,7 +1,6 @@
-import { Choice } from './List';
 import { useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { ART } from '@/lib/art';
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ART, poseArt } from '@/lib/art';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from './Icon';
 import { EXPLAINERS } from '@/data/explainers';
@@ -11,6 +10,8 @@ import { fonts, mix, usePalette } from '@/lib/theme';
 /**
  * First open: a few questions about where someone is on their journey, so Munib fits them from the first card.
  * The answers stay on the phone (prefs.journey) and only change settings; nothing is sent anywhere.
+ * Personal (Saj, 14 Nov 2026): it asks their name and brother/sister first, then talks to them by name and ends
+ * with a short note written from their answers. Every line is written here in advance; no AI writes to people.
  */
 type Opt<T extends string | number> = { id: T; label: string; sub?: string };
 
@@ -56,7 +57,11 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
   const old = prefs.journey;
   const [step, setStep] = useState(startAt);
   const [a, setA] = useState<Partial<JourneyAnswers>>(old ?? { goals: [] });
-  const STEPS = 7; // intro, 5 questions, summary
+  const STEPS = 10; // intro, name, brother/sister, 5 questions, your note, sharing
+  const [name, setName] = useState(prefs.firstName ?? '');
+  const [gender, setGender] = useState<'brother' | 'sister' | 'skip' | undefined>(prefs.gender);
+  const nm = name.trim().split(/\s+/)[0]?.slice(0, 24) ?? '';
+  const hi = (t: string) => (nm ? `${t}, ${nm}` : t); // "Where are you on your journey, Saj?" style
 
   const pick = <K extends keyof JourneyAnswers>(k: K, v: JourneyAnswers[K]) => {
     setA((x) => ({ ...x, [k]: v }));
@@ -73,8 +78,7 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
     onDone();
   };
 
-  const [share, setShare] = useState(!!prefs.shareInsights);
-  const finish = () => {
+  const finish = (share: boolean) => {
     const ans = { journey: a.journey ?? 'returning', arabic: a.arabic ?? 'slow', reading: a.reading ?? 'rarely', goals: a.goals ?? [], minutes: a.minutes ?? 5, at: Date.now() } as JourneyAnswers;
     const hide = new Set(prefs.feedHide ?? []);
     if (ans.arabic === 'fluent' || ans.journey === 'growing') hide.add('letters');
@@ -83,6 +87,9 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
     prefs.set({
       journey: ans,
       shareInsights: share,
+      firstName: nm || undefined,
+      gender,
+      ...(gender === 'brother' || gender === 'sister' ? { prayFigure: gender } : {}),
       showTl: ans.arabic !== 'fluent',
       feedHide: [...hide],
       dailyGoal: GOAL_AYAT[ans.minutes] ?? 10,
@@ -92,6 +99,26 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
       ...(fresh ? { mood: 'newmuslim', onboarded: true, feedMode: 'foryou' } : {}),
     });
     onDone();
+  };
+
+  /** A short note written to them from their answers (the first thing on the ready screen). */
+  const note = (): string => {
+    const lead = nm ? `${nm}, ` : '';
+    const mins = a.minutes ?? 5;
+    const ayat = GOAL_AYAT[mins] ?? 10;
+    const tl = a.arabic && a.arabic !== 'fluent' ? ' with the pronunciation under every word' : '';
+    const surahs = a.goals?.includes('surahs') ? ' Al-Fatihah and the short surahs are waiting for you, easiest first, so your prayer feels steady.' : '';
+    const calm = a.goals?.includes('calm') || a.goals?.includes('close') ? ' Whenever your heart is heavy, tell Munib how you feel and it will find you ayat for that moment.' : '';
+    switch (a.journey) {
+      case 'new':
+        return `${lead}welcome to your new beginning. The Prophet ﷺ said that Islam wipes away what came before it (Sahih Muslim 121), so you are starting fresh. We’ll go gently: ${ayat} ayat a day${tl}, with short lessons on the basics in between. Nothing here assumes you already know.${surahs}`;
+      case 'exploring':
+        return `${lead}thank you for coming to see for yourself. Munib shows the Quran one ayah at a time, in plain English${tl}, with short notes on what Muslims believe and why. Take it at your own pace: ${ayat} ayat a day is a lovely start, and no question is a silly one.`;
+      case 'growing':
+        return `${lead}may Allah increase you. Your goal is ${ayat} ayat a day, and every ayah has Tafsir Ibn Kathir and an Ask button when you want to go deeper.${surahs}${calm}`;
+      default:
+        return `${lead}coming back is the hardest step, and you’ve just taken it. We’ll start gently: ${ayat} ayat a day${tl}, about ${mins} minute${mins === 1 ? '' : 's'}. Miss a day and nothing breaks; there are no streaks here, just the next ayah whenever you’re ready.${surahs}${calm}`;
+    }
   };
 
   const summary = (): string[] => {
@@ -158,12 +185,63 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
         </Pressable>
       </View>
     );
-  else if (step === 1) body = q('Where are you on your journey?', null, options(JOURNEY, a.journey, (v) => pick('journey', v)));
-  else if (step === 2) body = q('How easily can you read Arabic?', 'There’s no wrong answer. Munib shows pronunciation and meaning for every ayah.', options(ARABIC, a.arabic, (v) => pick('arabic', v)));
-  else if (step === 3) body = q('How often do you read the Quran at the moment?', 'Be honest: this is just for you.', options(READING, a.reading, (v) => pick('reading', v)));
-  else if (step === 4)
+  else if (step === 1)
     body = q(
-      'What would you like help with?',
+      'What should we call you?',
+      'Your first name is enough. It stays on this phone.',
+      <TextInput
+        value={name}
+        onChangeText={setName}
+        placeholder="Your first name"
+        placeholderTextColor={pal.muted}
+        autoFocus
+        autoCapitalize="words"
+        autoComplete="given-name"
+        textContentType="givenName"
+        returnKeyType="next"
+        maxLength={40}
+        onSubmitEditing={() => setStep(2)}
+        style={[styles.input, { color: pal.text, borderColor: pal.line, backgroundColor: pal.surface }]}
+        accessibilityLabel="Your first name"
+      />,
+      { label: nm ? `Next` : 'Skip this', on: () => setStep(2) },
+    );
+  else if (step === 2)
+    body = q(
+      hi('Brother or sister') + '?',
+      'So the prayer guide and anything just for sisters or brothers fits you.',
+      <>
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          {(['brother', 'sister'] as const).map((g) => {
+            const sel = gender === g;
+            return (
+              <Pressable
+                key={g}
+                onPress={() => {
+                  setGender(g);
+                  setTimeout(() => setStep(3), 180);
+                }}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: sel }}
+                style={({ pressed }) => [styles.fig, { backgroundColor: sel ? pal.accent : pal.surface, borderColor: sel ? pal.accent : pal.line, opacity: pressed ? 0.85 : 1 }]}
+              >
+                <Image source={poseArt(g, 'stand')} style={{ width: '100%', height: 130 }} resizeMode="contain" accessibilityIgnoresInvertColors />
+                <Text style={[styles.optLabel, { color: sel ? pal.onAccent : pal.text, textAlign: 'center' }]}>{g === 'brother' ? 'Brother' : 'Sister'}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        <Pressable onPress={() => { setGender('skip'); setStep(3); }} style={styles.skipBtn} accessibilityRole="button">
+          <Text style={[styles.skipText, { color: pal.muted }]}>I’d rather not say</Text>
+        </Pressable>
+      </>,
+    );
+  else if (step === 3) body = q(hi('Where are you on your journey') + '?', null, options(JOURNEY, a.journey, (v) => pick('journey', v)));
+  else if (step === 4) body = q('How easily can you read Arabic?', 'There’s no wrong answer. Munib shows pronunciation and meaning for every ayah.', options(ARABIC, a.arabic, (v) => pick('arabic', v)));
+  else if (step === 5) body = q('How often do you read the Quran at the moment?', 'Be honest: this is just for you.', options(READING, a.reading, (v) => pick('reading', v)));
+  else if (step === 6)
+    body = q(
+      nm ? `What would you like help with, ${nm}?` : 'What would you like help with?',
       'Choose up to three.',
       <View style={styles.chips}>
         {GOALS.map((g) => {
@@ -182,34 +260,53 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
           );
         })}
       </View>,
-      { label: 'Next', on: () => setStep(5), disabled: !(a.goals ?? []).length },
+      { label: 'Next', on: () => setStep(7), disabled: !(a.goals ?? []).length },
     );
-  else if (step === 5) body = q('How much time can you give each day?', 'Small and steady is the Sunnah way. You can always read more.', options(TIME, a.minutes, (v) => pick('minutes', v)));
-  else
+  else if (step === 7) body = q('How much time can you give each day?', 'Small and steady is the Sunnah way. You can always read more.', options(TIME, a.minutes, (v) => pick('minutes', v)));
+  else if (step === 8)
     body = q(
-      'Your Munib is ready',
-      'Here’s what we’ve set up for you. You can change any of it from the You tab.',
+      nm ? `Your Munib is ready, ${nm}` : 'Your Munib is ready',
+      null,
       <>
-        {summary().map((s, i) => (
+        <View style={[styles.letter, { backgroundColor: pal.surface, borderColor: mix(pal.surface, pal.accent, 0.35) }]}>
+          {(gender === 'brother' || gender === 'sister') && (
+            <Image source={poseArt(gender, 'takbir')} style={styles.letterArt} resizeMode="contain" accessibilityIgnoresInvertColors />
+          )}
+          <Text style={[styles.letterText, { color: pal.text }]}>{note()}</Text>
+        </View>
+        <Text style={[styles.setUp, { color: pal.muted }]}>WHAT WE’VE SET UP</Text>
+        {summary().map((t, i) => (
           <View key={i} style={[styles.sumRow, { backgroundColor: pal.surface }]}>
             <View style={[styles.sumDot, { backgroundColor: [pal.pop.emerald, pal.pop.violet, pal.pop.amber, pal.pop.sky, pal.pop.coral, pal.pop.teal][i % 6] }]}>
               <Icon name="check" size={14} color="#FFFFFF" strokeWidth={2.6} />
             </View>
-            <Text style={[styles.sumText, { color: pal.text }]}>{s}</Text>
+            <Text style={[styles.sumText, { color: pal.text }]}>{t}</Text>
           </View>
         ))}
-        <Choice
-          pal={pal}
-          box
-          on={share}
-          onPress={() => setShare((v) => !v)}
-          title="Share my answers anonymously"
-          sub="Helps us understand who Munib serves. Never linked to you; only totals from large groups are used. Change it any time in You → Your data."
-        />
-        <Text style={[styles.privacy, { color: pal.muted }]}>Unless you tick this, your answers stay on this phone and are only used to set up Munib for you.</Text>
+        <Text style={[styles.privacy, { color: pal.muted }]}>You can change any of it from the You tab.</Text>
       </>,
-      { label: 'Start reading', on: finish },
+      { label: 'Continue', on: () => setStep(9) },
     );
+  else {
+    // Sharing is asked plainly as its own question, with two equal answers (UK GDPR: consent must be a clear, active choice).
+    const who = a.journey === 'new' ? 'people who are new to Islam' : a.journey === 'exploring' ? 'people curious about Islam' : a.journey === 'growing' ? 'people growing in their deen' : 'people coming back to the Quran';
+    body = (
+      <View style={[styles.intro, { paddingBottom: 8 }]}>
+        <ScrollView contentContainerStyle={{ paddingTop: 18, gap: 12 }}>
+          <Image source={ART.globe} style={{ width: 120, height: 120, marginLeft: -6 }} resizeMode="contain" accessibilityIgnoresInvertColors />
+          <Text style={[styles.h1, { color: pal.text }]}>{nm ? `${nm}, will you help Munib help more ${who}?` : `Will you help Munib help more ${who}?`}</Text>
+          <Text style={[styles.lead, { color: pal.muted }]}>Your answers (never your name) can be added, anonymously, to totals from large groups of readers. It tells us what people like you need, so we build the right things next.</Text>
+          <Text style={[styles.lead, { color: pal.muted }]}>Nothing is linked to you or this phone, groups smaller than 20 are never shown, and you can change your mind any time in You → Your data.</Text>
+        </ScrollView>
+        <View style={{ gap: 10, paddingTop: 10 }}>
+          <Big pal={pal} label="Yes, share anonymously" onPress={() => finish(true)} />
+          <Pressable onPress={() => finish(false)} style={({ pressed }) => [styles.big, { borderWidth: 1.5, borderColor: pal.line, opacity: pressed ? 0.85 : 1 }]} accessibilityRole="button">
+            <Text style={[styles.bigText, { color: pal.text }]}>No thanks</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.root, { backgroundColor: pal.bg, paddingTop: insets.top + 10 }]}>
@@ -278,5 +375,11 @@ const styles = StyleSheet.create({
   sumRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, borderRadius: 16, padding: 14 },
   sumDot: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
   sumText: { flex: 1, fontFamily: fonts.ui, fontSize: 15.5, lineHeight: 21 },
+  input: { borderWidth: 1.5, borderRadius: 16, paddingHorizontal: 18, paddingVertical: 16, fontFamily: fonts.uiSemi, fontSize: 19 },
+  fig: { flex: 1, borderRadius: 20, borderWidth: 1.5, padding: 12, gap: 8 },
+  letter: { borderRadius: 20, borderWidth: 1.5, padding: 18, gap: 10 },
+  letterArt: { width: 90, height: 90, alignSelf: 'flex-start' },
+  letterText: { fontFamily: fonts.read, fontSize: 17, lineHeight: 26 },
+  setUp: { fontFamily: fonts.uiBold, fontSize: 11.5, letterSpacing: 1.2, marginTop: 10, paddingHorizontal: 4 },
   privacy: { fontFamily: fonts.ui, fontSize: 13, lineHeight: 18, marginTop: 8, paddingHorizontal: 4 },
 });

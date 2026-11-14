@@ -6,7 +6,20 @@ import { Icon, IconName } from '@/components/Icon';
 import { ART } from '@/lib/art';
 import { PlanId, usePlus } from '@/lib/plus';
 import { SITE } from '@/lib/site';
+import { usePrefs } from '@/lib/store';
 import { fonts, mix, usePalette } from '@/lib/theme';
+
+/** The opening line, written to the reader: their name and what they said they wanted help with. */
+function plusLead(name: string | undefined, goals: string[]) {
+  const why = goals.includes('understand')
+    ? 'ask about every ayah you read, as often as you like'
+    : goals.includes('habit')
+      ? 'keep your reading going anywhere, even offline'
+      : goals.includes('calm')
+        ? 'fall asleep to every bedtime story and listen offline'
+        : 'get more of Munib';
+  return `${name ? `${name}, ` : ''}${name ? why : why[0].toUpperCase() + why.slice(1)}, and keep Munib free for everyone else.`;
+}
 
 /** The Munib Plus screen: what members get, the three plans, buy and restore. */
 const PERKS: { icon: IconName; title: string; sub: string }[] = [
@@ -22,6 +35,7 @@ const FALLBACK: Record<PlanId, string> = { yearly: '£29.99', monthly: '£4.99',
 
 export default function PlusScreen() {
   const pal = usePalette();
+  const prefs = usePrefs();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const plus = usePlus();
@@ -84,7 +98,7 @@ export default function PlusScreen() {
         </View>
         <Image source={ART.star8} style={styles.art} resizeMode="contain" accessibilityIgnoresInvertColors />
         <Text style={[styles.h1, { color: pal.text }]}>Munib Plus</Text>
-        <Text style={[styles.lead, { color: pal.muted }]}>More of Munib, and you keep it free for everyone else.</Text>
+        <Text style={[styles.lead, { color: pal.muted }]}>{plusLead(prefs.firstName, prefs.journey?.goals ?? [])}</Text>
 
         <View style={{ gap: 14, marginTop: 22 }}>
           {PERKS.map((p, i) => (

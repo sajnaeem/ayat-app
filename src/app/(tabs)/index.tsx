@@ -644,7 +644,7 @@ export default function Feed() {
   const progRef = useRef(prog.progress);
   progRef.current = prog.progress;
   useEffect(() => {
-    const plan = () => scheduleReminders({ ...prefs.reminders, lang: prefs.lang, progress: progRef.current }).catch(() => {});
+    const plan = () => scheduleReminders({ ...prefs.reminders, lang: prefs.lang, progress: progRef.current, name: prefs.firstName }).catch(() => {});
     plan();
     const sub = AppState.addEventListener('change', (st) => st === 'active' && plan());
     return () => sub.remove();

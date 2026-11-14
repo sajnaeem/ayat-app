@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { authMessage, useAccount } from '@/lib/account';
+import { usePrefs } from '@/lib/store';
 import { fonts, usePalette } from '@/lib/theme';
 import { GuidelinesSheet } from './Guidelines';
 import { NameMeaning } from './NameMeaning';
@@ -235,7 +236,9 @@ export function ChooseName() {
   const insets = useSafeAreaInsets();
   const acct = useAccount();
   const toast = useToast();
-  const [name, setName] = useState('');
+  const prefs = usePrefs();
+  // The name they gave on first open is already filled in.
+  const [name, setName] = useState(prefs.firstName ?? '');
   const [busy, setBusy] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [reading, setReading] = useState(false);

@@ -96,7 +96,7 @@ export async function cancelWhere(match: (id: string) => boolean) {
 }
 
 /** Cancels pending reminders and schedules the next week's. Safe to call every time the app opens. */
-export async function scheduleReminders(opts: { on: boolean; hour: number; minute: number; friday: boolean; lang: LangId; progress: Progress }) {
+export async function scheduleReminders(opts: { on: boolean; hour: number; minute: number; friday: boolean; lang: LangId; progress: Progress; name?: string }) {
   if (Platform.OS === 'web') return;
   // Only this daily check-in is replaced here; prayer alerts (identifiers starting "prayer-") are planned in mosque.ts.
   await cancelWhere((id) => !id.startsWith('prayer-'));
@@ -107,7 +107,7 @@ export async function scheduleReminders(opts: { on: boolean; hour: number; minut
     const at = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d, opts.hour, opts.minute, 0);
     if (at.getTime() <= now.getTime() + 60_000) continue; // today's time has passed
     let content: { title: string; body: string; data: ReminderData };
-    if (d === 6) content = { title: "We've missed you", body: 'Your next ayah is here whenever you are ready.', data: { to: 'mood' } };
+    if (d === 6) content = { title: opts.name ? `We've missed you, ${opts.name}` : "We've missed you", body: 'Your next ayah is here whenever you are ready.', data: { to: 'mood' } };
     else if (opts.friday && at.getDay() === 5) content = { title: "It's Jumuʿah", body: 'Read Surah al-Kahf today?', data: { to: 'surah', s: 18, a: 1 } };
     else content = messageFor(at.getDate() + at.getMonth() * 31, opts.lang, opts.progress);
     await Notifications.scheduleNotificationAsync({

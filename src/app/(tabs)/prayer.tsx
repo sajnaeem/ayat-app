@@ -49,7 +49,7 @@ export default function PrayerTab() {
     <View style={[styles.root, { backgroundColor: pal.bg }]}>
       <ScrollView contentContainerStyle={{ paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
         <SkyHero phase={phase} top={insets.top}>
-          <Text style={sky.title}>Prayer</Text>
+          <Text style={sky.title}>{prefs.firstName ? `Salaam, ${prefs.firstName}` : 'Prayer'}</Text>
           <Text style={sky.eyebrow}>{[now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }), hijri].filter(Boolean).join('  ·  ')}</Text>
           {day && next ? (
             <Pressable onPress={() => router.push('/prayertimes')} style={{ flex: 1 }} accessibilityRole="button" accessibilityLabel={`Next: ${nextName} at ${hm(next.at)}, in ${until(next.at.getTime() - now.getTime())}`}>

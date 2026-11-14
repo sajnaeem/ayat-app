@@ -32,7 +32,12 @@ export function FirstRun() {
   if (step === 'signin') return <SignIn reason="Welcome back. Sign in to pick up where you left off: your progress, saved ayat and reading groups." onClose={() => go('welcome')} />;
   if (step === 'journey') return <JourneyFlow startAt={1} onBack={() => go('welcome')} onDone={() => go(signedIn ? 'done' : 'save')} />;
   if (step === 'save')
-    return <SignIn reason="Your Munib is ready. Create a free account so your journey, progress and saved ayat are kept safe, on this phone and any other." onClose={() => go('done')} />;
+    return (
+      <SignIn
+        reason={`${prefs.firstName ? `${prefs.firstName}, your` : 'Your'} Munib is ready. Create a free account so your journey, progress and saved ayat are kept safe, on this phone and any other.`}
+        onClose={() => go('done')}
+      />
+    );
   return (
     <Welcome
       onStart={() => go('journey')}
