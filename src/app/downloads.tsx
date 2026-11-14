@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
 import { RECITERS, ReciterId } from '@/lib/audio';
 import { bytesOf, cancelAll, downloaded, enqueue, formatBytes, offlineSupported, onQueue, QueueState, removeAll, removeSurah, usage } from '@/lib/offline';
+import { showFeed } from '@/lib/nav';
 import { SURAHS } from '@/lib/quran';
 import { usePrefs } from '@/lib/store';
 import { fonts, mix, Palette, usePalette } from '@/lib/theme';
@@ -41,7 +42,7 @@ export default function Downloads() {
     () => (
       <View style={{ gap: 14, paddingBottom: 8 }}>
         <Text style={[styles.lead, { color: pal.muted }]}>
-          Download recitations to listen with no signal: on the Underground, on a plane, or to save data. Ayat you’ve downloaded play from your phone, in the feed and in page view.
+          Download recitations to listen with no signal: on the Underground, on a plane, or to save data. Downloads are kept safely inside Munib (not in your Files or Music app), and they play by themselves whenever you read that surah, in the feed or in page view. Tap a downloaded surah to listen.
         </Text>
         {!plus.unlocked && (
           <Pressable onPress={() => router.push('/plus')} accessibilityRole="button" style={{ backgroundColor: pal.pop.sky, borderRadius: 16, padding: 14, gap: 3 }}>
@@ -145,34 +146,56 @@ export default function Downloads() {
           const busy = q.current?.r === r && q.current.s === s;
           const waiting = q.waiting.includes(`${r}:${s}`);
           return (
-            <Pressable
-              onPress={() => {
-                if (d?.complete)
-                  Alert.alert(`Remove ${SURAHS[s - 1][0]}?`, `Frees ${formatBytes(bytesOf(d))}.`, [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Remove', style: 'destructive', onPress: () => removeSurah(r, s) },
-                  ]);
-                else if (!busy && !waiting) gate(() => enqueue(r, [s]));
-              }}
-              style={[styles.row, { borderColor: pal.line }]}
-              accessibilityRole="button"
-              accessibilityLabel={`${SURAHS[s - 1][0]}, ${d?.complete ? 'downloaded, tap to remove' : busy ? 'downloading' : waiting ? 'waiting' : 'tap to download'}`}
-            >
-              <Text style={[styles.num, { color: pal.muted }]}>{s}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.name, { color: pal.text }]}>{SURAHS[s - 1][0]}</Text>
-                <Text style={[styles.small, { color: pal.muted }]}>
-                  {SURAHS[s - 1][3]} ayat{d?.complete ? ` · ${formatBytes(bytesOf(d))}` : d && !busy ? ' · partly downloaded' : ''}
-                </Text>
-              </View>
-              {busy ? (
-                <Text style={[styles.small, { color: pal.accent, fontFamily: fonts.uiBold }]}>{Math.round(((q.current?.done ?? 0) / (q.current?.total ?? 1)) * 100)}%</Text>
-              ) : waiting ? (
-                <Text style={[styles.small, { color: pal.muted }]}>Waiting</Text>
-              ) : (
-                <Icon name={d?.complete ? 'downloaded' : 'download'} size={20} color={d?.complete ? pal.accent : pal.text} />
+            <View style={[styles.row, { borderColor: pal.line }]}>
+              <Pressable
+                onPress={() => {
+                  if (d?.complete) {
+                    // Listen: open the Quran at this surah with the reciter whose recitation is downloaded.
+                    prefs.set({ reciter: r });
+                    prefs.readAt(s, 1);
+                    showFeed(router);
+                  } else if (!busy && !waiting) gate(() => enqueue(r, [s]));
+                }}
+                style={styles.rowMain}
+                accessibilityRole="button"
+                accessibilityLabel={`${SURAHS[s - 1][0]}, ${d?.complete ? 'downloaded, tap to listen' : busy ? 'downloading' : waiting ? 'waiting' : 'tap to download'}`}
+              >
+                <Text style={[styles.num, { color: pal.muted }]}>{s}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.name, { color: pal.text }]}>{SURAHS[s - 1][0]}</Text>
+                  <Text style={[styles.small, { color: d?.complete ? pal.accent : pal.muted }]}>
+                    {d?.complete ? `Downloaded · ${formatBytes(bytesOf(d))} · tap to listen` : `${SURAHS[s - 1][3]} ayat${d && !busy ? ' · partly downloaded' : ''}`}
+                  </Text>
+                </View>
+                {busy ? (
+                  <Text style={[styles.small, { color: pal.accent, fontFamily: fonts.uiBold }]}>{Math.round(((q.current?.done ?? 0) / (q.current?.total ?? 1)) * 100)}%</Text>
+                ) : waiting ? (
+                  <Text style={[styles.small, { color: pal.muted }]}>Waiting</Text>
+                ) : d?.complete ? (
+                  <View style={[styles.listen, { backgroundColor: pal.accent }]}>
+                    <Icon name="play" size={14} color="#FFFFFF" />
+                  </View>
+                ) : (
+                  <Icon name="download" size={20} color={pal.text} />
+                )}
+              </Pressable>
+              {d?.complete && (
+                <Pressable
+                  onPress={() =>
+                    Alert.alert(`Remove ${SURAHS[s - 1][0]}?`, `The download is deleted from your phone (frees ${formatBytes(bytesOf(d))}). You can still listen online.`, [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Remove', style: 'destructive', onPress: () => removeSurah(r, s) },
+                    ])
+                  }
+                  hitSlop={8}
+                  style={styles.bin}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Remove the download of ${SURAHS[s - 1][0]}`}
+                >
+                  <Icon name="trash" size={19} color={pal.muted} />
+                </Pressable>
               )}
-            </Pressable>
+            </View>
           );
         }}
       />
@@ -208,7 +231,10 @@ const styles = StyleSheet.create({
   cardTitle: { fontFamily: fonts.uiBold, fontSize: 16 },
   track: { height: 6, borderRadius: 3, overflow: 'hidden' },
   bundle: { flex: 1, borderWidth: 1, borderRadius: 14, padding: 12, gap: 2 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 4, borderBottomWidth: StyleSheet.hairlineWidth },
+  rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
+  listen: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', paddingLeft: 2 },
+  bin: { width: 40, height: 44, alignItems: 'center', justifyContent: 'center' },
   num: { fontFamily: fonts.uiSemi, fontSize: 13, width: 26, textAlign: 'center' },
   name: { fontFamily: fonts.uiSemi, fontSize: 16 },
   btn: { borderRadius: 12, minHeight: 50, alignItems: 'center', justifyContent: 'center' },
