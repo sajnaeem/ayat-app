@@ -7,6 +7,7 @@ import { authMessage, useAccount } from '@/lib/account';
 import { usePrefs } from '@/lib/store';
 import { fonts, usePalette } from '@/lib/theme';
 import { GuidelinesSheet } from './Guidelines';
+import { HeavenSky, heavenly } from './Heaven';
 import { NameMeaning } from './NameMeaning';
 import { useToast } from './Toast';
 
@@ -30,8 +31,9 @@ const SHOW_PHONE = false;
  * Sign in or create an account. Shown when someone wants something that needs an account
  * (For you, reflections, their progress); the Quran tab works without one.
  */
-export function SignIn({ onClose, reason }: { onClose?: () => void; reason?: string } = {}) {
-  const pal = usePalette();
+export function SignIn({ onClose, reason, heaven }: { onClose?: () => void; reason?: string; /** the first-open look: dawn light behind */ heaven?: boolean } = {}) {
+  const pal0 = usePalette();
+  const pal = heaven ? heavenly(pal0) : pal0;
   const insets = useSafeAreaInsets();
   const acct = useAccount();
   const toast = useToast();
@@ -82,7 +84,8 @@ export function SignIn({ onClose, reason }: { onClose?: () => void; reason?: str
   const outline = [styles.btn, { borderColor: pal.line, borderWidth: 1, backgroundColor: pal.surface }];
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: pal.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: heaven ? '#FBF6EC' : pal.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      {heaven && <HeavenSky />}
       <ScrollView contentContainerStyle={[styles.wrap, { paddingTop: insets.top + 40, paddingBottom: insets.bottom + 28 }]} keyboardShouldPersistTaps="handled">
         <View style={styles.hero}>
           <Text style={[styles.bism, { color: pal.accent }]}>بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ</Text>
@@ -232,7 +235,9 @@ export function SignIn({ onClose, reason }: { onClose?: () => void; reason?: str
 
 /** Shown once after signing up: everyone has a display name before entering the app. */
 export function ChooseName() {
-  const pal = usePalette();
+  // Shown once, right after signing up: same dawn light as the first-open screens.
+  const heaven = true;
+  const pal = heavenly(usePalette());
   const insets = useSafeAreaInsets();
   const acct = useAccount();
   const toast = useToast();
@@ -257,7 +262,8 @@ export function ChooseName() {
     }
   };
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: pal.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: heaven ? '#FBF6EC' : pal.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <HeavenSky />
       <View style={[styles.wrap, { paddingTop: insets.top + 60, paddingBottom: insets.bottom + 28, justifyContent: 'center' }]}>
         <Text style={[styles.title, { color: pal.text }]}>What should we call you?</Text>
         <Text style={[styles.tag, { color: pal.muted, textAlign: 'left' }]}>This is the name people see on your reflections. You can change it later.</Text>

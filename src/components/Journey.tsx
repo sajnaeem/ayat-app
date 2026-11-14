@@ -3,9 +3,10 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { ART, poseArt } from '@/lib/art';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from './Icon';
+import { HeavenSky, heavenly } from './Heaven';
 import { EXPLAINERS } from '@/data/explainers';
 import { Journey, JourneyAnswers, usePrefs } from '@/lib/store';
-import { fonts, mix, usePalette } from '@/lib/theme';
+import { fonts, usePalette } from '@/lib/theme';
 
 /**
  * First open: a few questions about where someone is on their journey, so Munib fits them from the first card.
@@ -16,7 +17,7 @@ import { fonts, mix, usePalette } from '@/lib/theme';
 type Opt<T extends string | number> = { id: T; label: string; sub?: string };
 
 const JOURNEY: Opt<Journey>[] = [
-  { id: 'returning', label: 'I’m Muslim and want to come back to the Quran', sub: 'It’s been a while, and I want to make it part of my life again' },
+  { id: 'returning', label: 'I’m Muslim and want to come back to Allah', sub: 'It’s been a while, and I want to make it part of my life again' },
   { id: 'new', label: 'I’m new to Islam', sub: 'I’ve taken my shahadah, or I’m about to' },
   { id: 'exploring', label: 'I’m curious about Islam', sub: 'I’m not Muslim, and I’d like to understand' },
   { id: 'growing', label: 'I practise and want to go deeper', sub: 'I read already, and want more understanding' },
@@ -51,7 +52,7 @@ const TIME: Opt<number>[] = [
 const GOAL_AYAT: Record<number, number> = { 2: 5, 5: 10, 10: 20, 20: 40 };
 
 export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => void; /** 1 skips the intro (the welcome screen has already said hello) */ startAt?: number; onBack?: () => void }) {
-  const pal = usePalette();
+  const pal = heavenly(usePalette());
   const prefs = usePrefs();
   const insets = useSafeAreaInsets();
   const old = prefs.journey;
@@ -252,9 +253,9 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
               onPress={() => toggleGoal(g.id)}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: sel }}
-              style={[styles.chip, { borderColor: sel ? pal.text : pal.line, backgroundColor: sel ? mix(pal.bg, pal.text, 0.12) : 'transparent' }]}
+              style={[styles.chip, { borderColor: sel ? pal.accent : pal.line, backgroundColor: sel ? 'rgba(184,134,59,0.16)' : 'rgba(255,255,255,0.6)' }]}
             >
-              {sel && <Icon name="check" size={14} color={pal.text} strokeWidth={2.4} />}
+              {sel && <Icon name="check" size={14} color={pal.accent} strokeWidth={2.4} />}
               <Text style={[styles.chipText, { color: pal.text }]}>{g.label}</Text>
             </Pressable>
           );
@@ -268,7 +269,7 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
       nm ? `Your Munib is ready, ${nm}` : 'Your Munib is ready',
       null,
       <>
-        <View style={[styles.letter, { backgroundColor: pal.surface, borderColor: mix(pal.surface, pal.accent, 0.35) }]}>
+        <View style={[styles.letter, { backgroundColor: pal.surface, borderColor: 'rgba(184,134,59,0.45)' }]}>
           {(gender === 'brother' || gender === 'sister') && (
             <Image source={poseArt(gender, 'takbir')} style={styles.letterArt} resizeMode="contain" accessibilityIgnoresInvertColors />
           )}
@@ -289,7 +290,7 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
     );
   else {
     // Sharing is asked plainly as its own question, with two equal answers (UK GDPR: consent must be a clear, active choice).
-    const who = a.journey === 'new' ? 'people who are new to Islam' : a.journey === 'exploring' ? 'people curious about Islam' : a.journey === 'growing' ? 'people growing in their deen' : 'people coming back to the Quran';
+    const who = a.journey === 'new' ? 'people who are new to Islam' : a.journey === 'exploring' ? 'people curious about Islam' : a.journey === 'growing' ? 'people growing in their deen' : 'people coming back to Allah';
     body = (
       <View style={[styles.intro, { paddingBottom: 8 }]}>
         <ScrollView contentContainerStyle={{ paddingTop: 18, gap: 12 }}>
@@ -309,7 +310,8 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
   }
 
   return (
-    <View style={[styles.root, { backgroundColor: pal.bg, paddingTop: insets.top + 10 }]}>
+    <View style={[styles.root, { backgroundColor: '#FBF6EC', paddingTop: insets.top + 10 }]}>
+      <HeavenSky />
       {step > 0 && (
         <View style={styles.top}>
           <Pressable onPress={() => (step <= startAt && onBack ? onBack() : setStep((s) => s - 1))} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back" style={styles.back}>
@@ -319,7 +321,7 @@ export function JourneyFlow({ onDone, startAt = 0, onBack }: { onDone: () => voi
           </Pressable>
           <View style={styles.bars}>
             {Array.from({ length: STEPS - 1 }, (_, i) => (
-              <View key={i} style={[styles.bar, { backgroundColor: i < step ? pal.text : mix(pal.bg, pal.text, 0.18) }]} />
+              <View key={i} style={[styles.bar, { backgroundColor: i < step ? pal.accent : 'rgba(184,134,59,0.2)' }]} />
             ))}
           </View>
           <Pressable onPress={skip} hitSlop={10} accessibilityRole="button">
@@ -357,18 +359,18 @@ const styles = StyleSheet.create({
   intro: { flex: 1, paddingHorizontal: 24 },
   badge: { width: 96, height: 96, borderRadius: 26, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   badgeAr: { fontFamily: fonts.arabic, fontSize: 30, lineHeight: 52, color: '#FFFFFF' },
-  hero: { fontFamily: fonts.uiBold, fontSize: 38, letterSpacing: -1, lineHeight: 42 },
-  h1: { fontFamily: fonts.uiBold, fontSize: 30, letterSpacing: -0.8, lineHeight: 35 },
+  hero: { fontFamily: fonts.read, fontSize: 40, letterSpacing: -1.2, lineHeight: 46 },
+  h1: { fontFamily: fonts.read, fontSize: 31, letterSpacing: -0.9, lineHeight: 37 },
   lead: { fontFamily: fonts.read, fontSize: 16, lineHeight: 24, marginTop: 6 },
   qBody: { paddingHorizontal: 22, paddingTop: 18, paddingBottom: 20 },
-  opt: { borderRadius: 18, borderWidth: 1.5, paddingHorizontal: 18, paddingVertical: 16, gap: 3 },
+  opt: { borderRadius: 18, borderWidth: 1, paddingHorizontal: 18, paddingVertical: 16, gap: 3, shadowColor: '#B8863B', shadowOpacity: 0.12, shadowRadius: 14, shadowOffset: { width: 0, height: 4 } },
   optLabel: { fontFamily: fonts.uiSemi, fontSize: 17, lineHeight: 22 },
   optSub: { fontFamily: fonts.ui, fontSize: 14, lineHeight: 19 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1.5, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11 },
   chipText: { fontFamily: fonts.uiSemi, fontSize: 15 },
   foot: { paddingHorizontal: 22, paddingTop: 8 },
-  big: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 999, paddingVertical: 17 },
+  big: { shadowColor: '#B8863B', shadowOpacity: 0.3, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 999, paddingVertical: 17 },
   bigText: { fontFamily: fonts.uiBold, fontSize: 17 },
   skipBtn: { alignSelf: 'center', paddingVertical: 14 },
   skipText: { fontFamily: fonts.uiSemi, fontSize: 15 },
