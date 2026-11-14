@@ -86,6 +86,15 @@ supabase/           schema.sql, 002_accounts.sql, 003_feedback.sql, 004_safety.s
 - Never edit `ios/` or `android/` by hand.
 - Islamic content (notes, name meanings, translations) must stay accurate. Prefer omitting to guessing, and flag anything that needs scholarly review.
 
+## Waiting on Saj (check this list at the start of a session and remind him)
+
+- **Publish the latest update from his Mac** (he was away from it on 14 Nov 2026; Learn to pray, Live TV and radio aren't on his phone yet). In Terminal: `cd ~/ayat-app && git pull && npm install && EAS_NO_VCS=1 npx eas-cli@latest update --channel production --environment production --message "Learn to pray, Live TV and radio"`. Goes to the 1.2.0 build (install it from TestFlight).
+- **Test the radio on his iPhone** (the cloud workspace can't reach the stream servers, so no station has been heard playing yet): play a station, lock the phone, check it keeps going and the lock screen shows it.
+- **Email mp3quran.net before launch** for written permission to feature their radio streams in Munib (credited in the app).
+- **Next native build (whenever one is needed for something else):** add react-native-webview to play Live TV inside Munib instead of the YouTube sheet.
+- **Munib Plus setup:** Paid Apps agreement, bank and tax in App Store Connect; the 3 products; RevenueCat account; send the public `appl_` key; add `REVENUECAT_SECRET` to Supabase secrets himself.
+- **Scholar review** of all religious content (see the flags throughout this file), and a Quran teacher for the letter recordings.
+
 ## Launch checklist (iOS)
 
 Saj: Apple Developer account (Individual or Organisation), getmunib.com, Supabase Pro at public launch ($25/month, backups and no pausing), optional UK trademark.
