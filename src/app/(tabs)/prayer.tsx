@@ -9,6 +9,7 @@ import { ExplainIntro, useExplain } from '@/components/Explain';
 import { Group, Row, Section, Tile, TileGrid } from '@/components/List';
 import { ART, poseArt } from '@/lib/art';
 import { CALC_ROWS, calcDay, hm, nextPrayer, until } from '@/lib/prayertimes';
+import { ramadanNow } from '@/lib/ramadan';
 import { usePrefs } from '@/lib/store';
 import { fonts, mix, onColour, usePalette } from '@/lib/theme';
 
@@ -22,6 +23,11 @@ export default function PrayerTab() {
   const prefs = usePrefs();
   const s = prefs.prayer;
   const [explain, explainSheet] = useExplain(pal);
+  // Ramadan: a row all year, and a card at the top from a month before until Eid.
+  const rn = ramadanNow(prefs.ramadan?.shift ?? 0, prefs.prayer);
+  const ramadanSoon = rn.phase === 'during' || rn.phase === 'eid' || (rn.phase === 'before' && rn.daysTo <= 30);
+  const ramadanTitle = rn.phase === 'during' ? `Day ${rn.day}` : rn.phase === 'eid' ? 'Eid Mubarak' : rn.daysTo === 1 ? 'Begins tomorrow' : `${rn.daysTo} days to go`;
+  const ramadanSub = rn.phase === 'during' ? 'Suhoor and iftar, duas, tonight’s juz and your fasts' : rn.phase === 'eid' ? 'May Allah accept it from us and from you' : rn.phase === 'before' && !ramadanSoon ? `${rn.daysTo} days away: duas, sleep and meal ideas` : 'Get ready: duas, sleep and meal ideas';
   const hp = onColour(pal, pal.pop.emerald);
   const [now, setNow] = useState(new Date());
   // Fresh countdown whenever the tab is opened, and every 30 seconds while it's open.
@@ -96,6 +102,18 @@ export default function PrayerTab() {
           <Icon name="chevron" size={18} color={pal.muted} />
         </Pressable>
 
+        {ramadanSoon && (
+          <Pressable onPress={() => router.push('/ramadan')} style={({ pressed }) => [styles.ramadan, { opacity: pressed ? 0.85 : 1 }]} accessibilityRole="button" accessibilityLabel="Ramadan companion">
+            <Image source={ART.moon} style={styles.ramadanArt} resizeMode="contain" accessibilityIgnoresInvertColors />
+            <View style={{ flex: 1, gap: 3 }}>
+              <Text style={styles.ramadanEyebrow}>RAMADAN</Text>
+              <Text style={styles.ramadanTitle}>{ramadanTitle}</Text>
+              <Text style={styles.ramadanSub}>{ramadanSub}</Text>
+            </View>
+            <Icon name="chevron" size={18} color="#FFFFFF" />
+          </Pressable>
+        )}
+
         <Section pal={pal} title="Your mosque" />
         <Group pal={pal}>
           <Row
@@ -118,7 +136,8 @@ export default function PrayerTab() {
           <Tile pal={pal} colour={pal.pop.violet} art="beads" title="Tasbeeh" sub={tasbeehToday ? `${tasbeehToday} today` : 'Count your remembrance'} onPress={() => router.push('/tasbeeh')} onInfo={() => explain('dhikr')} />
         </TileGrid>
         <Group pal={pal}>
-          <Row pal={pal} icon="tv" title="Live from Makkah and Madinah" sub="The two Holy Mosques, and Quran radio" onPress={() => router.push('/live')} />
+          {!ramadanSoon && <Row pal={pal} icon="moon" title="Ramadan" sub={ramadanSub} onPress={() => router.push('/ramadan')} onInfo={() => explain('ramadan')} />}
+          <Row pal={pal} icon="tv" divider={!ramadanSoon} title="Live from Makkah and Madinah" sub="The two Holy Mosques, and Quran radio" onPress={() => router.push('/live')} />
           <Row pal={pal} icon="bell" title="Prayer times and alerts" sub={s.loc ? 'Calculation, Asr and alerts' : 'Set up for where you are'} onPress={() => router.push('/prayertimes')} onInfo={() => explain('prayertimes')} divider />
         </Group>
         <ExplainIntro id="salah" pal={pal} />
@@ -134,6 +153,11 @@ export default function PrayerTab() {
 }
 
 const styles = StyleSheet.create({
+  ramadan: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#0E1530', borderRadius: 20, padding: 16, marginBottom: 12, overflow: 'hidden' },
+  ramadanArt: { width: 64, height: 64 },
+  ramadanEyebrow: { fontFamily: fonts.uiBold, fontSize: 11, letterSpacing: 1.4, color: '#E2B76A' },
+  ramadanTitle: { fontFamily: fonts.read, fontSize: 22, color: '#FFFFFF' },
+  ramadanSub: { fontFamily: fonts.ui, fontSize: 13, lineHeight: 18, color: 'rgba(255,255,255,0.75)' },
   root: { flex: 1 },
   learn: { flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: 22, padding: 12, paddingRight: 16 },
   learnArt: { width: 96, height: 96, borderRadius: 16, overflow: 'hidden' },

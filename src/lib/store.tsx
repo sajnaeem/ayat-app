@@ -65,6 +65,9 @@ export type Prefs = {
   look: 'bold' | 'dark' | 'light' | 'auto';
   /** The app's colours follow the prayer day (dawn, day, sunset, night). On unless switched off. */
   skyLook: boolean;
+  /** Ramadan companion (phone only): `shift` moves the first fast a day earlier or later than the Umm al-Qura calendar (local moon
+   *  sighting); `log` is the private fasting log, per Hijri year then per day: 'f' fasted, 'm' to make up later. */
+  ramadan: { shift: -1 | 0 | 1; log: Record<string, Record<string, 'f' | 'm'>> };
   /** Answers to the first-open questions, if given. */
   journey: JourneyAnswers | null;
   journeySkipped: boolean;
@@ -126,6 +129,7 @@ const DEFAULTS: Prefs = {
   explained: [],
   look: 'bold',
   skyLook: true,
+  ramadan: { shift: 0, log: {} },
   journey: null,
   journeySkipped: false,
   dailyGoal: 0,

@@ -121,6 +121,7 @@ function Root() {
         <Stack.Screen name="watch" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="data" options={{ presentation: 'modal' }} />
         <Stack.Screen name="stats" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="ramadan" options={{ presentation: 'modal' }} />
       </Stack>
     </>
   );
