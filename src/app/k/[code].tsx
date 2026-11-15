@@ -10,7 +10,7 @@ import { joinKhatm, Preview, previewKhatm } from '@/lib/together';
 import { fonts, usePalette } from '@/lib/theme';
 
 /**
- * An invite to a khatm: getmunib.com/k/ABC234 (or munib://k/ABC234) opens here.
+ * An invite to a khatm: munib.co/k/ABC234 (or munib://k/ABC234) opens here.
  * Shows what it is, then joins (signing in first if needed).
  */
 export default function JoinKhatm() {

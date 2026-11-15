@@ -4,7 +4,7 @@ import { SURAHS } from '@/lib/quran';
 import { usePrefs } from '@/lib/store';
 
 /**
- * A shared ayah link (getmunib.com/93/1 or /93/1-4) opens the app here:
+ * A shared ayah link (munib.co/93/1 or /93/1-4) opens the app here:
  * go to the Quran tab at that ayah, then show the feed. Unknown links just open the feed.
  */
 export default function OpenSharedAyah() {

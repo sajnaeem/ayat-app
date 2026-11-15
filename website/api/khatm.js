@@ -40,7 +40,7 @@ module.exports = async (req, res) => {
 <meta property="og:site_name" content="Munib">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(desc)}">
-<meta property="og:image" content="https://${esc(req.headers['x-forwarded-host'] || req.headers.host || 'getmunib.com')}/og.png">
+<meta property="og:image" content="https://${esc(req.headers['x-forwarded-host'] || req.headers.host || 'munib.co')}/og.png">
 <link rel="icon" type="image/png" href="/favicon.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

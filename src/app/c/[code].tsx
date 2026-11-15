@@ -9,7 +9,7 @@ import { CirclePreview, daysUntil, joinCircle, niceDate, previewCircle } from '@
 import { fonts, usePalette } from '@/lib/theme';
 
 /**
- * An invite to a circle (Family circle or Ramadan together): getmunib.com/c/ABC234 (or munib://c/ABC234) opens here.
+ * An invite to a circle (Family circle or Ramadan together): munib.co/c/ABC234 (or munib://c/ABC234) opens here.
  * Shows what it is, then joins (signing in first if needed).
  */
 export default function JoinCircle() {

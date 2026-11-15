@@ -46,7 +46,7 @@ module.exports = async (req, res) => {
 
   const ref = from === to ? `${s}:${from}` : `${s}:${from}–${to}`;
   const path = from === to ? `/${s}/${from}` : `/${s}/${from}-${to}`;
-  const host = req.headers['x-forwarded-host'] || req.headers.host || 'getmunib.com';
+  const host = req.headers['x-forwarded-host'] || req.headers.host || 'munib.co';
   const origin = `https://${host}`;
   const trText = ayat.map((a) => a.tr).join(' ');
   const desc = trText.length > 180 ? trText.slice(0, 177).replace(/\s+\S*$/, '') + '…' : trText;
