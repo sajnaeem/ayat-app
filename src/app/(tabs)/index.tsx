@@ -952,8 +952,11 @@ export default function Feed() {
           stop();
           router.push('/search');
         }}
+        pagesTip={!prefs.pagesTipSeen}
+        onTipClose={() => prefs.set({ pagesTipSeen: true })}
         onPages={() => {
           stop();
+          if (!prefs.pagesTipSeen) prefs.set({ pagesTipSeen: true });
           const it = items[active];
           const at = it && it.kind === 'verse' && it.ord ? { s: it.v.s, a: it.v.a } : prefs.place ?? { s: 1, a: 1 };
           router.push({ pathname: '/mushaf', params: { page: String(pageOf(at.s, at.a)) } });
@@ -1151,7 +1154,7 @@ function OffRamp(p: { pal: Palette; tone: { bg: string; accent: string }; height
   );
 }
 
-function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palette; onDark?: boolean; top: number; moodLabel: string; mode: 'foryou' | 'order'; onMode: (m: 'foryou' | 'order') => void; showTl: boolean; onMood: () => void; onTl: () => void; onRead: () => void; onPages: () => void }) {
+function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palette; onDark?: boolean; top: number; moodLabel: string; mode: 'foryou' | 'order'; onMode: (m: 'foryou' | 'order') => void; showTl: boolean; onMood: () => void; onTl: () => void; pagesTip?: boolean; onTipClose?: () => void; onRead: () => void; onPages: () => void }) {
   // On a dark card (a video, a photo post) switch to light text and dark see-through buttons, with a shadow under the tab names.
   const pal: Palette = p.onDark ? { ...p.pal, text: '#FFFFFF', muted: 'rgba(255,255,255,0.72)', surface: 'rgba(20,24,22,0.55)', line: 'rgba(255,255,255,0.28)', bg: '#121A16', accent: '#7FE0B5' } : p.pal;
   const fade = useAnimatedStyle(() => ({ opacity: p.chrome.value }));
@@ -1188,7 +1191,10 @@ function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palett
         )}
         {p.mode === 'order' && (
           <TopBtn pal={pal} onDark={p.onDark} onPress={p.onPages} label="Page view: read the Quran as printed pages">
-            <Icon name="book" size={17} color={pal.text} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+              <Icon name="book" size={15} color={pal.accent} strokeWidth={2} />
+              <Text style={[styles.pillText, { color: pal.text }]}>Pages</Text>
+            </View>
           </TopBtn>
         )}
         <TopBtn pal={pal} onDark={p.onDark} onPress={p.onRead} label="Search surahs, ayat, people and posts">
@@ -1199,6 +1205,18 @@ function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palett
         </TopBtn>
         <MeButton size={32} />
       </View>
+      {p.mode === 'order' && p.pagesTip && !p.onDark && (
+        <Pressable onPress={p.onPages} style={[styles.tip, { top: p.top + 54, backgroundColor: pal.text }]} accessibilityRole="button" accessibilityLabel="Prefer the printed Quran? Read it page by page">
+          <View style={[styles.tipArrow, { backgroundColor: pal.text }]} />
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.tipTitle, { color: pal.bg }]}>Prefer the printed Quran?</Text>
+            <Text style={[styles.tipText, { color: pal.bg }]}>Tap Pages to read it like the book, page by page.</Text>
+          </View>
+          <Pressable onPress={p.onTipClose} hitSlop={12} accessibilityRole="button" accessibilityLabel="Close this tip">
+            <Icon name="close" size={15} color={pal.bg} />
+          </Pressable>
+        </Pressable>
+      )}
     </Animated.View>
   );
 }
@@ -1237,6 +1255,10 @@ const styles = StyleSheet.create({
   glassPill: { minHeight: 36, minWidth: 36, borderRadius: 18, overflow: 'hidden' },
   pillIn: { minHeight: 36, minWidth: 36, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center' },
   pillText: { fontFamily: fonts.uiSemi, fontSize: 13 },
+  tip: { position: 'absolute', right: 16, width: 250, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 10, shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 4 },
+  tipArrow: { position: 'absolute', top: -5, right: 150, width: 12, height: 12, borderRadius: 2, transform: [{ rotate: '45deg' }] },
+  tipTitle: { fontFamily: fonts.uiBold, fontSize: 13 },
+  tipText: { fontFamily: fonts.ui, fontSize: 12.5, lineHeight: 17, opacity: 0.85 },
   aa: { fontFamily: fonts.readItalic, fontSize: 15 },
   lead: { fontFamily: fonts.read, fontSize: 15, lineHeight: 22, marginBottom: 6 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
