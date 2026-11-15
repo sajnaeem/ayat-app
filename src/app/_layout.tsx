@@ -128,6 +128,7 @@ function Root() {
         <Stack.Screen name="stats" options={{ presentation: 'modal' }} />
         <Stack.Screen name="ramadan" options={{ presentation: 'modal' }} />
         <Stack.Screen name="curate" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="gathering" options={{ presentation: 'fullScreenModal' }} />
       </Stack>
     </>
   );

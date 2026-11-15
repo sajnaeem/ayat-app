@@ -22,6 +22,9 @@ export type JourneyAnswers = {
   at: number;
 };
 
+/** Someone who has passed away, for a gathering of dua: their name, she (for the Arabic forms) and whether they were the reader's mother or father. */
+export type GatherPerson = { id: string; name: string; she: boolean; parent: boolean };
+
 export type Prefs = {
   onboarded: boolean;
   mood: MoodId | null;
@@ -72,6 +75,8 @@ export type Prefs = {
   /** Ramadan companion (phone only): `shift` moves the first fast a day earlier or later than the Umm al-Qura calendar (local moon
    *  sighting); `log` is the private fasting log, per Hijri year then per day: 'f' fasted, 'm' to make up later. */
   ramadan: { shift: -1 | 0 | 1; log: Record<string, Record<string, 'f' | 'm'>> };
+  /** A gathering of dua (phone only): the people a family makes dua for, and how it plays. */
+  gathering?: { people: GatherPerson[]; voice: boolean; fatihah: boolean; surah: number };
   /** Answers to the first-open questions, if given. */
   journey: JourneyAnswers | null;
   journeySkipped: boolean;

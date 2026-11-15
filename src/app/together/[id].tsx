@@ -192,6 +192,9 @@ export default function KhatmScreen() {
             <Text style={[styles.memAr, { color: pal.text }]}>{memoryDua.ar}</Text>
             <Text style={[styles.small, { color: pal.text }]}>{memoryDua.en}</Text>
             <Text style={[styles.small, { color: pal.muted }]}>{memoryDua.src} · a dua for all who have passed</Text>
+            <Pressable onPress={() => router.push('/gathering')} accessibilityRole="button" hitSlop={6}>
+              <Text style={[styles.small, { color: pal.accent, fontFamily: fonts.uiSemi }]}>Make dua together for {k.in_memory} →</Text>
+            </Pressable>
           </View>
         )}
 

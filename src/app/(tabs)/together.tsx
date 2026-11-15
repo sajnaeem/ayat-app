@@ -73,6 +73,7 @@ export default function TogetherTab() {
         <Section pal={pal} title="Family" />
         <Group pal={pal}>
           <Row pal={pal} icon="people" title="Read together" sub="Finish the whole Quran as a family, a part (juz) each, or in memory of someone" onPress={needs('together', () => router.push('/together'))} onInfo={() => explain('khatm')} />
+          <Row pal={pal} icon="hands" title="A gathering of dua" sub="For someone who has passed away. Munib leads the dua with their name, and everyone says Ameen" onPress={() => router.push('/gathering')} divider />
         </Group>
 
         <Section pal={pal} title="Community" />
