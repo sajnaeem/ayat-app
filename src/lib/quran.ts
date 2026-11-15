@@ -31,6 +31,17 @@ export type Verse = {
 
 export const VERSES = (versesJson as unknown as Omit<Verse, 'b'>[]).map((v) => ({ ...v, b: v.ar[v.ar.length - 1][1] })) as Verse[];
 
+/**
+ * Ayat a reviewer approved for For you (ayah_picks, suggested by Claude and checked in the app: src/lib/picks.ts).
+ * They join the hand-picked ayat in every round of the feed. Any that overlap a hand-picked card are left out.
+ */
+let PICKS: Verse[] = [];
+export function setPicks(list: Verse[]) {
+  const taken = new Set(VERSES.map((v) => `${v.s}:${v.a}`));
+  PICKS = list.filter((p) => !taken.has(`${p.s}:${p.a}`));
+}
+export const pickCount = () => PICKS.length;
+
 /** [transliterated name, Arabic name, English meaning, ayah count] for each of the 114 surahs. */
 /** Each surah: [name, Arabic name, meaning, number of ayat, where it was revealed (standard Mushaf classification)]. */
 export const SURAHS = surahsJson as [string, string, string, number, 'makkah' | 'madinah'][];
@@ -102,10 +113,11 @@ function seeded(seed: number) {
  */
 export function feedRound(round: number, mood: MoodId | null, liked: string[], fresh = false): Verse[] {
   const affinity: Record<string, number> = {};
-  for (const k of liked) VERSES.find((v) => v.k === k)?.tags.forEach((t) => (affinity[t] = (affinity[t] || 0) + 1));
+  const pool = PICKS.length ? [...VERSES, ...PICKS] : VERSES;
+  for (const k of liked) pool.find((v) => v.k === k)?.tags.forEach((t) => (affinity[t] = (affinity[t] || 0) + 1));
   const r = seeded(SESSION + round * 7919);
   const plain = fresh && round === 0 && !mood && liked.length === 0;
-  return VERSES.map((v) => {
+  return pool.map((v) => {
     let score = r() * 0.9;
     if (mood && v.tags.includes(mood)) score += 4;
     score += Math.min(2, v.tags.reduce((a, t) => a + (affinity[t] || 0), 0) * 0.35);
@@ -302,7 +314,7 @@ function makeVerse(s: number, a: number, b: number, tags: MoodId[], c: ChapterAy
 
 /** Builds one card for any range, e.g. "67:1-5" (used for saved ayat and the reader). */
 export async function verseForKey(k: string, lang: LangId): Promise<Verse | null> {
-  const cur = VERSES.find((v) => v.k === k);
+  const cur = VERSES.find((v) => v.k === k) ?? PICKS.find((v) => v.k === k);
   if (cur) return cur;
   const mm = k.match(/^(\d+):(\d+)(?:-(\d+))?$/);
   if (!mm) return null;

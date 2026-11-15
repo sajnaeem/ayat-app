@@ -25,6 +25,7 @@ import { SkyProvider } from '@/lib/sky';
 import { usePalette } from '@/lib/theme';
 import { flushUmmah } from '@/lib/together-more';
 import { useLiveUpdates } from '@/lib/updates';
+import { loadPicks } from '@/lib/picks';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -35,6 +36,10 @@ function Root() {
   const acct = useAccount();
   useLiveUpdates();
   useUsage();
+  // Approved extra ayat for For you (ayah_picks): the saved list at once, refreshed twice a day.
+  useEffect(() => {
+    loadPicks();
+  }, []);
   const [fontsLoaded, fontError] = useFonts({
     NotoNaskhArabic_400Regular,
     Literata_400Regular,
@@ -122,6 +127,7 @@ function Root() {
         <Stack.Screen name="data" options={{ presentation: 'modal' }} />
         <Stack.Screen name="stats" options={{ presentation: 'modal' }} />
         <Stack.Screen name="ramadan" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="curate" options={{ presentation: 'modal' }} />
       </Stack>
     </>
   );

@@ -259,6 +259,7 @@ export default function You() {
                 );
               })}
               {waiting !== null && <Row pal={pal} icon="shield" title="Review posts" value={`${waiting} waiting`} valueColor={waiting ? pal.accent : undefined} onPress={() => router.push('/review')} divider />}
+              {waiting !== null && <Row pal={pal} icon="book" title="Choose ayat for For you" sub="Check the ayat Claude suggests" onPress={() => router.push('/curate')} divider />}
             </Group>
 
             {/* Account */}
