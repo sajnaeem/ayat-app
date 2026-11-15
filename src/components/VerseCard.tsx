@@ -283,17 +283,21 @@ export const VerseCard = memo(function VerseCard(props: Props) {
       >
         <Pressable onPress={onBodyPress} style={styles.stage} accessible={false}>
           <Pressable onPress={props.onRef} disabled={!props.onRef} hitSlop={8} style={{ alignSelf: 'flex-start', maxWidth: '100%' }} accessibilityRole={props.onRef ? 'button' : undefined} accessibilityLabel={props.onRef ? `${v.name} ${v.k}. Go to another surah, juz or page` : undefined}>
-          <Reveal p={p} start={0} style={styles.ref}>
+          {/* With somewhere to go, the surah name is drawn as a button (Saj, 15 Nov 2026: "more obvious that they can change the surah"). */}
+          <Reveal p={p} start={0} style={[styles.ref, props.onRef && styles.refBtn, props.onRef && { borderColor: mix(tone.bg, tone.accent, 0.35), backgroundColor: mix(tone.bg, pal.dark ? '#FFFFFF' : '#FFFFFF', pal.dark ? 0.06 : 0.6) }]}>
             <View style={[styles.keyChip, { backgroundColor: tone.accent }]}>
               <Text style={[styles.keyText, { color: pal.dark ? tone.bg : '#FFFFFF' }]}>{v.k.replace('-', '–')}</Text>
             </View>
-            <Text style={[styles.refText, { color: mix(tone.bg, text, 0.78) }]} numberOfLines={1}>
+            <Text style={[styles.refText, props.onRef ? { color: text, fontFamily: fonts.uiSemi } : { color: mix(tone.bg, text, 0.78) }]} numberOfLines={1}>
               {v.name} · {v.meaning}
             </Text>
-            <Text style={[styles.refAr, { color: muted }]} numberOfLines={1}>{v.ar_name}</Text>
+            {/* As a button there isn't room for both names: keep the English name and its meaning, which newcomers need. */}
+            {!props.onRef && <Text style={[styles.refAr, { color: muted }]} numberOfLines={1}>{v.ar_name}</Text>}
             {props.onRef && (
-              <View style={{ transform: [{ rotate: '90deg' }], marginLeft: -4 }}>
-                <Icon name="chevron" size={14} color={muted} strokeWidth={2.2} />
+              <View style={[styles.refGo, { backgroundColor: tone.accent, marginLeft: 'auto' }]}>
+                <View style={{ transform: [{ rotate: '90deg' }] }}>
+                  <Icon name="chevron" size={14} color={pal.dark ? tone.bg : '#FFFFFF'} strokeWidth={2.8} />
+                </View>
               </View>
             )}
           </Reveal>
@@ -463,6 +467,8 @@ const styles = StyleSheet.create({
   scrollInner: { flexGrow: 1, justifyContent: 'center' },
   stage: { gap: 22 },
   ref: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  refBtn: { borderWidth: 1, borderRadius: 12, paddingLeft: 5, paddingRight: 6, paddingVertical: 5 },
+  refGo: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center', marginLeft: -2 },
   keyChip: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
   keyText: { fontFamily: fonts.uiBold, fontSize: 13, fontVariant: ['tabular-nums'] },
   refText: { fontFamily: fonts.ui, fontSize: 14, flexShrink: 1 },
