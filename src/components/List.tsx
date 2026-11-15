@@ -2,6 +2,7 @@ import type React from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ART, ArtName } from '@/lib/art';
 import { Icon, IconName } from './Icon';
+import { usePaint, type Scene } from '@/lib/paint';
 import { fonts, mix, Palette, popFor } from '@/lib/theme';
 
 /** Grouped settings-style lists, shared by the You, Quran, Prayer and Together tabs. */
@@ -30,8 +31,8 @@ export function Row({
       style={({ pressed }) => [styles.row, divider && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: pal.line }, pressed && { opacity: 0.6 }]}
       accessibilityRole="button"
     >
-      <View style={[styles.icon, { backgroundColor: pal.bold && !danger ? popFor(pal, icon) : highlight ? tint : mix(pal.surface, tint, pal.dark ? 0.22 : 0.12) }]}>
-        <Icon name={icon} size={18} color={pal.bold && !danger ? '#FFFFFF' : highlight ? pal.onAccent : tint} strokeWidth={pal.bold ? 2 : undefined} />
+      <View style={[styles.icon, { backgroundColor: pal.bold && pal.dark && !danger ? popFor(pal, icon) : highlight ? tint : mix(pal.surface, tint, pal.dark ? 0.22 : 0.1) }]}>
+        <Icon name={icon} size={18} color={pal.bold && pal.dark && !danger ? '#FFFFFF' : highlight ? pal.onAccent : tint} strokeWidth={pal.bold ? 2 : undefined} />
       </View>
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={[styles.rowTitle, { color: danger ? DANGER : pal.text }]}>{title}</Text>
@@ -49,7 +50,33 @@ export function Row({
 }
 
 /** A bright square card with a 3D graphic, for a tab's main features (two per row inside TileGrid). */
-export function Tile({ pal, colour, title, sub, art, onPress, onInfo }: { pal: Palette; colour: string; title: string; sub?: string; art: ArtName; onPress: () => void; onInfo?: () => void }) {
+/** A picture card: one of Munib's painted scenes above a serif title, in the light of the prayer day. */
+function PaintTile({ pal, title, sub, paint, onPress, onInfo }: { pal: Palette; title: string; sub?: string; paint: Scene; onPress: () => void; onInfo?: () => void }) {
+  const src = usePaint(paint);
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={({ pressed }) => [styles.paintTile, { backgroundColor: pal.surface, borderColor: pal.line, opacity: pressed ? 0.92 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] }]}>
+      <Image source={src} style={styles.paintImg} resizeMode="cover" accessibilityIgnoresInvertColors />
+      <View style={styles.paintText}>
+        <Text style={[styles.paintTitle, { color: pal.text }]} numberOfLines={2}>
+          {title}
+        </Text>
+        {!!sub && (
+          <Text style={[styles.paintSub, { color: pal.muted }]} numberOfLines={2}>
+            {sub}
+          </Text>
+        )}
+      </View>
+      {!!onInfo && (
+        <Pressable onPress={onInfo} hitSlop={10} accessibilityRole="button" accessibilityLabel={`What is ${title}?`} style={[styles.tileInfo, { backgroundColor: 'rgba(0,0,0,0.28)', borderColor: 'rgba(255,255,255,0.85)' }]}>
+          <Text style={styles.tileInfoText}>?</Text>
+        </Pressable>
+      )}
+    </Pressable>
+  );
+}
+
+export function Tile({ pal, colour, title, sub, art, paint, onPress, onInfo }: { pal: Palette; colour: string; title: string; sub?: string; art: ArtName; paint?: Scene; onPress: () => void; onInfo?: () => void }) {
+  if (paint) return <PaintTile pal={pal} title={title} sub={sub} paint={paint} onPress={onPress} onInfo={onInfo} />;
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={({ pressed }) => [styles.tile, { backgroundColor: colour, opacity: pressed ? 0.92 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] }]}>
       <Image source={ART[art]} style={styles.tileArt} resizeMode="contain" accessibilityIgnoresInvertColors />
@@ -115,6 +142,11 @@ export function Stat({ pal, n, label }: { pal: Palette; n: number; label: string
 const styles = StyleSheet.create({
   tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   tile: { width: '48.4%', minHeight: 158, borderRadius: 22, padding: 14, overflow: 'hidden' },
+  paintTile: { width: '48.4%', borderRadius: 22, borderWidth: 1, overflow: 'hidden' },
+  paintImg: { width: '100%', height: 118 },
+  paintText: { paddingHorizontal: 13, paddingTop: 10, paddingBottom: 13, gap: 2, minHeight: 74 },
+  paintTitle: { fontFamily: fonts.read, fontSize: 18.5, lineHeight: 23, letterSpacing: -0.2 },
+  paintSub: { fontFamily: fonts.ui, fontSize: 12.5, lineHeight: 16.5 },
   tileArt: { position: 'absolute', right: -10, bottom: -10, width: 104, height: 104 },
   tileTitle: { fontFamily: fonts.uiBold, fontSize: 17, lineHeight: 21, color: '#FFFFFF', letterSpacing: -0.2 },
   tileSub: { fontFamily: fonts.ui, fontSize: 12.5, lineHeight: 16, color: 'rgba(255,255,255,0.85)', maxWidth: '78%' },

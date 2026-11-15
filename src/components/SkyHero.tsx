@@ -6,15 +6,15 @@ import { fonts } from '@/lib/theme';
 export { skyPhase, type SkyPhase };
 
 /**
- * The premium look (Saj, 14 Nov 2026): a full-bleed scene of a marble mosque under the sky as it is now
- * (dawn, day, sunset or night; Munib's own three.js renders in assets/art/sky, source scripts/art/sky.html),
+ * The premium look (Saj, 14 Nov 2026): a full-bleed scene of a mosque in its valley under the sky as it is now
+ * (dawn, day, sunset or night; since 15 Nov 2026 Munib's painted scenes, assets/art/paint, source scripts/art/paint.py),
  * a serif title, and frosted-glass panels. The rest of the screen slides up over it as a rounded sheet.
  */
 const SKY = {
-  fajr: require('../../assets/art/sky/fajr.jpg'),
-  day: require('../../assets/art/sky/day.jpg'),
-  maghrib: require('../../assets/art/sky/maghrib.jpg'),
-  isha: require('../../assets/art/sky/isha.jpg'),
+  fajr: require('../../assets/art/paint/valley-fajr.jpg'),
+  day: require('../../assets/art/paint/valley-day.jpg'),
+  maghrib: require('../../assets/art/paint/valley-maghrib.jpg'),
+  isha: require('../../assets/art/paint/valley-isha.jpg'),
 };
 
 /** Today's Islamic date (Umm al-Qura), e.g. "23 Jumada I 1448", if the phone can work it out. */

@@ -1,3 +1,4 @@
+import { usePaint } from '@/lib/paint';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { setStatusBarStyle } from 'expo-status-bar';
 import { useCallback } from 'react';
@@ -28,7 +29,8 @@ export default function QuranTab() {
   const { progress } = useProgress();
   const learned = learnedCount(progress);
   const next = nextToLearn(progress);
-  const lp = onColour(pal, pal.pop.amber);
+  const lp = pal.bold && pal.dark ? onColour(pal, pal.pop.amber) : pal;
+  const learnArt = usePaint('arch');
   const insets = useSafeAreaInsets();
   const barSpace = useTabBarSpace();
   const phase = skyPhase(new Date(), prefs.prayer.loc ? calcDay(prefs.prayer)?.times : null);
@@ -59,11 +61,11 @@ export default function QuranTab() {
         <View style={{ gap: 10 }}>
         <Pressable
           onPress={() => router.push('/learn')}
-          style={({ pressed }) => [styles.learn, { backgroundColor: lp.surface, opacity: pressed ? 0.8 : 1 }]}
+          style={({ pressed }) => [styles.learn, { backgroundColor: lp.surface, borderColor: pal.line, borderWidth: lp === pal ? 1 : 0, opacity: pressed ? 0.8 : 1 }]}
           accessibilityRole="button"
           accessibilityHint="Opens the short surahs to learn for prayer"
         >
-          <Image source={ART.mushaf} style={{ width: 64, height: 50 }} resizeMode="contain" accessibilityIgnoresInvertColors />
+          <Image source={learnArt} style={{ width: 66, height: 66, borderRadius: 14 }} resizeMode="cover" accessibilityIgnoresInvertColors />
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={[styles.learnTitle, { color: lp.text }]}>Learn surahs for your prayer</Text>
             <Text style={[styles.learnSub, { color: lp.muted }]}>
@@ -116,7 +118,7 @@ const styles = StyleSheet.create({
   livePillText: { fontFamily: fonts.uiBold, fontSize: 10.5, color: '#FFFFFF', letterSpacing: 0.8 },
   liveTitle: { fontFamily: fonts.uiSemi, fontSize: 15.5, color: '#FFFFFF' },
   liveSub: { fontFamily: fonts.ui, fontSize: 13, color: 'rgba(255,255,255,0.75)' },
-  learn: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 14, padding: 12 },
+  learn: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 20, padding: 10, paddingRight: 14 },
   learnTitle: { fontFamily: fonts.uiSemi, fontSize: 15.5 },
   learnSub: { fontFamily: fonts.ui, fontSize: 13 },
   tool: { flex: 1, borderRadius: 14, paddingVertical: 12, alignItems: 'center', gap: 6 },

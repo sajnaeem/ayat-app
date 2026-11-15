@@ -44,7 +44,7 @@ export default function TogetherTab() {
         <Text style={[styles.lead, { color: pal.muted }]}>The Quran with the people you love, and an ummah that reminds each other.</Text>
       </View>
       <ScrollView contentContainerStyle={[styles.body, { paddingBottom: barSpace + 20 }]}>
-        <View style={[styles.ummah, { backgroundColor: pal.bold ? pal.pop.violet : pal.accent }]} accessibilityRole="summary">
+        <View style={[styles.ummah, { backgroundColor: pal.bold && pal.dark ? pal.pop.violet : '#1F6E52' }]} accessibilityRole="summary">
           <Image source={ART.globe} style={styles.ummahArt} resizeMode="contain" accessibilityIgnoresInvertColors />
           <Text style={[styles.ummahEyebrow, { color: 'rgba(255,255,255,0.8)' }]}>THE UMMAH, READING TOGETHER</Text>
           {stats && stats.week > 0 ? (
@@ -62,12 +62,12 @@ export default function TogetherTab() {
         </View>
 
         <TileGrid>
-          <Tile pal={pal} colour={pal.pop.emerald} art="crescent" title="Ramadan together" sub="A juz a day" onPress={needs('circle', () => router.push({ pathname: '/circle', params: { kind: 'ramadan' } }))} />
-          <Tile pal={pal} colour={pal.pop.amber} art="star8" title="Family circle" sub="One ayah a day, shared" onPress={needs('circle', () => router.push({ pathname: '/circle', params: { kind: 'family' } }))} />
+          <Tile pal={pal} colour={pal.pop.emerald} art="crescent" paint="dunes" title="Ramadan together" sub="A juz a day" onPress={needs('circle', () => router.push({ pathname: '/circle', params: { kind: 'ramadan' } }))} />
+          <Tile pal={pal} colour={pal.pop.amber} art="star8" paint="garden" title="Family circle" sub="One ayah a day, shared" onPress={needs('circle', () => router.push({ pathname: '/circle', params: { kind: 'family' } }))} />
         </TileGrid>
         <TileGrid>
-          <Tile pal={pal} colour={pal.pop.rose} art="hands" title="Ask for dua" sub="Pray for each other" onPress={() => router.push('/dua-requests')} onInfo={() => explain('duaothers')} />
-          <Tile pal={pal} colour={pal.pop.sky} art="moon" title="Bedtime stories" sub="True stories for children" onPress={() => router.push('/stories')} />
+          <Tile pal={pal} colour={pal.pop.rose} art="hands" paint="olive" title="Ask for dua" sub="Pray for each other" onPress={() => router.push('/dua-requests')} onInfo={() => explain('duaothers')} />
+          <Tile pal={pal} colour={pal.pop.sky} art="moon" paint="night" title="Bedtime stories" sub="True stories for children" onPress={() => router.push('/stories')} />
         </TileGrid>
 
         <Section pal={pal} title="Family" />

@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
+import { paintFor } from '@/lib/paint';
 import { Glass, hijriToday, sky, SkyHero, skyPhase } from '@/components/SkyHero';
 import { ExplainIntro, useExplain } from '@/components/Explain';
 import { Group, Row, Section, Tile, TileGrid } from '@/components/List';
@@ -104,7 +105,7 @@ export default function PrayerTab() {
 
         {ramadanSoon && (
           <Pressable onPress={() => router.push('/ramadan')} style={({ pressed }) => [styles.ramadan, { opacity: pressed ? 0.85 : 1 }]} accessibilityRole="button" accessibilityLabel="Ramadan companion">
-            <Image source={ART.moon} style={styles.ramadanArt} resizeMode="contain" accessibilityIgnoresInvertColors />
+            <Image source={paintFor('dunes', 'isha')} style={styles.ramadanArt} resizeMode="cover" accessibilityIgnoresInvertColors />
             <View style={{ flex: 1, gap: 3 }}>
               <Text style={styles.ramadanEyebrow}>RAMADAN</Text>
               <Text style={styles.ramadanTitle}>{ramadanTitle}</Text>
@@ -130,10 +131,10 @@ export default function PrayerTab() {
 
         <Section pal={pal} title="Every day" />
         <TileGrid>
-          <Tile pal={pal} colour={pal.pop.amber} art="mushaf" title="Learn surahs" sub="Short ones for your prayer" onPress={() => router.push('/learn')} onInfo={() => explain('surahs')} />
-          <Tile pal={pal} colour={pal.pop.sky} art="kaaba" title="Qibla" sub="Which way to face Makkah" onPress={() => router.push('/qibla')} onInfo={() => explain('qibla')} />
-          <Tile pal={pal} colour={pal.pop.rose} art="hands" title="Find a dua" sub="For what’s happening" onPress={() => router.push('/duas')} onInfo={() => explain('dua')} />
-          <Tile pal={pal} colour={pal.pop.violet} art="beads" title="Tasbeeh" sub={tasbeehToday ? `${tasbeehToday} today` : 'Count your remembrance'} onPress={() => router.push('/tasbeeh')} onInfo={() => explain('dhikr')} />
+          <Tile pal={pal} colour={pal.pop.amber} art="mushaf" paint="arch" title="Learn surahs" sub="Short ones for your prayer" onPress={() => router.push('/learn')} onInfo={() => explain('surahs')} />
+          <Tile pal={pal} colour={pal.pop.sky} art="kaaba" paint="minaret" title="Qibla" sub="Which way to face Makkah" onPress={() => router.push('/qibla')} onInfo={() => explain('qibla')} />
+          <Tile pal={pal} colour={pal.pop.rose} art="hands" paint="mist" title="Find a dua" sub="For what’s happening" onPress={() => router.push('/duas')} onInfo={() => explain('dua')} />
+          <Tile pal={pal} colour={pal.pop.violet} art="beads" paint="sea" title="Tasbeeh" sub={tasbeehToday ? `${tasbeehToday} today` : 'Count your remembrance'} onPress={() => router.push('/tasbeeh')} onInfo={() => explain('dhikr')} />
         </TileGrid>
         <Group pal={pal}>
           {!ramadanSoon && <Row pal={pal} icon="moon" title="Ramadan" sub={ramadanSub} onPress={() => router.push('/ramadan')} onInfo={() => explain('ramadan')} />}
@@ -154,7 +155,7 @@ export default function PrayerTab() {
 
 const styles = StyleSheet.create({
   ramadan: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#0E1530', borderRadius: 20, padding: 16, marginBottom: 12, overflow: 'hidden' },
-  ramadanArt: { width: 64, height: 64 },
+  ramadanArt: { width: 72, height: 72, borderRadius: 16 },
   ramadanEyebrow: { fontFamily: fonts.uiBold, fontSize: 11, letterSpacing: 1.4, color: '#E2B76A' },
   ramadanTitle: { fontFamily: fonts.read, fontSize: 22, color: '#FFFFFF' },
   ramadanSub: { fontFamily: fonts.ui, fontSize: 13, lineHeight: 18, color: 'rgba(255,255,255,0.75)' },
