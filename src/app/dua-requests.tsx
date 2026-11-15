@@ -1,8 +1,9 @@
 import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ActionSheetIOS, ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { DuaHow } from '@/components/DuaHow';
 import { ExplainIntro } from '@/components/Explain';
 import { GuidelinesList } from '@/components/Guidelines';
 import { Icon } from '@/components/Icon';
@@ -19,6 +20,7 @@ import { fonts, mix, usePalette } from '@/lib/theme';
 export default function DuaRequests() {
   const pal = usePalette();
   const insets = useSafeAreaInsets();
+  const { how } = useLocalSearchParams<{ how?: string }>();
   const router = useRouter();
   const toast = useToast();
   const acct = useAccount();
@@ -189,6 +191,7 @@ export default function DuaRequests() {
         ListHeaderComponent={
           <View style={{ gap: 10, marginBottom: 6 }}>
             <ExplainIntro id="duaothers" pal={pal} />
+            <DuaHow pal={pal} open={how === '1'} />
             <Text style={[styles.lead, { color: pal.muted }]}>
               The Prophet ﷺ said the dua of a Muslim for their brother or sister in their absence is answered, and an angel says, “Ameen, and the same for you” (Sahih Muslim 2733).
             </Text>
