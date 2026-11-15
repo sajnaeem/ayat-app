@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
+import { Today } from '@/components/Today';
 import { paintFor } from '@/lib/paint';
 import { Glass, hijriToday, sky, SkyHero, skyPhase } from '@/components/SkyHero';
 import { ExplainIntro, useExplain } from '@/components/Explain';
@@ -91,6 +92,7 @@ export default function PrayerTab() {
           )}
         </SkyHero>
         <View style={[styles.sheet, { backgroundColor: pal.bg }]}>
+        <Today pal={pal} />
         <Pressable onPress={() => router.push('/pray')} style={({ pressed }) => [styles.learn, { backgroundColor: pal.surface, opacity: pressed ? 0.8 : 1 }]} accessibilityRole="button" accessibilityLabel="Learn to pray, step by step">
           <View style={[styles.learnArt, { backgroundColor: pal.bold ? mix(pal.surface, pal.pop.emerald, 0.14) : mix(pal.surface, pal.accent, 0.1) }]}>
             <Image source={poseArt(prefs.prayFigure ?? 'brother', 'ruku')} style={{ width: '100%', height: '100%' }} resizeMode="contain" accessibilityIgnoresInvertColors />
