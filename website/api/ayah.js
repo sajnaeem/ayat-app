@@ -53,7 +53,8 @@ module.exports = async (req, res) => {
   const revealed = place === 'madinah' ? 'Madinah' : 'Makkah';
   const prev = from > 1 ? `/${s}/${from - 1}` : s > 1 ? `/${s - 1}/${SURAHS[s - 2][3]}` : null;
   const next = to < count ? `/${s}/${to + 1}` : s < 114 ? `/${s + 1}/1` : null;
-  const cta = APP_STORE_URL || '/';
+  // Until Munib is on the App Store, the button opens this ayah in the web app (app.munib.co), ready to keep reading.
+  const cta = APP_STORE_URL || `https://app.munib.co${path}`;
   const audio = ayat.map((a) => `https://verses.quran.com/Alafasy/mp3/${pad(s)}${pad(a.n)}.mp3`);
 
   const html = `<!doctype html>
@@ -106,7 +107,7 @@ footer { font-family: var(--display); font-size: 13px; color: var(--muted); padd
 footer a { color: var(--muted); }
 </style>
 </head><body><div class="wrap">
-<header><a class="brand" href="/">munib<i>.</i></a><a class="get" href="${esc(cta)}">Get the app</a></header>
+<header><a class="brand" href="/">munib<i>.</i></a><a class="get" href="${esc(cta)}">${APP_STORE_URL ? 'Get the app' : 'Open in Munib'}</a></header>
 <main>
 <article class="card">
   <div class="chip"><b>${esc(ref)}</b><span>${esc(name)} · ${esc(meaning)}</span><span lang="ar" style="font-family:var(--ar)">${esc(arName)}</span></div>
@@ -120,7 +121,7 @@ footer a { color: var(--muted); }
 <section class="cta">
   <h2>Read the whole of ${esc(name)} in Munib.</h2>
   <p>Munib is a new way to read the Quran: one ayah at a time, recited aloud, with translation and word meanings. Start with one minute a day.</p>
-  <a class="btn" href="${esc(cta)}">Get Munib on iPhone</a>
+  <a class="btn" href="${esc(cta)}">${APP_STORE_URL ? 'Get Munib on iPhone' : 'Keep reading in Munib'}</a>${APP_STORE_URL ? '' : '<p style="margin:12px 0 0;font-size:14px">Opens in your browser. Coming soon to iPhone.</p>'}
 </section>
 </main>
 <footer><span>Quran text and recitation via the Quran Foundation</span><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><a href="/support.html">Support</a></footer>
