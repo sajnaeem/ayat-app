@@ -14,6 +14,7 @@ import { FirstRun } from '@/components/Welcome';
 import { ChooseName } from '@/components/SignIn';
 import { ToastProvider } from '@/components/Toast';
 import { MomentHost } from '@/components/Moment';
+import { WebFrame } from '@/components/WebFrame';
 import { RadioProvider } from '@/lib/radio';
 import { useUsage } from '@/lib/usage';
 import { PlusProvider } from '@/lib/plus';
@@ -126,15 +127,6 @@ function Root() {
 }
 
 /** On a computer, the web app shows as a phone-width column in the middle of the screen. */
-function WebFrame({ children }: { children: React.ReactNode }) {
-  if (Platform.OS !== 'web') return <>{children}</>;
-  return (
-    <View style={{ flex: 1, alignItems: 'center', backgroundColor: '#E4E8E2' }}>
-      <View style={{ flex: 1, width: '100%', maxWidth: 520, overflow: 'hidden' }}>{children}</View>
-    </View>
-  );
-}
-
 export default function Layout() {
   return (
     <WebFrame>
