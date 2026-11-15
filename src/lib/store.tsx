@@ -76,7 +76,7 @@ export type Prefs = {
    *  sighting); `log` is the private fasting log, per Hijri year then per day: 'f' fasted, 'm' to make up later. */
   ramadan: { shift: -1 | 0 | 1; log: Record<string, Record<string, 'f' | 'm'>> };
   /** Today's checklist on the Prayer tab (phone only): the day it belongs to and what has been ticked. It starts fresh each day; nothing older is kept. */
-  today?: { day: string; done: string[] };
+  today?: { day: string; done: string[]; cheered?: boolean };
   /** A gathering of dua (phone only): the people a family makes dua for, and how it plays. */
   gathering?: { people: GatherPerson[]; voice: boolean; fatihah: boolean; surah: number };
   /** Answers to the first-open questions, if given. */

@@ -13,6 +13,7 @@ import { JourneyFlow } from '@/components/Journey';
 import { FirstRun } from '@/components/Welcome';
 import { ChooseName } from '@/components/SignIn';
 import { ToastProvider } from '@/components/Toast';
+import { ConfettiHost } from '@/components/Confetti';
 import { MomentHost } from '@/components/Moment';
 import { WebFrame } from '@/components/WebFrame';
 import { RadioProvider } from '@/lib/radio';
@@ -148,6 +149,7 @@ export default function Layout() {
               <ToastProvider>
                 <Root />
                 <MomentHost />
+                <ConfettiHost />
               </ToastProvider>
               </RadioProvider>
             </PlusProvider>

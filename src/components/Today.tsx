@@ -1,11 +1,14 @@
 import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { fireConfetti } from '@/components/Confetti';
 import { GoldStar } from '@/components/Gold';
 import { Icon } from '@/components/Icon';
 import { SNIPPETS } from '@/data/snippets';
 import { showFeed } from '@/lib/nav';
 import { dayKey, useProgress } from '@/lib/progress';
+import { playSfx } from '@/lib/sfx';
 import { usePrefs } from '@/lib/store';
 import { fonts, mix, type Palette } from '@/lib/theme';
 
@@ -40,7 +43,8 @@ export function Today({ pal }: { pal: Palette }) {
   const has = (id: string) => t.done.includes(id);
   const toggle = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    prefs.set({ today: { day: key, done: has(id) ? t.done.filter((x) => x !== id) : [...t.done, id] } });
+    if (!has(id)) playSfx('tick'); // a soft sound for every deed and prayer ticked (not when unticking)
+    prefs.set({ today: { ...t, day: key, done: has(id) ? t.done.filter((x) => x !== id) : [...t.done, id] } });
   };
 
   const goal = prefs.dailyGoal || 10;
@@ -70,6 +74,25 @@ export function Today({ pal }: { pal: Palette }) {
   const count = items.filter((i) => i.done).length + (prayed === 5 ? 1 : 0);
   const all = count === total;
   const gold = pal.gold;
+
+  // The whole list done: once a day, while this tab is open (reading and tasbeeh tick themselves elsewhere, so the
+  // celebration waits until the reader is back here to see it). Unticking and re-ticking doesn't replay it.
+  const cheered = !!t.cheered;
+  const firstName = prefs.firstName;
+  const setPrefs = prefs.set;
+  useFocusEffect(
+    useCallback(() => {
+      if (!all || cheered) return;
+      setPrefs({ today: { day: key, done: t.done, cheered: true } });
+      // No cleanup on purpose: marking it cheered re-runs this effect, which must not cancel the celebration.
+      setTimeout(() => {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        playSfx('done');
+        fireConfetti(firstName ? `MashaAllah, ${firstName}` : 'MashaAllah');
+      }, 350);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [all, cheered, key, firstName]),
+  );
 
   return (
     <View style={[styles.card, { backgroundColor: pal.surface, borderColor: all ? gold : pal.line }]}>
