@@ -3,6 +3,8 @@
 import { EXPLAINERS } from '../src/data/explainers';
 import { STEPS, LEARN_ORDER, WUDU, WUDU_END, BEFORE } from '../src/data/salah';
 import { SNIPPETS } from '../src/data/snippets';
+import { MORE_SNIPPETS } from '../src/data/feedMore';
+import SURAHS from '../src/data/surahs.json';
 import { DUA_TOPICS } from '../src/data/duas';
 import { writeFileSync } from 'fs';
 type Item = { id: string; title: string; text: string; src: string };
@@ -22,6 +24,14 @@ for (const s of SNIPPETS as any[]) {
   else if (k === 'quiz') out.push({ id: `s:${s.id}`, title: s.q, text: `${s.options[s.answer]}. ${s.why}`, src: s.source });
   else if (k === 'story') s.parts.forEach((p: any, i: number) => out.push({ id: `s:${s.id}.${i}`, title: `${s.title ?? `The story of ${s.who}`}${p.heading ? `: ${p.heading}` : ` (part ${i + 1})`}`, text: p.text, src: p.source }));
   else if (k === 'quote') out.push({ id: `s:${s.id}`, title: `Saying of ${s.who} (${s.about})`, text: s.text ?? s.quote ?? '', src: s.source ?? '' });
+}
+// The 99 names and the surah introductions from feedMore.ts (its duas are already in DUA_TOPICS below).
+for (const s of MORE_SNIPPETS as any[]) {
+  if (s.kind === 'name') out.push({ id: `s:${s.id}`, title: `Name of Allah: ${s.tl} (${s.meaning})`, text: s.body, src: s.source });
+  else if (s.kind === 'surah') {
+    const [name, , meaning, ayat, place] = (SURAHS as any)[s.s - 1];
+    out.push({ id: `s:${s.id}`, title: `About Surah ${name} (${meaning}), surah ${s.s}`, text: `${s.about} ${ayat} ayat, revealed in ${place === 'madinah' ? 'Madinah' : 'Makkah'}.`, src: `Quran ${s.s} · Munib's introduction` });
+  }
 }
 for (const t of DUA_TOPICS) out.push({ id: `d:${t.id}`, title: `Duas: ${t.title}`, text: t.duas.map((d) => `${d.tl} — "${d.en}"${d.n > 1 ? ` (${d.n} times)` : ''}`).join('\n'), src: t.src });
 writeFileSync('website/data/kb.json', JSON.stringify(out));

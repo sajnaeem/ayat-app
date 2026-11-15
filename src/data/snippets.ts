@@ -31,7 +31,9 @@ export type Snippet =
    */
   | { id: string; kind: 'quote'; who: string; honorific?: string; about: string; text: string; source: string; check?: boolean; moods?: MoodId[] }
   /** One short ayah recited by three reciters, one after another. */
-  | { id: string; kind: 'reciters'; s: number; a: number; ar: string; en: string; moods?: MoodId[] };
+  | { id: string; kind: 'reciters'; s: number; a: number; ar: string; en: string; moods?: MoodId[] }
+  /** About one surah, in Munib's own words (feedMore.ts), with a button to read it. */
+  | { id: string; kind: 'surah'; s: number; about: string; moods?: MoodId[] };
 
 export type StoryPart = { heading?: string; text: string; source: string };
 

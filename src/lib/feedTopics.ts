@@ -12,7 +12,8 @@ export const FEED_TOPICS: FeedTopic[] = [
   { id: 'facts', title: 'Did you know? and myths', sub: 'Facts about the Quran, and common myths answered' },
   { id: 'quotes', title: 'Words of the scholars', sub: 'Sayings of the Companions and scholars, with their books' },
   { id: 'duas', title: 'Duas', sub: 'Short duas from the Quran and Sunnah' },
-  { id: 'names', title: 'Names of Allah', sub: 'One name and its meaning' },
+  { id: 'names', title: 'Names of Allah', sub: 'All 99 names, one at a time, with the ayah each appears in' },
+  { id: 'surahs', title: 'About each surah', sub: 'What a surah is about, where it was revealed, and a button to read it' },
   { id: 'try', title: 'Try this today', sub: 'A small Sunnah to try' },
   { id: 'words', title: 'Arabic words and meanings', sub: 'Words like iman, deen and in shaʾ Allah explained' },
   { id: 'letters', title: 'Arabic letters', sub: 'Learn the alphabet, one letter at a time' },
@@ -34,6 +35,7 @@ const BY_KIND: Record<Snippet['kind'], string> = {
   letter: 'letters',
   quiz: 'quiz',
   reciters: 'reciters',
+  surah: 'surahs',
 };
 export const topicOf = (s: Snippet) => BY_KIND[s.kind] ?? 'facts';
 

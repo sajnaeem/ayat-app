@@ -812,6 +812,7 @@ export default function Feed() {
                   bottomInset={barSpace}
                   active={index === active && sheet !== 'mood'}
                   autoplay={prefs.sound && !held}
+                  onOpen={openSurah}
                 />
               );
             }

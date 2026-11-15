@@ -1,5 +1,6 @@
 import { topicOf } from './feedTopics';
 import { NEWCOMER, SNIPPETS, Snippet, VIDEOS, FeedVideo } from '@/data/snippets';
+import { MORE_SNIPPETS } from '@/data/feedMore';
 import type { MoodId } from '@/lib/quran';
 import { SITE } from '@/lib/site';
 
@@ -35,8 +36,34 @@ function byMood<T extends { id: string; moods?: MoodId[] }>(all: T[], mood: Mood
   return [...shuffle(mine, salt), ...shuffle(everyone, salt + 1), ...shuffle(others, salt + 2)];
 }
 
-export const snippetOrder = (mood: MoodId | null, hide: string[] = []): Snippet[] =>
-  byMood(hide.length ? SNIPPETS.filter((s) => !hide.includes(topicOf(s))) : SNIPPETS, mood, 11);
+/** Every card that can come between the ayat: the hand-written ones and the ones built from Munib's libraries (feedMore.ts). */
+const ALL_SNIPPETS: Snippet[] = [...SNIPPETS, ...MORE_SNIPPETS];
+
+/**
+ * Takes turns between kinds (a dua, then a name, then a fact…) so the hundreds of duas, names and surah
+ * introductions don't crowd out the rest. Keeps each kind's own order, so mood-matched cards still come first.
+ */
+function takeTurns(list: Snippet[]): Snippet[] {
+  const queues = new Map<string, Snippet[]>();
+  for (const s of list) {
+    const k = topicOf(s);
+    if (!queues.has(k)) queues.set(k, []);
+    queues.get(k)!.push(s);
+  }
+  const out: Snippet[] = [];
+  const qs = [...queues.values()];
+  while (out.length < list.length) for (const q of qs) if (q.length) out.push(q.shift()!);
+  return out;
+}
+
+export const snippetOrder = (mood: MoodId | null, hide: string[] = []): Snippet[] => {
+  const pool = hide.length ? ALL_SNIPPETS.filter((s) => !hide.includes(topicOf(s))) : ALL_SNIPPETS;
+  const ordered = byMood(pool, mood, 11);
+  if (!mood) return takeTurns(ordered);
+  // Keep the mood's own cards in front, then take turns within each part.
+  const fits = (x: Snippet) => !!x.moods?.includes(mood) || (mood === 'newmuslim' && NEWCOMER.has(x.id));
+  return [...takeTurns(ordered.filter(fits)), ...takeTurns(ordered.filter((x) => !fits(x)))];
+};
 export const videoOrder = (mood: MoodId | null, hide: string[] = []): FeedVideo[] => (hide.includes('videos') ? [] : byMood(VIDEOS, mood, 23));
 
 /** A card for this moment, worked out from the phone's clock and calendar alone (nothing about the person). */

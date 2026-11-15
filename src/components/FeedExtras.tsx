@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { FeedVideo, Snippet } from '@/data/snippets';
 import { ayahAudio, ReciterId, RECITERS, wordAudioUrl } from '@/lib/audio';
-import { ayahWords } from '@/lib/quran';
+import { ayahWords, revealedIn, SURAHS } from '@/lib/quran';
 import { posterUrl, Timely, videoUrl } from '@/lib/extras';
 import { fonts, mix, Palette, Tone } from '@/lib/theme';
 import { Icon } from './Icon';
@@ -13,7 +13,7 @@ import { Icon } from './Icon';
 type CardProps = { pal: Palette; tone: Tone; height: number; bottomInset: number };
 
 /** A fact, myth, word, dua, name of Allah, small action, quiz, story part or reciter card, between the ayat on For you. */
-export function SnippetCard(p: CardProps & { s: Snippet; part?: number; active: boolean; autoplay: boolean; reciter?: ReciterId }) {
+export function SnippetCard(p: CardProps & { s: Snippet; part?: number; active: boolean; autoplay: boolean; reciter?: ReciterId; onOpen?: (s: number, a: number) => void }) {
   const { s, pal, tone, height, bottomInset } = p;
   const [revealed, setRevealed] = useState(false);
   const [picked, setPicked] = useState<number | null>(null);
@@ -56,7 +56,7 @@ export function SnippetCard(p: CardProps & { s: Snippet; part?: number; active: 
           <Text style={[styles.tl, { color: tone.accent }]}>
             {s.tl} · <Text style={{ color: pal.text }}>{s.meaning}</Text>
           </Text>
-          <Text style={[styles.body, { color: soft }]}>{s.body}</Text>
+          <Text style={[styles.body, { color: soft }, s.body.length > 240 && { fontSize: 16, lineHeight: 24 }]}>{s.body}</Text>
           {source(s.source)}
         </View>
       );
@@ -147,6 +147,28 @@ export function SnippetCard(p: CardProps & { s: Snippet; part?: number; active: 
               <View key={d} style={[styles.dot, { backgroundColor: d === i ? tone.accent : mix(tone.bg, pal.text, 0.18) }]} />
             ))}
           </View>
+        </View>
+      );
+    }
+    case 'surah': {
+      const [name, arName, meaning, ayat] = SURAHS[s.s - 1];
+      return (
+        <View style={frame} accessible accessibilityLabel={`About Surah ${name}, ${meaning}. ${s.about}`}>
+          {eyebrow(`ABOUT THIS SURAH · ${s.s} OF 114`)}
+          <Text style={[styles.surahAr, { color: pal.text }]}>{arName}</Text>
+          <Text style={[styles.title, { color: pal.text }]}>
+            {name} <Text style={{ color: soft, fontFamily: fonts.read }}>· {meaning}</Text>
+          </Text>
+          <Text style={[styles.body, { color: soft }]}>{s.about}</Text>
+          <Text style={[styles.source, { color: tone.accent }]}>
+            {ayat} ayat · Revealed in {revealedIn(s.s)}
+            {ayat <= 11 ? ' · about a minute to read' : ''}
+          </Text>
+          {!!p.onOpen && (
+            <Pressable onPress={() => p.onOpen!(s.s, 1)} accessibilityRole="button" style={[styles.action, { backgroundColor: pal.text }]}>
+              <Text style={[styles.actionText, { color: tone.bg }]}>Read {name}</Text>
+            </Pressable>
+          )}
         </View>
       );
     }
@@ -424,6 +446,7 @@ const styles = StyleSheet.create({
   body: { fontFamily: fonts.read, fontSize: 18, lineHeight: 28 },
   source: { fontFamily: fonts.ui, fontSize: 12, lineHeight: 17, marginTop: 4 },
   ar: { fontFamily: fonts.arabic, fontSize: 72, lineHeight: 130, textAlign: 'right' },
+  surahAr: { fontFamily: fonts.arabic, fontSize: 56, lineHeight: 100, textAlign: 'right' },
   tl: { fontFamily: fonts.readItalic, fontSize: 22, lineHeight: 30 },
   letterRow: { flexDirection: 'row', alignItems: 'center', gap: 20 },
   letter: { fontFamily: fonts.arabic, fontSize: 96, lineHeight: 150, minWidth: 90, textAlign: 'center' },
