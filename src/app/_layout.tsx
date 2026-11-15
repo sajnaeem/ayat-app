@@ -16,6 +16,7 @@ import { ToastProvider } from '@/components/Toast';
 import { ConfettiHost } from '@/components/Confetti';
 import { MomentHost } from '@/components/Moment';
 import { WebFrame } from '@/components/WebFrame';
+import { LoopProvider } from '@/lib/loop';
 import { RadioProvider } from '@/lib/radio';
 import { useUsage } from '@/lib/usage';
 import { PlusProvider } from '@/lib/plus';
@@ -124,6 +125,7 @@ function Root() {
         <Stack.Screen name="pray/index" options={{ presentation: 'modal' }} />
         <Stack.Screen name="pray/[mode]" />
         <Stack.Screen name="live" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="repeat" options={{ presentation: 'modal' }} />
         <Stack.Screen name="watch" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="data" options={{ presentation: 'modal' }} />
         <Stack.Screen name="stats" options={{ presentation: 'modal' }} />
@@ -146,11 +148,13 @@ export default function Layout() {
           <AccountProvider>
             <PlusProvider>
               <RadioProvider>
+              <LoopProvider>
               <ToastProvider>
                 <Root />
                 <MomentHost />
                 <ConfettiHost />
               </ToastProvider>
+              </LoopProvider>
               </RadioProvider>
             </PlusProvider>
           </AccountProvider>

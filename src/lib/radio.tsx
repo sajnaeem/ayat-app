@@ -23,8 +23,20 @@ const Ctx = createContext<RadioState>({ station: null, on: false, loading: false
 export const useRadio = () => useContext(Ctx);
 
 let stopper: (() => void) | null = null;
-/** Stop the radio from anywhere (e.g. when a story or a recitation starts). */
-export const stopRadio = () => stopper?.();
+let closer: (() => void) | null = null;
+/** Other app-wide players (the repeat player) that must give way too: each registers how to pause and how to close. */
+const others = new Set<{ pause: () => void; close: () => void }>();
+export const registerSound = (o: { pause: () => void; close: () => void }) => {
+  others.add(o);
+  return () => void others.delete(o);
+};
+/** Stop the radio (and the repeat player) from anywhere, e.g. when a story or a recitation starts. */
+export const stopRadio = () => {
+  stopper?.();
+  others.forEach((o) => o.pause());
+};
+/** The repeat player is taking over: put the radio away. */
+export const closeRadio = () => closer?.();
 
 export function RadioProvider({ children }: { children: ReactNode }) {
   const player = useRef<AudioPlayer | null>(null);
@@ -45,6 +57,7 @@ export function RadioProvider({ children }: { children: ReactNode }) {
 
   const play = useCallback((s: Station) => {
     const p = get();
+    others.forEach((o) => o.close()); // one app-wide player at a time
     setStation(s);
     setOn(true);
     setLoading(true);
@@ -84,8 +97,13 @@ export function RadioProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     stopper = () => halt(true);
+    closer = () => {
+      halt(true);
+      setStation(null);
+    };
     return () => {
       stopper = null;
+      closer = null;
     };
   }, [halt]);
 

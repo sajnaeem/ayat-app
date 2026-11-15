@@ -3,6 +3,7 @@ import { celebrate, juzMoment, surahMoment } from '@/lib/moments';
 import { Glassy, hasGlass } from '@/components/Glassy';
 import { SkyWash } from '@/components/SkyWash';
 import { useTabBarSpace } from '@/components/TabBar';
+import { useLoop } from '@/lib/loop';
 import { stopRadio, useRadio } from '@/lib/radio';
 import { useAudioPlayer } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
@@ -560,6 +561,7 @@ export default function Feed() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tipId]);
   const radio = useRadio();
+  const loop = useLoop();
   useFocusEffect(
     useCallback(() => {
       setFocused(true);
@@ -607,13 +609,13 @@ export default function Feed() {
   useEffect(() => {
     if (!focused) return stop();
     // The radio is on: leave it playing until the reader taps a card.
-    if (radio.on) return stop();
+    if (radio.on || loop.on) return stop();
     if (!items.length || sheet === 'mood' || resting) return;
     const it = items[active];
     if (prefs.sound && !heldRef.current) startCard(it, it?.kind === 'verse' ? (repeat[it.key] ?? 1) : 1);
     else stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeKey, prefs.sound, prefs.reciter, sheet === 'mood', resting, focused, radio.on]);
+  }, [activeKey, prefs.sound, prefs.reciter, sheet === 'mood', resting, focused, radio.on, loop.on]);
 
   // Each new card: controls visible while it arrives, then fade (after the translation and buttons have appeared).
   useEffect(() => {

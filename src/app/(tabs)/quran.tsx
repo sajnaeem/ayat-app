@@ -89,6 +89,7 @@ export default function QuranTab() {
         <View style={styles.tools}>
           <Tool pal={pal} icon="book" label="Page view" onPress={() => router.push({ pathname: '/mushaf', params: { page: String(pageOf(at.s, at.a)) } })} />
           <Tool pal={pal} icon="search" label="Search" onPress={() => router.push({ pathname: '/search', params: { tab: 'quran' } })} />
+          <Tool pal={pal} icon="repost" label="Repeat" onPress={() => router.push({ pathname: '/repeat', params: { s: String(at.s) } })} />
           {Platform.OS !== 'web' && <Tool pal={pal} icon="download" label="Offline" onPress={() => router.push('/downloads')} />}
         </View>
         </View>

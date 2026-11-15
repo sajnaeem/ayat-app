@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Glassy, hasGlass } from './Glassy';
 import { Icon, IconName } from './Icon';
 import { ART } from '@/lib/art';
+import { useLoop } from '@/lib/loop';
 import { useRadio } from '@/lib/radio';
 import { fonts, mix, usePalette } from '@/lib/theme';
 
@@ -30,7 +31,8 @@ const barBottom = (inset: number) => Math.max(inset - 10, 10);
 export function useTabBarSpace() {
   const insets = useSafeAreaInsets();
   const radio = useRadio();
-  return BAR_H + barBottom(insets.bottom) + 10 + (radio.station ? 62 : 0);
+  const loop = useLoop();
+  return BAR_H + barBottom(insets.bottom) + 10 + (radio.station || loop.passage ? 62 : 0);
 }
 
 /**
@@ -53,6 +55,7 @@ export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
   return (
     <View style={styles.float} pointerEvents="box-none">
       <RadioBar />
+      <LoopBar />
       <Glassy
         dark={pal.dark}
         interactive
@@ -83,6 +86,35 @@ export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
 }
 
 /** The radio's mini player, just above the tabs while a station is on. */
+/** The repeat player's mini bar: what is on repeat, pause and close. Opens Play on repeat. */
+function LoopBar() {
+  const pal = usePalette();
+  const loop = useLoop();
+  const router = useRouter();
+  if (!loop.passage) return null;
+  const bg = pal.dark ? mix(pal.bg, '#FFFFFF', 0.1) : pal.surface;
+  const sub = loop.error ? 'Couldn’t load · check your connection' : loop.finished ? 'Finished' : !loop.on ? 'Paused' : loop.loading ? 'Loading…' : `On repeat · round ${loop.round}${loop.rounds ? ` of ${loop.rounds}` : ''}${loop.total > 1 ? ` · ayah ${loop.at + 1} of ${loop.total}` : ''}`;
+  return (
+    <Glassy dark={pal.dark} style={styles.radio} fallback={{ backgroundColor: bg, shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 14, shadowOffset: { width: 0, height: 4 }, elevation: 4 }}>
+      <Pressable onPress={() => router.push('/repeat')} style={styles.radioMain} accessibilityRole="button" accessibilityLabel={`On repeat: ${loop.passage.title}. Open`}>
+        <View style={[styles.loopIcon, { backgroundColor: mix(bg, pal.accent, pal.dark ? 0.3 : 0.14) }]}>
+          <Icon name="repost" size={18} color={pal.accent} strokeWidth={2} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.radioTitle, { color: pal.text }]} numberOfLines={1}>{loop.passage.title}</Text>
+          <Text style={[styles.radioSub, { color: loop.on && !loop.error ? pal.accent : pal.muted }]} numberOfLines={1}>{sub}</Text>
+        </View>
+      </Pressable>
+      <Pressable onPress={loop.toggle} hitSlop={8} style={[styles.radioBtn, { backgroundColor: pal.text }]} accessibilityRole="button" accessibilityLabel={loop.on ? 'Pause' : 'Play'}>
+        {loop.on && loop.loading ? <ActivityIndicator size="small" color={pal.bg} /> : <Icon name={loop.on ? 'pause' : 'play'} size={16} color={pal.bg} fill={!loop.on} strokeWidth={2.4} />}
+      </Pressable>
+      <Pressable onPress={loop.close} hitSlop={8} style={styles.radioX} accessibilityRole="button" accessibilityLabel="Stop and close">
+        <Icon name="close" size={16} color={pal.muted} />
+      </Pressable>
+    </Glassy>
+  );
+}
+
 function RadioBar() {
   const pal = usePalette();
   const radio = useRadio();
@@ -115,6 +147,7 @@ const styles = StyleSheet.create({
   radioTitle: { fontFamily: fonts.uiSemi, fontSize: 14.5 },
   radioSub: { fontFamily: fonts.uiSemi, fontSize: 12 },
   radioBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  loopIcon: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
   radioX: { width: 30, height: 36, alignItems: 'center', justifyContent: 'center' },
   float: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   bar: { height: BAR_H, borderRadius: BAR_H / 2, marginHorizontal: 14 },
