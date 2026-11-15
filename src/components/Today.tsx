@@ -62,7 +62,7 @@ export function Today({ pal }: { pal: Palette }) {
   const items = [
     { id: 'read', title: `Read ${goal} ayat`, sub: read >= goal ? `${read} read` : `${read} of ${goal}`, done: read >= goal, auto: true, open: () => showFeed(router) },
     { id: 'tasbeeh', title: `Remember Allah ${TASBEEH_GOAL} times`, sub: tasbeeh >= TASBEEH_GOAL ? `${tasbeeh} today` : `${tasbeeh} of ${TASBEEH_GOAL} · tasbeeh`, done: tasbeeh >= TASBEEH_GOAL, auto: true, open: () => router.push('/tasbeeh') },
-    { id: 'adhkar', title: 'Morning or evening adhkar', sub: 'Words of remembrance to begin or end the day', done: has('adhkar'), open: () => router.push('/duas') },
+    { id: 'selfdua', title: 'Make a dua for yourself', sub: 'Ask Allah for what you need, in your own words', done: has('selfdua'), open: () => router.push('/duas') },
     { id: 'dua', title: 'Make dua for someone', sub: 'A parent, a friend, someone who asked', done: has('dua'), open: () => router.push({ pathname: '/dua-requests', params: { how: '1' } }) },
     { id: 'extra', title: extra.title, sub: extra.sub, done: has('extra'), open: extra.open },
   ];
