@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import type React from "react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   FlatList,
   Pressable,
@@ -47,6 +47,15 @@ export function QuranIndex({ toPages = false, title = "Go to", close = false, ex
       : null;
   const hereJuz = here ? juzOf(here[0], here[1]) : 0;
   const hereS = here ? here[0] : 0;
+  // In the Go to sheet, open the surah list at the surah you're reading (not at al-Fatihah). Once only, and not
+  // on the Quran tab, where the list sits under the scene.
+  const surahList = useRef<FlatList<{ s: number; name: string; ar: string; meaning: string; count: number }>>(null);
+  const jumped = useRef(false);
+  const jumpToHere = () => {
+    if (jumped.current || hero || !hereS || hereS < 4 || q.trim()) return;
+    jumped.current = true;
+    setTimeout(() => surahList.current?.scrollToIndex({ index: hereS - 1, viewPosition: 0.25, animated: false }), 0);
+  };
 
   const list = useMemo(() => {
     const all = SURAHS.map((x, i) => ({
@@ -285,7 +294,14 @@ export function QuranIndex({ toPages = false, title = "Go to", close = false, ex
       {tab === "surah" ? (
         <FlatList
           key="surah"
+          ref={surahList}
           data={list}
+          onLayout={jumpToHere}
+          onScrollToIndexFailed={(e) => {
+            // Rows far down aren't drawn yet: scroll near them, then try again once they are.
+            surahList.current?.scrollToOffset({ offset: Math.max(e.averageItemLength, 60) * e.index, animated: false });
+            setTimeout(() => surahList.current?.scrollToIndex({ index: e.index, viewPosition: 0.25, animated: false }), 120);
+          }}
           keyExtractor={(x) => String(x.s)}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
@@ -310,23 +326,30 @@ export function QuranIndex({ toPages = false, title = "Go to", close = false, ex
                 accessibilityRole="button"
                 accessibilityLabel={`${item.s}. ${item.name}, ${item.meaning}, ${item.count} ayat, revealed in ${revealedIn(item.s)}${done ? ", read" : ""}${now ? ", you are here" : ""}`}
               >
+                {/* The filled circle marks where you are; a surah you've read gets a green ring and a small tick. */}
                 <View
                   style={[
                     styles.num,
                     {
-                      borderColor: done ? pal.accent : pal.line,
-                      backgroundColor: done ? pal.accent : "transparent",
+                      borderColor: now || done ? pal.accent : pal.line,
+                      borderWidth: now ? 0 : done ? 1.5 : 1,
+                      backgroundColor: now ? pal.accent : "transparent",
                     },
                   ]}
                 >
                   <Text
                     style={[
                       styles.numText,
-                      { color: done ? pal.onAccent : pal.muted },
+                      { color: now ? pal.onAccent : done ? pal.accent : pal.muted },
                     ]}
                   >
                     {item.s}
                   </Text>
+                  {done && !now && (
+                    <View style={[styles.tick, { backgroundColor: pal.accent, borderColor: pal.bg }]}>
+                      <Icon name="check" size={8} color={pal.onAccent} strokeWidth={3} />
+                    </View>
+                  )}
                 </View>
                 <View style={{ flex: 1, gap: 2 }}>
                   <Text style={[styles.name, { color: pal.text }]}>
@@ -341,7 +364,7 @@ export function QuranIndex({ toPages = false, title = "Go to", close = false, ex
                     {now ? "You’re here · " : ""}
                     {item.meaning} · {item.count} ayat ·{" "}
                     {revealedIn(item.s) === "Makkah" ? "Makkan" : "Madinan"}
-                    {done ? " · read" : ""}
+                    {done && !now ? " · read ✓" : ""}
                   </Text>
                 </View>
                 <Text style={[styles.ar, { color: pal.text }]}>{item.ar}</Text>
@@ -492,6 +515,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
+  tick: { position: 'absolute', right: -3, bottom: -3, width: 15, height: 15, borderRadius: 8, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   num: {
     width: 34,
     height: 34,
