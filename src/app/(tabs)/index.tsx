@@ -516,6 +516,49 @@ export default function Feed() {
 
   // Recitation stops when another tab is open, and the card starts again on coming back to Home.
   const [focused, setFocused] = useState(true);
+  // One-time tips: the first not yet seen for this tab, once the feed has been quiet for a moment.
+  const [tipOk, setTipOk] = useState(false);
+  const tipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    tipTimer.current = setTimeout(() => setTipOk(true), TIP_FIRST_MS);
+    return () => {
+      if (tipTimer.current) clearTimeout(tipTimer.current);
+    };
+  }, []);
+  const tipsSeen = prefs.tips ?? (prefs.pagesTipSeen ? ['pages'] : []);
+  const tipId: TipId | null = tipOk && !sheet && !resting && focused ? ((TIP_ORDER[mode].find((id) => !tipsSeen.includes(id)) as TipId | undefined) ?? null) : null;
+  /** A tip is done with: closed, tapped, or its control was used (`quiet`: no need for the pause, nothing was showing). */
+  const closeTip = (id: TipId, quiet = false) => {
+    if (tipsSeen.includes(id)) return;
+    prefs.set({ tips: [...tipsSeen, id] });
+    if (quiet && tipId !== id) return;
+    setTipOk(false);
+    if (tipTimer.current) clearTimeout(tipTimer.current);
+    tipTimer.current = setTimeout(() => setTipOk(true), TIP_GAP_MS);
+  };
+  const tapTip = (id: TipId) => {
+    closeTip(id);
+    if (id === 'mood') setSheet('mood');
+    else if (id === 'aa') setSheet('reading');
+    else if (id === 'ask') router.push('/ask');
+    else if (id === 'search') {
+      stop();
+      router.push('/search');
+    } else openPages();
+  };
+  const openPages = () => {
+    stop();
+    const it = items[active];
+    const at = it && it.kind === 'verse' && it.ord ? { s: it.v.s, a: it.v.a } : prefs.place ?? { s: 1, a: 1 };
+    router.push({ pathname: '/mushaf', params: { page: String(pageOf(at.s, at.a)) } });
+  };
+  // Tips don't linger: after a while one steps aside by itself (the Pages one stays, as it's the one people ask about).
+  useEffect(() => {
+    if (!tipId || tipId === 'pages') return;
+    const t = setTimeout(() => closeTip(tipId), 14000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tipId]);
   const radio = useRadio();
   useFocusEffect(
     useCallback(() => {
@@ -934,6 +977,21 @@ export default function Feed() {
         </Pressable>
       )}
 
+      {tipId === 'ask' && !onDark && (
+        <View pointerEvents="box-none" style={[styles.tipBottom, { bottom: barSpace + 4 }]}>
+        <Pressable onPress={() => tapTip('ask')} style={[styles.tip, { position: 'relative', right: 0, backgroundColor: pal.text }]} accessibilityRole="button" accessibilityLabel={`${TIPS.ask.title} ${TIPS.ask.text}`}>
+          <View style={[styles.tipArrowDown, { backgroundColor: pal.text }]} />
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.tipTitle, { color: pal.bg }]}>{TIPS.ask.title}</Text>
+            <Text style={[styles.tipText, { color: pal.bg }]}>{TIPS.ask.text}</Text>
+          </View>
+          <Pressable onPress={() => closeTip('ask')} hitSlop={12} accessibilityRole="button" accessibilityLabel="Close this tip">
+            <Icon name="close" size={15} color={pal.bg} />
+          </Pressable>
+        </Pressable>
+        </View>
+      )}
+
       {/* The light of the prayer day over the top of the feed (not over videos and photos). */}
       {!onDark && <SkyWash pal={pal} height={260} strength={0.8} />}
       <TopBar
@@ -946,20 +1004,19 @@ export default function Feed() {
         mode={mode}
         onMode={switchMode}
         showTl={prefs.showTl}
-        onMood={() => setSheet('mood')}
-        onTl={() => setSheet('reading')}
+        onMood={() => { closeTip('mood', true); setSheet('mood'); }}
+        onTl={() => { closeTip('aa', true); setSheet('reading'); }}
         onRead={() => {
           stop();
+          closeTip('search', true);
           router.push('/search');
         }}
-        pagesTip={!prefs.pagesTipSeen}
-        onTipClose={() => prefs.set({ pagesTipSeen: true })}
+        tip={tipId && tipId !== 'ask' ? TIPS[tipId] : null}
+        onTip={() => tipId && tapTip(tipId)}
+        onTipClose={() => tipId && closeTip(tipId)}
         onPages={() => {
-          stop();
-          if (!prefs.pagesTipSeen) prefs.set({ pagesTipSeen: true });
-          const it = items[active];
-          const at = it && it.kind === 'verse' && it.ord ? { s: it.v.s, a: it.v.a } : prefs.place ?? { s: 1, a: 1 };
-          router.push({ pathname: '/mushaf', params: { page: String(pageOf(at.s, at.a)) } });
+          closeTip('pages', true);
+          openPages();
         }}
       />
 
@@ -1154,7 +1211,24 @@ function OffRamp(p: { pal: Palette; tone: { bg: string; accent: string }; height
   );
 }
 
-function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palette; onDark?: boolean; top: number; moodLabel: string; mode: 'foryou' | 'order'; onMode: (m: 'foryou' | 'order') => void; showTl: boolean; onMood: () => void; onTl: () => void; pagesTip?: boolean; onTipClose?: () => void; onRead: () => void; onPages: () => void }) {
+/**
+ * One-time tips for new readers (Saj, 15 Nov 2026: "I like these tips for new users"): a small dark bubble pointing at a
+ * control. One at a time, in this order per tab, with a quiet gap between them; each goes for good once it is tapped,
+ * closed, or the control itself is used. `arrow` is how far the pointer sits from the bubble's right edge.
+ */
+type TipId = 'pages' | 'mood' | 'search' | 'aa' | 'ask';
+const TIPS: Record<TipId, { title: string; text: string; arrow: number }> = {
+  pages: { title: 'Prefer the printed Quran?', text: 'Tap Pages to read it like the book, page by page.', arrow: 155 },
+  mood: { title: 'How are you feeling today?', text: 'Tap here any time to change the ayat For you shows.', arrow: 160 },
+  search: { title: 'Looking for something?', text: 'Search any surah, an ayah like 2:255, or how you feel.', arrow: 92 },
+  aa: { title: 'Make it comfortable', text: 'Text size, recitation speed and help with pronunciation.', arrow: 50 },
+  ask: { title: 'Have a question about Islam?', text: 'Ask anything, privately. No question is too small.', arrow: 0 },
+};
+const TIP_ORDER: Record<'foryou' | 'order', TipId[]> = { order: ['pages', 'search', 'aa'], foryou: ['mood', 'aa', 'ask', 'search'] };
+/** How long the feed stays quiet before the first tip, and between one tip and the next. */
+const TIP_FIRST_MS = 2500, TIP_GAP_MS = 40000;
+
+function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palette; onDark?: boolean; top: number; moodLabel: string; mode: 'foryou' | 'order'; onMode: (m: 'foryou' | 'order') => void; showTl: boolean; onMood: () => void; onTl: () => void; tip?: { title: string; text: string; arrow: number } | null; onTip?: () => void; onTipClose?: () => void; onRead: () => void; onPages: () => void }) {
   // On a dark card (a video, a photo post) switch to light text and dark see-through buttons, with a shadow under the tab names.
   const pal: Palette = p.onDark ? { ...p.pal, text: '#FFFFFF', muted: 'rgba(255,255,255,0.72)', surface: 'rgba(20,24,22,0.55)', line: 'rgba(255,255,255,0.28)', bg: '#121A16', accent: '#7FE0B5' } : p.pal;
   const fade = useAnimatedStyle(() => ({ opacity: p.chrome.value }));
@@ -1205,12 +1279,12 @@ function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palett
         </TopBtn>
         <MeButton size={32} />
       </View>
-      {p.mode === 'order' && p.pagesTip && !p.onDark && (
-        <Pressable onPress={p.onPages} style={[styles.tip, { top: p.top + 54, backgroundColor: pal.text }]} accessibilityRole="button" accessibilityLabel="Prefer the printed Quran? Read it page by page">
-          <View style={[styles.tipArrow, { backgroundColor: pal.text }]} />
+      {!!p.tip && !p.onDark && (
+        <Pressable onPress={p.onTip} style={[styles.tip, { top: p.top + 54, backgroundColor: pal.text }]} accessibilityRole="button" accessibilityLabel={`${p.tip.title} ${p.tip.text}`}>
+          <View style={[styles.tipArrow, { backgroundColor: pal.text, right: p.tip.arrow }]} />
           <View style={{ flex: 1 }}>
-            <Text style={[styles.tipTitle, { color: pal.bg }]}>Prefer the printed Quran?</Text>
-            <Text style={[styles.tipText, { color: pal.bg }]}>Tap Pages to read it like the book, page by page.</Text>
+            <Text style={[styles.tipTitle, { color: pal.bg }]}>{p.tip.title}</Text>
+            <Text style={[styles.tipText, { color: pal.bg }]}>{p.tip.text}</Text>
           </View>
           <Pressable onPress={p.onTipClose} hitSlop={12} accessibilityRole="button" accessibilityLabel="Close this tip">
             <Icon name="close" size={15} color={pal.bg} />
@@ -1256,6 +1330,8 @@ const styles = StyleSheet.create({
   pillIn: { minHeight: 36, minWidth: 36, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center' },
   pillText: { fontFamily: fonts.uiSemi, fontSize: 13 },
   tip: { position: 'absolute', right: 16, width: 250, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 10, shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 4 },
+  tipBottom: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
+  tipArrowDown: { position: 'absolute', bottom: -5, left: 119, width: 12, height: 12, borderRadius: 2, transform: [{ rotate: '45deg' }] },
   tipArrow: { position: 'absolute', top: -5, right: 150, width: 12, height: 12, borderRadius: 2, transform: [{ rotate: '45deg' }] },
   tipTitle: { fontFamily: fonts.uiBold, fontSize: 13 },
   tipText: { fontFamily: fonts.ui, fontSize: 12.5, lineHeight: 17, opacity: 0.85 },

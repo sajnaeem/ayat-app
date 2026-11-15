@@ -67,6 +67,8 @@ export type Prefs = {
   skyLook: boolean;
   /** The "Prefer the printed Quran?" tip under the Pages button on the Quran feed has been seen or closed. */
   pagesTipSeen?: boolean;
+  /** One-time tips on the feed that have been seen, tapped or closed (ids in (tabs)/index.tsx TIPS). */
+  tips?: string[];
   /** Ramadan companion (phone only): `shift` moves the first fast a day earlier or later than the Umm al-Qura calendar (local moon
    *  sighting); `log` is the private fasting log, per Hijri year then per day: 'f' fasted, 'm' to make up later. */
   ramadan: { shift: -1 | 0 | 1; log: Record<string, Record<string, 'f' | 'm'>> };
