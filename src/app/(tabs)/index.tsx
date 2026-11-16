@@ -4,6 +4,7 @@ import { Glassy, hasGlass } from '@/components/Glassy';
 import { SkyWash } from '@/components/SkyWash';
 import { useTabBarSpace } from '@/components/TabBar';
 import { useLoop } from '@/lib/loop';
+import { ayahReadMs, cumulative, useAppActive } from '@/lib/readtime';
 import { stopRadio, useRadio } from '@/lib/radio';
 import { useAudioPlayer } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
@@ -66,7 +67,6 @@ const CONT_EVERY = 12;
 /** How long someone scrolls before the "time check" card appears. */
 const OFFRAMP_AFTER_MS = 20 * 60 * 1000;
 /** How long a card must stay on screen to count as read. */
-const DWELL_MS = 3500;
 
 const withTimeout = <T,>(p: Promise<T>, ms: number, fallback: T) => Promise.race([p, new Promise<T>((r) => setTimeout(() => r(fallback), ms))]);
 
@@ -502,6 +502,8 @@ export default function Feed() {
   useEffect(() => {
     if (!finished || !queue.current) return;
     const q = queue.current;
+    // An ayah recited to the end counts as read.
+    countRef.current(items.find((x) => x.key === q.card), [`${q.s}:${q.ayat[q.idx]}`]);
     if (q.idx < q.ayat.length - 1) q.idx += 1;
     else if (q.pass < q.passes) {
       q.pass += 1;
@@ -645,27 +647,61 @@ export default function Feed() {
     [toast, refreshAhead, active, mode],
   );
 
+  // Reading progress, stricter (Saj, 16 Nov 2026): each ayah on the card counts only once the reader has stayed long
+  // enough to read it (src/lib/readtime.ts), one by one, and only while the feed is on screen; or when its
+  // recitation is heard to the end (see the finished effect below).
+  const appActive = useAppActive();
+  const cardTime = useRef<Record<string, number>>({});
+  const firstOnCard = useRef(new Set<string>());
+  const countAyat = useCallback(
+    (it: Item | undefined, keys: string[]) => {
+      if (!it || it.kind !== 'verse') return;
+      const fresh = keys.filter((k) => !counted.current.has(k));
+      if (!fresh.length) return;
+      fresh.forEach((k) => counted.current.add(k));
+      // The ladder counts cards, not ayat: only the first ayah read on a card adds a reading.
+      const weight = firstOnCard.current.has(it.key) ? 0 : 1;
+      firstOnCard.current.add(it.key);
+      announce(prog.markRead(fresh, weight));
+      if (it.ord) {
+        const [ls, la] = fresh[fresh.length - 1].split(':').map(Number);
+        prefs.set({ place: { s: ls, a: la } });
+        // Counts towards any juz this person is reading in a khatm (Read together).
+        noteQuranRead(fresh).then((ev) => ev.finished.forEach((f) => celebrate(juzMoment(f.khatm, f.title, f.juz, true))));
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [announce, prog.markRead],
+  );
+  const countRef = useRef(countAyat);
+  countRef.current = countAyat;
+
+  useEffect(() => {
+    const it = items[active];
+    if (!it || it.kind !== 'verse' || sheet === 'mood' || resting || !focused || !appActive) return;
+    const keys = ayahKeys(it.v);
+    const tr = it.v.tr[prefs.lang] ?? it.v.tr.en;
+    const due = cumulative(it.v.ar.map(([t], i) => ayahReadMs(ayahWords(t).length, tr?.[i])));
+    const tick = setInterval(() => {
+      const t = (cardTime.current[it.key] = (cardTime.current[it.key] ?? 0) + 500);
+      const ready = keys.filter((_, i) => due[i] <= t);
+      if (ready.length) countRef.current(it, ready);
+      if (ready.length === keys.length) clearInterval(tick);
+    }, 500);
+    return () => clearInterval(tick);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, items.length, sheet === 'mood', resting, focused, appActive]);
+
+  // The time-check card after a while of reading.
   useEffect(() => {
     const it = items[active];
     if (!it || it.kind !== 'verse' || sheet === 'mood' || resting) return;
-    const t = setTimeout(() => {
-      if (counted.current.has(it.key)) return;
-      counted.current.add(it.key);
-      announce(prog.markRead(ayahKeys(it.v), 1));
-      if (it.ord) {
-        prefs.set({ place: { s: it.v.s, a: it.v.b } });
-        // Counts towards any juz this person is reading in a khatm (Read together).
-        noteQuranRead(ayahKeys(it.v)).then((ev) => ev.finished.forEach((f) => celebrate(juzMoment(f.khatm, f.title, f.juz, true))));
-      }
-    }, DWELL_MS);
-
     const now = Date.now();
     if (now - sessionStart.current > OFFRAMP_AFTER_MS && now - lastOff.current > OFFRAMP_AFTER_MS && prog.sessionAyat >= 10 && items[active + 1]?.kind !== 'off') {
       lastOff.current = now;
       const off: OffItem = { kind: 'off', key: `off-${now}`, i: it.i, s: it.v.s };
       setItems((prev) => [...prev.slice(0, active + 1), off, ...prev.slice(active + 1)]);
     }
-    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, items.length, sheet === 'mood', resting]);
 

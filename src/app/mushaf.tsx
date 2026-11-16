@@ -14,13 +14,13 @@ import { juzOf, pageOf, PAGES, pageStart } from '@/data/mushaf';
 import { ayahAudio, wordAt } from '@/lib/audio';
 import { ayatOn, HAFS, loadHafs, loadPage, loadPageFont, MLine, MPage, pageFont, prefetchAround, prunePages } from '@/lib/mushaf';
 import { useProgress } from '@/lib/progress';
+import { ayahReadMs, cumulative, useAppActive } from '@/lib/readtime';
 import { SURAHS } from '@/lib/quran';
 import { usePrefs } from '@/lib/store';
 import { noteQuranRead } from '@/lib/together';
 import Svg, { Circle, Path, Polygon, Rect } from 'react-native-svg';
 import { fonts, usePalette } from '@/lib/theme';
 
-const READ_AFTER_MS = 15000; // a page on screen this long counts as read
 const BASMALAH = 'بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ';
 const nextKey = (k: string) => {
   const [s, a] = k.split(':').map(Number);
@@ -72,29 +72,61 @@ export default function Mushaf() {
     [],
   );
 
-  /* ---------- reading progress: a page that stays on screen counts as read ---------- */
-  const counted = useRef(new Set<number>());
+  /* ---------- reading progress: the ayat on a page count one by one, as the time to read each is reached ---------- */
+  // (Saj, 16 Nov 2026: stricter than "15 seconds on a page": src/lib/readtime.ts. Only while the app is on screen.)
+  const counted = useRef(new Set<string>());
+  const pageTime = useRef<Record<number, number>>({});
+  const appActive = useAppActive();
+  const countKeys = useCallback(
+    async (keys: string[]) => {
+      const fresh = keys.filter((k) => !counted.current.has(k));
+      if (!fresh.length) return;
+      fresh.forEach((k) => counted.current.add(k));
+      try {
+        const done = prog.markRead(fresh, 1);
+        if (done.surahsCompleted.length) celebrate(surahMoment(done.surahsCompleted[0]));
+        const [ls, la] = fresh[fresh.length - 1].split(':').map(Number);
+        prefs.set({ place: { s: ls, a: la } });
+        const ev = await noteQuranRead(fresh);
+        ev.finished.forEach((f) => celebrate(juzMoment(f.khatm, f.title, f.juz, true)));
+      } catch {}
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [prog.markRead],
+  );
+  const countRef = useRef(countKeys);
+  countRef.current = countKeys;
   useEffect(() => {
     prefs.set({ mushafPage: page });
     prefetchAround(page);
-    const t = setTimeout(async () => {
-      if (counted.current.has(page)) return;
-      counted.current.add(page);
-      try {
-        const d = await loadPage(page);
-        const keys = ayatOn(d);
-        if (!keys.length) return;
-        const done = prog.markRead(keys, 1);
-        if (done.surahsCompleted.length) celebrate(surahMoment(done.surahsCompleted[0]));
-        const [ls, la] = keys[keys.length - 1].split(':').map(Number);
-        prefs.set({ place: { s: ls, a: la } });
-        const ev = await noteQuranRead(keys);
-        ev.finished.forEach((f) => celebrate(juzMoment(f.khatm, f.title, f.juz, true)));
-      } catch {}
-    }, READ_AFTER_MS);
-    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
+  useEffect(() => {
+    if (!appActive) return;
+    let tick: ReturnType<typeof setInterval> | null = null;
+    let gone = false;
+    loadPage(page)
+      .then((d) => {
+        if (gone) return;
+        const keys = ayatOn(d);
+        if (!keys.length) return;
+        const words: Record<string, number> = {};
+        for (const l of d.lines) if (l.t === 'w') for (const w of l.w) words[w[1]] = (words[w[1]] ?? 0) + 1;
+        // Arabic only on the page, so no translation time.
+        const due = cumulative(keys.map((k) => ayahReadMs(words[k] ?? 1, '')));
+        tick = setInterval(() => {
+          const t = (pageTime.current[page] = (pageTime.current[page] ?? 0) + 500);
+          const ready = keys.filter((_, i) => due[i] <= t);
+          if (ready.length) countRef.current(ready);
+          if (ready.length === keys.length && tick) clearInterval(tick);
+        }, 500);
+      })
+      .catch(() => {});
+    return () => {
+      gone = true;
+      if (tick) clearInterval(tick);
+    };
+  }, [page, appActive]);
 
   /* ---------- recitation: plays on from a chosen ayah, turning pages as it goes ---------- */
   const player = useAudioPlayer(null, { updateInterval: 100 });
@@ -136,6 +168,7 @@ export default function Mushaf() {
   useEffect(() => {
     const sub = player.addListener('playbackStatusUpdate', (st) => {
       if (st.didJustFinish && current.current) {
+        countRef.current([current.current]); // an ayah recited to the end counts as read
         const n = nextKey(current.current);
         if (n) playKey(n);
         else stopAudio();
