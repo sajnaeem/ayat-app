@@ -43,10 +43,10 @@ html,body{margin:0;width:1320px;height:2868px;overflow:hidden;background:${b}}
 .cone{position:absolute;left:50%;top:-200px;width:1800px;height:1700px;margin-left:-900px;background:conic-gradient(from 180deg at 50% 0%, transparent 150deg, rgba(255,255,255,.16) 172deg, rgba(255,255,255,.22) 180deg, rgba(255,255,255,.16) 188deg, transparent 210deg);filter:blur(30px)}
 svg.l{position:absolute;inset:0;opacity:.11;-webkit-mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.25) 38%,transparent 62%);mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.25) 38%,transparent 62%)}
 svg.grain{position:absolute;inset:0;opacity:.2;mix-blend-mode:soft-light}
-.head{position:relative;padding:118px 84px 0;z-index:3}
+.head{position:relative;padding:150px 84px 0;z-index:3}
 .eye{display:inline-flex;align-items:center;gap:18px;font-family:BS;font-size:38px;letter-spacing:5px;color:#fff;background:rgba(255,255,255,.16);border:2px solid rgba(255,255,255,.34);border-radius:60px;padding:16px 34px 16px 28px}
 .eye i{width:18px;height:18px;border-radius:50%;background:${hi}}
-h1{margin:44px 0 0;font-family:B;font-size:${Math.max(...h.replace(/\*/g, '').split('<br>').map((l) => l.length)) > 14 ? 132 : 152}px;line-height:1.08;letter-spacing:-4.5px;color:#fff;text-shadow:0 8px 40px rgba(0,0,0,.22)}
+h1{margin:0;font-family:B;font-size:${Math.max(...h.replace(/\*/g, '').split('<br>').map((l) => l.length)) > 14 ? 132 : 152}px;line-height:1.08;letter-spacing:-4.5px;color:#fff;text-shadow:0 8px 40px rgba(0,0,0,.22)}
 h1 em{font-style:normal;color:#0B1512;background:${hi};padding:0 26px 6px;margin:0 -8px;border-radius:30px;-webkit-box-decoration-break:clone;box-decoration-break:clone;text-shadow:none;box-shadow:0 14px 36px rgba(0,0,0,.2)}
 p{margin:44px 300px 0 4px;font-family:BM;font-size:54px;line-height:1.24;color:rgba(255,255,255,.9);text-wrap:balance}
 .stage{position:relative;width:1010px;margin:96px auto 0}
@@ -72,7 +72,7 @@ p{margin:44px 300px 0 4px;font-family:BM;font-size:54px;line-height:1.24;color:r
 <div class="bg"></div><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="cone"></div>
 <svg class="l" width="1320" height="2868" fill="none" stroke="#fff" stroke-width="3">${lattice}</svg>
 <svg class="grain" width="1320" height="2868"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="4"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .9 0"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
-<div class="head"><span class="eye"><i></i>${eye}</span><h1>${h.replace(/\*(.+?)\*/g, '<em>$1</em>')}</h1><p>${sub}</p></div>
+<div class="head"><h1>${h.replace(/\*(.+?)\*/g, '<em>$1</em>')}</h1><p>${sub}</p></div>
 ${Array.isArray(shot) ? multi(shot) : `<div class="stage"><div class="halo"></div><img class="art2" src="file://${ART}/${art}.png">${phone(shot)}
 <img class="art ${ap}" src="file://${ART}/${art}.png">${chips[0] ? chip(chips[0], 'l') + chip(chips[1], 'r') : ''}</div>`}
 </body></html>`;
