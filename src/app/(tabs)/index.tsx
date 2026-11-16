@@ -29,7 +29,7 @@ import { useAccount } from '@/lib/account';
 import { dayKey, useProgress } from '@/lib/progress';
 import { refreshMosque } from '@/lib/mosque';
 import { schedulePrayerCalcAlerts } from '@/lib/prayertimes';
-import { askPermission, REMINDER_TIMES, ReminderData, scheduleReminders } from '@/lib/reminders';
+import { askPermission, REMINDER_TIMES, ReminderData, scheduleReminders, scheduleFastReminders } from '@/lib/reminders';
 import { usePrefs } from '@/lib/store';
 import type { FeedVideo, Snippet } from '@/data/snippets';
 import { freshTimelyCard, markTimelySeen, SNIPPET_EVERY, snippetOrder, Timely, VIDEO_EVERY, videoOrder } from '@/lib/extras';
@@ -731,12 +731,18 @@ export default function Feed() {
   // Re-plan the next week of reminders whenever the app opens or the settings change.
   const progRef = useRef(prog.progress);
   progRef.current = prog.progress;
+  const fastRef = useRef(prefs.fastReminder);
+  fastRef.current = prefs.fastReminder;
   useEffect(() => {
-    const plan = () => scheduleReminders({ ...prefs.reminders, lang: prefs.lang, progress: progRef.current, name: prefs.firstName }).catch(() => {});
+    const plan = () => {
+      scheduleReminders({ ...prefs.reminders, lang: prefs.lang, progress: progRef.current, name: prefs.firstName })
+        .then(() => scheduleFastReminders(!!fastRef.current))
+        .catch(() => {});
+    };
     plan();
     const sub = AppState.addEventListener('change', (st) => st === 'active' && plan());
     return () => sub.remove();
-  }, [prefs.reminders, prefs.lang]);
+  }, [prefs.reminders, prefs.lang, prefs.fastReminder]);
   // Prayer alerts for my mosque: fresh times and the next week's alerts every time Munib opens.
   const mosqueId = prefs.mosque?.id;
   const alertsRef = useRef({ alerts: prefs.prayerAlerts, jumuah: prefs.jumuah });

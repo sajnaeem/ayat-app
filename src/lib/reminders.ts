@@ -99,7 +99,7 @@ export async function cancelWhere(match: (id: string) => boolean) {
 export async function scheduleReminders(opts: { on: boolean; hour: number; minute: number; friday: boolean; lang: LangId; progress: Progress; name?: string }) {
   if (Platform.OS === 'web') return;
   // Only this daily check-in is replaced here; prayer alerts (identifiers starting "prayer-") are planned in mosque.ts.
-  await cancelWhere((id) => !id.startsWith('prayer-') && !id.startsWith('trial-'));
+  await cancelWhere((id) => !id.startsWith('prayer-') && !id.startsWith('trial-') && !id.startsWith('fast-'));
   if (!opts.on || !(await hasPermission())) return;
 
   const now = new Date();
@@ -113,6 +113,29 @@ export async function scheduleReminders(opts: { on: boolean; hour: number; minut
     await Notifications.scheduleNotificationAsync({
       identifier: `daily-${d}`,
       content: { title: content.title, body: content.body, data: content.data as unknown as Record<string, unknown> },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: at },
+    });
+  }
+}
+
+/**
+ * The evening before a Monday or Thursday fast (Saj, 16 Nov 2026: "I woke up this morning and had no idea today was
+ * meant to be a fast day"). Opt-in from Daily deeds; Sunday and Wednesday at 9pm for the next two weeks, re-planned
+ * when the app opens. An extra notification only on those evenings, like the opt-in prayer alerts.
+ */
+export async function scheduleFastReminders(on: boolean) {
+  if (Platform.OS === 'web') return;
+  await cancelWhere((id) => id.startsWith('fast-'));
+  if (!on || !(await hasPermission())) return;
+  const now = new Date();
+  for (let d = 0; d < 15; d++) {
+    const at = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d, 21, 0, 0);
+    const dow = at.getDay();
+    if ((dow !== 0 && dow !== 3) || at.getTime() <= now.getTime() + 60_000) continue;
+    const day = dow === 0 ? 'Monday' : 'Thursday';
+    await Notifications.scheduleNotificationAsync({
+      identifier: `fast-${d}`,
+      content: { title: `Tomorrow is ${day}`, body: 'A sunnah fast day. Fasting? Set an alarm for suhoor before Fajr.', data: { to: 'prayertimes' } },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: at },
     });
   }

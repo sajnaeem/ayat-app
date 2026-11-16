@@ -77,6 +77,8 @@ export type Prefs = {
   ramadan: { shift: -1 | 0 | 1; log: Record<string, Record<string, 'f' | 'm'>> };
   /** Today's checklist on the Prayer tab (phone only): the day it belongs to and what has been ticked. It starts fresh each day; nothing older is kept. */
   today?: { day: string; done: string[]; cheered?: boolean };
+  /** A reminder the evening before Monday and Thursday fasts (Daily deeds; opt-in). */
+  fastReminder?: boolean;
   /** A gathering of dua (phone only): the people a family makes dua for, and how it plays. */
   gathering?: { people: GatherPerson[]; voice: boolean; fatihah: boolean; surah: number };
   /** Answers to the first-open questions, if given. */

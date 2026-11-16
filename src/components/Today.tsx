@@ -1,13 +1,15 @@
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { fireConfetti } from '@/components/Confetti';
+import { useExplain } from '@/components/Explain';
 import { GoldStar } from '@/components/Gold';
 import { Icon } from '@/components/Icon';
 import { SNIPPETS } from '@/data/snippets';
 import { showFeed } from '@/lib/nav';
 import { dayKey, useProgress } from '@/lib/progress';
+import { askPermission } from '@/lib/reminders';
 import { playSfx } from '@/lib/sfx';
 import { usePrefs } from '@/lib/store';
 import { fonts, mix, type Palette } from '@/lib/theme';
@@ -31,7 +33,7 @@ const PRAYERS = [
 const TASBEEH_GOAL = 33;
 const TRIES = SNIPPETS.filter((s) => s.kind === 'try' && s.id !== 't-tasbih') as { id: string; title: string; source: string }[];
 
-type Extra = { title: string; sub: string; open?: () => void };
+type Extra = { title: string; sub: string; info: string; fast?: boolean; open?: () => void };
 
 export function Today({ pal }: { pal: Palette }) {
   const prefs = usePrefs();
@@ -54,21 +56,24 @@ export function Today({ pal }: { pal: Palette }) {
   const dow = now.getDay();
   const extra: Extra =
     dow === 5
-      ? { title: 'Read Surah al-Kahf', sub: 'A Friday sunnah', open: () => { prefs.readAt(18, 1); showFeed(router); } }
+      ? { title: 'Read Surah al-Kahf', sub: 'A Friday sunnah', info: 'kahf', open: () => { prefs.readAt(18, 1); showFeed(router); } }
       : dow === 1 || dow === 4
-        ? { title: 'Fast today, if you’re able', sub: 'A sunnah on Mondays and Thursdays · Tirmidhi 745' }
+        ? { title: 'Fast today, if you’re able', sub: 'A voluntary sunnah · already eaten? No harm, there’s always the next one', info: 'sunnahfast', fast: true }
         : (() => {
             const s = TRIES[Math.floor(now.getTime() / 86400000) % TRIES.length];
-            return { title: s.title, sub: s.source };
+            return { title: s.title, sub: s.source, info: 'sunnah' };
           })();
+  // The evening before a fast day (Sunday and Wednesday from 3pm): a heads-up, so nobody finds out after breakfast.
+  const tomorrowFast = (dow === 0 || dow === 3) && now.getHours() >= 15 ? (dow === 0 ? 'Monday' : 'Thursday') : null;
+  const [explain, explainSheet] = useExplain(pal);
 
   const prayed = PRAYERS.filter((p) => has(p.id)).length;
   const items = [
-    { id: 'read', title: `Read ${goal} ayat`, sub: read >= goal ? `${read} read` : `${read} of ${goal}`, done: read >= goal, auto: true, open: () => showFeed(router) },
-    { id: 'tasbeeh', title: `Remember Allah ${TASBEEH_GOAL} times`, sub: tasbeeh >= TASBEEH_GOAL ? `${tasbeeh} today` : `${tasbeeh} of ${TASBEEH_GOAL} · tasbeeh`, done: tasbeeh >= TASBEEH_GOAL, auto: true, open: () => router.push('/tasbeeh') },
-    { id: 'selfdua', title: 'Make a dua for yourself', sub: 'Ask Allah for what you need, in your own words', done: has('selfdua'), open: () => router.push('/duas') },
-    { id: 'dua', title: 'Make dua for someone', sub: 'A parent, a friend, someone who asked', done: has('dua'), open: () => router.push({ pathname: '/dua-requests', params: { how: '1' } }) },
-    { id: 'extra', title: extra.title, sub: extra.sub, done: has('extra'), open: extra.open },
+    { id: 'read', info: 'dailyquran', title: `Read ${goal} ayat`, sub: read >= goal ? `${read} read` : `${read} of ${goal}`, done: read >= goal, auto: true, open: () => showFeed(router) },
+    { id: 'tasbeeh', info: 'dhikr', title: `Remember Allah ${TASBEEH_GOAL} times`, sub: tasbeeh >= TASBEEH_GOAL ? `${tasbeeh} today` : `${tasbeeh} of ${TASBEEH_GOAL} · tasbeeh`, done: tasbeeh >= TASBEEH_GOAL, auto: true, open: () => router.push('/tasbeeh') },
+    { id: 'selfdua', info: 'dua', title: 'Make a dua for yourself', sub: 'Ask Allah for what you need, in your own words', done: has('selfdua'), open: () => router.push('/duas') },
+    { id: 'dua', info: 'duaothers', title: 'Make dua for someone', sub: 'A parent, a friend, someone who asked', done: has('dua'), open: () => router.push({ pathname: '/dua-requests', params: { how: '1' } }) },
+    { id: 'extra', info: extra.info, fast: extra.fast, title: extra.title, sub: extra.sub, done: has('extra'), open: extra.open },
   ];
   const total = items.length + 1;
   const count = items.filter((i) => i.done).length + (prayed === 5 ? 1 : 0);
@@ -109,7 +114,10 @@ export function Today({ pal }: { pal: Palette }) {
       <View style={[styles.row, { borderTopColor: pal.line }]}>
         <Tick pal={pal} on={prayed === 5} />
         <View style={{ flex: 1, gap: 8 }}>
-          <Text style={[styles.itemTitle, { color: pal.text }]}>Pray the five prayers</Text>
+          <View style={styles.titleRow}>
+            <Text style={[styles.itemTitle, { color: pal.text, flex: 1 }]}>Pray the five prayers</Text>
+            <Info pal={pal} label="What is salah?" onPress={() => explain('salah')} />
+          </View>
           <View style={styles.prayers}>
             {PRAYERS.map((p) => {
               const on = has(p.id);
@@ -133,15 +141,64 @@ export function Today({ pal }: { pal: Palette }) {
               <Text style={[styles.itemTitle, { color: pal.text }, it.done && { color: pal.muted }]}>{it.title}</Text>
               <Text style={[styles.itemSub, { color: pal.muted }]}>{it.sub}</Text>
             </Pressable>
+            <Info pal={pal} label={`About: ${it.title}`} onPress={() => explain(it.info)} />
             {!!it.open && (
               <Pressable onPress={it.open} hitSlop={10} accessibilityRole="button" accessibilityLabel={`Open: ${it.title}`} style={[styles.go, { backgroundColor: mix(pal.surface, pal.accent, 0.1) }]}>
                 <Icon name="chevron" size={14} color={pal.accent} />
               </Pressable>
             )}
           </View>
+          {it.fast && <FastRemind pal={pal} />}
         </View>
       ))}
+
+      {tomorrowFast && (
+        <View style={[styles.rowWrap, { borderTopColor: pal.line }]}>
+          <View style={[styles.tomorrow, { backgroundColor: mix(pal.surface, pal.accent, pal.dark ? 0.16 : 0.07) }]}>
+            <View style={styles.rowIn}>
+              <Icon name="moon" size={20} color={pal.accent} />
+              <View style={{ flex: 1, gap: 1 }}>
+                <Text style={[styles.itemTitle, { color: pal.text }]}>Tomorrow is {tomorrowFast}</Text>
+                <Text style={[styles.itemSub, { color: pal.muted }]}>A sunnah fast day. Fasting? Eat suhoor before Fajr.</Text>
+              </View>
+              <Info pal={pal} label="Why fast on Mondays and Thursdays?" onPress={() => explain('sunnahfast')} />
+            </View>
+            <FastRemind pal={pal} />
+          </View>
+        </View>
+      )}
+      {explainSheet}
     </View>
+  );
+}
+
+/** The small ? that opens the explainer for a deed. */
+function Info({ pal, label, onPress }: { pal: Palette; label: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} hitSlop={10} accessibilityRole="button" accessibilityLabel={label} style={[styles.info, { borderColor: mix(pal.surface, pal.accent, 0.45) }]}>
+      <Text style={[styles.infoText, { color: pal.accent }]}>?</Text>
+    </Pressable>
+  );
+}
+
+/** "Remind me the night before" for Monday and Thursday fasts (prefs.fastReminder; scheduled in reminders.ts). */
+function FastRemind({ pal }: { pal: Palette }) {
+  const prefs = usePrefs();
+  const on = !!prefs.fastReminder;
+  const flip = async () => {
+    if (on) return prefs.set({ fastReminder: false });
+    if (!(await askPermission())) {
+      Alert.alert('Notifications are off', 'To get a reminder the night before, allow notifications for Munib in your iPhone’s Settings.');
+      return;
+    }
+    prefs.set({ fastReminder: true });
+  };
+  return (
+    <Pressable onPress={flip} style={[styles.remind, { borderColor: on ? pal.accent : pal.line, backgroundColor: on ? mix(pal.surface, pal.accent, 0.12) : 'transparent' }]} accessibilityRole="switch" accessibilityState={{ checked: on }} accessibilityLabel="Remind me the night before Monday and Thursday fasts">
+      <Icon name="bell" size={15} color={pal.accent} />
+      <Text style={[styles.remindText, { color: on ? pal.accent : pal.text }]}>{on ? 'Reminder on · 9pm the night before' : 'Remind me the night before'}</Text>
+      {on && <Icon name="check" size={14} color={pal.accent} strokeWidth={2.4} />}
+    </Pressable>
   );
 }
 
@@ -169,5 +226,11 @@ const styles = StyleSheet.create({
   prayers: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
   prayer: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
   prayerText: { fontFamily: fonts.uiSemi, fontSize: 12.5 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  info: { width: 24, height: 24, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  infoText: { fontFamily: fonts.uiBold, fontSize: 13 },
+  tomorrow: { borderRadius: 16, padding: 12, gap: 10 },
+  remind: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start', borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7, marginLeft: 36 },
+  remindText: { fontFamily: fonts.uiSemi, fontSize: 13 },
   go: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
 });
