@@ -7,9 +7,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Glassy, hasGlass } from './Glassy';
 import { Icon, IconName } from './Icon';
 import { ART } from '@/lib/art';
+import Svg, { Circle } from 'react-native-svg';
+import { useDeeds } from '@/lib/deeds';
 import { useLoop } from '@/lib/loop';
 import { useRadio } from '@/lib/radio';
-import { fonts, mix, usePalette } from '@/lib/theme';
+import { fonts, mix, type Palette, usePalette } from '@/lib/theme';
 
 /** The tabs along the bottom, in order (Saj, 14 Nov 2026: Ask in the centre; You moved to the profile button). `name` is the route in src/app/(tabs). */
 export const TABS: { name: string; label: string; icon: IconName }[] = [
@@ -74,7 +76,13 @@ export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
             };
             return (
               <Pressable key={route.key} onPress={press} style={styles.item} accessibilityRole="tab" accessibilityState={{ selected: sel }} accessibilityLabel={tab.label}>
-                <Icon name={tab.icon} size={23} color={sel ? on : pal.muted} strokeWidth={sel ? 2.1 : 1.7} />
+                {tab.name === 'prayer' ? (
+                  <DeedsRing pal={pal}>
+                    <Icon name={tab.icon} size={19} color={sel ? on : pal.muted} strokeWidth={sel ? 2.1 : 1.7} />
+                  </DeedsRing>
+                ) : (
+                  <Icon name={tab.icon} size={23} color={sel ? on : pal.muted} strokeWidth={sel ? 2.1 : 1.7} />
+                )}
                 <Text style={[styles.label, { color: sel ? on : pal.muted }]}>{tab.label}</Text>
               </Pressable>
             );
@@ -86,6 +94,28 @@ export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
 }
 
 /** The radio's mini player, just above the tabs while a station is on. */
+/**
+ * Daily deeds progress as a ring round the Prayer tab's icon (Saj, 16 Nov 2026: "good idea with the progress ring"):
+ * visible from every tab, so readers who live in the feed still see it; it fills as deeds are ticked and turns
+ * gold when all six are done. Tapping the tab opens the Prayer tab, where Daily deeds is the first card.
+ */
+function DeedsRing({ pal, children }: { pal: Palette; children: React.ReactNode }) {
+  const d = useDeeds();
+  const S = 27, W = 2.4, R = (S - W) / 2, C = 2 * Math.PI * R;
+  const frac = d.count / d.total;
+  return (
+    <View style={{ width: S, height: S, marginVertical: -2, alignItems: 'center', justifyContent: 'center' }} accessibilityLabel={`Daily deeds: ${d.count} of ${d.total}`}>
+      <Svg width={S} height={S} style={StyleSheet.absoluteFill}>
+        <Circle cx={S / 2} cy={S / 2} r={R} stroke={mix(pal.surface, pal.muted, 0.28)} strokeWidth={W} fill="none" />
+        {frac > 0 && (
+          <Circle cx={S / 2} cy={S / 2} r={R} stroke={d.all ? pal.gold : pal.accent} strokeWidth={W} fill={d.all ? mix(pal.surface, pal.gold, 0.18) : 'none'} strokeLinecap="round" strokeDasharray={`${C * frac} ${C}`} transform={`rotate(-90 ${S / 2} ${S / 2})`} />
+        )}
+      </Svg>
+      <View style={{ position: 'relative' }}>{children}</View>
+    </View>
+  );
+}
+
 /** The repeat player's mini bar: what is on repeat, pause and close. Opens Play on repeat. */
 function LoopBar() {
   const pal = usePalette();

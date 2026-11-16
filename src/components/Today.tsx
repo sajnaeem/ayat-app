@@ -8,7 +8,8 @@ import { GoldStar } from '@/components/Gold';
 import { Icon } from '@/components/Icon';
 import { SNIPPETS } from '@/data/snippets';
 import { showFeed } from '@/lib/nav';
-import { dayKey, useProgress } from '@/lib/progress';
+import { useDeeds } from '@/lib/deeds';
+import { dayKey } from '@/lib/progress';
 import { askPermission } from '@/lib/reminders';
 import { playSfx } from '@/lib/sfx';
 import { usePrefs } from '@/lib/store';
@@ -30,14 +31,14 @@ const PRAYERS = [
   { id: 'maghrib', name: 'Maghrib' },
   { id: 'isha', name: 'Isha' },
 ];
-const TASBEEH_GOAL = 33;
+const TASBEEH_GOAL = 33; // same as deeds.ts
 const TRIES = SNIPPETS.filter((s) => s.kind === 'try' && s.id !== 't-tasbih') as { id: string; title: string; source: string }[];
 
 type Extra = { title: string; sub: string; info: string; fast?: boolean; open?: () => void };
 
 export function Today({ pal }: { pal: Palette }) {
   const prefs = usePrefs();
-  const { progress } = useProgress();
+  const deeds = useDeeds();
   const router = useRouter();
   const now = new Date();
   const key = dayKey(now);
@@ -49,9 +50,7 @@ export function Today({ pal }: { pal: Palette }) {
     prefs.set({ today: { ...t, day: key, done: has(id) ? t.done.filter((x) => x !== id) : [...t.done, id] } });
   };
 
-  const goal = prefs.dailyGoal || 10;
-  const read = progress.days[key] ?? 0;
-  const tasbeeh = prefs.tasbeeh.day === now.toISOString().slice(0, 10) ? prefs.tasbeeh.today : 0;
+  const { goal, read, tasbeeh } = deeds;
 
   const dow = now.getDay();
   const extra: Extra =
@@ -75,9 +74,7 @@ export function Today({ pal }: { pal: Palette }) {
     { id: 'dua', info: 'duaothers', title: 'Make dua for someone', sub: 'A parent, a friend, someone who asked', done: has('dua'), open: () => router.push({ pathname: '/dua-requests', params: { how: '1' } }) },
     { id: 'extra', info: extra.info, fast: extra.fast, title: extra.title, sub: extra.sub, done: has('extra'), open: extra.open },
   ];
-  const total = items.length + 1;
-  const count = items.filter((i) => i.done).length + (prayed === 5 ? 1 : 0);
-  const all = count === total;
+  const { total, count, all } = deeds;
   const gold = pal.gold;
 
   // The whole list done: once a day, while this tab is open (reading and tasbeeh tick themselves elsewhere, so the
