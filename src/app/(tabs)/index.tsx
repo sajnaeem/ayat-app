@@ -273,7 +273,11 @@ export default function Feed() {
   const guest = acctEarly.status === 'signedOut';
   // Since 10 Nov 2026 guests can try For you too (pick a mood, see ayat that speak to it) before being asked to sign up.
   const mode: 'foryou' | 'order' = prefs.feedMode;
-  const [sheet, setSheet] = useState<null | 'mood' | 'context' | 'remind' | 'support' | 'reading' | 'topics'>(prefs.onboarded ? null : 'mood');
+  const [sheet, setSheet] = useState<null | 'mood' | 'context' | 'remind' | 'support' | 'reading' | 'topics'>(prefs.onboarded || !prefs.journey ? null : 'mood');
+  // Someone who skipped the questions ("just let me read") sees ayat first; the picker comes once they reach the third card (Saj, 22 Nov 2026).
+  useEffect(() => {
+    if (!prefs.onboarded && !prefs.journey && active >= 2 && sheet === null && mode === 'foryou') setSheet('mood');
+  }, [active]);
   const [remindAt, setRemindAt] = useState(2);
   const [contextVerse, setContextVerse] = useState<Verse | null>(null);
   const [resting, setResting] = useState(false);

@@ -1,4 +1,5 @@
 import { memo, ReactNode, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { learnSurah } from '@/lib/learn';
 import { textScale, usePrefs } from '@/lib/store';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { Easing, FadeIn, FadeOut, SharedValue, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -325,7 +326,7 @@ export const VerseCard = memo(function VerseCard(props: Props) {
                 {v.tl.map((t, j) => (
                   <Text key={j} style={{ opacity: playing && playingAyah !== null && playingAyah !== v.ar[j][1] ? 0.45 : 1 }}>
                     {v.tl.length > 1 ? `(${v.ar[j][1]}) ` : ''}
-                    {t}{' '}
+                    {learnTl(v.s, v.ar[j][1]) ?? t}{' '}
                   </Text>
                 ))}
               </Text>
@@ -459,6 +460,9 @@ function RailButton({ p, i, label, a11y, onPress, color, children }: { p: Shared
   );
 }
 
+/** Munib's plainer learner spelling ("Qul huwal-laahu ahad") where it exists: al-Fatihah and the short surahs in Surahs for your prayer. */
+const learnTl = (s: number, a: number): string | undefined => learnSurah(s)?.ayat[a - 1]?.tl;
+
 const styles = StyleSheet.create({
   pausedWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', zIndex: 5 },
   pausedDot: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', paddingLeft: 4, opacity: 0.75 },
@@ -475,8 +479,8 @@ const styles = StyleSheet.create({
   refAr: { fontFamily: fonts.arabic, fontSize: 16, marginLeft: 'auto', flexShrink: 0, paddingLeft: 8 },
   because: { fontFamily: fonts.uiSemi, fontSize: 13, marginTop: -10 },
   arabic: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center' },
-  tl: { fontFamily: fonts.readItalic, lineHeight: 26, textAlign: 'right', marginTop: -8 },
-  tlKey: { fontFamily: fonts.ui, fontSize: 12, textAlign: 'right', marginTop: 4 },
+  tl: { fontFamily: fonts.readItalic, lineHeight: 26, textAlign: 'left', marginTop: -8 },
+  tlKey: { fontFamily: fonts.ui, fontSize: 12, textAlign: 'left', marginTop: 4 },
   tr: { fontFamily: fonts.read },
   by: { fontFamily: fonts.ui, fontSize: 12, marginTop: 10 },
   tools: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

@@ -53,6 +53,7 @@ Things learned about testing:
 - The page's text dump always shows the first feed card (all tabs stay mounted); judge by the screenshots.
 - Wheel-scroll doesn't work while the pointer rests on the floating tab bar: move it first (`xy:200,400` can tap things; prefer `goto:` to a screen and scroll before clicking tabs).
 - Prefs live in localStorage `ayat.prefs.v1`, progress in `ayat.progress.v1`. URL helpers: `?sky=fajr|day|maghrib|isha`, `?ramadan=12`, `?h=118` (Qibla).
+- `move:x,y` puts the pointer somewhere without clicking (do this over the page before `scroll:`). The address `/together` opens Read together, not the Together tab: reach tabs by clicking them (`last:Together`).
 - Not testable here: sound, haptics, notifications, Apple sign-in, real recitation, the lock screen, liquid glass, signed-in server features (Ask answers, Read together). List these for Saj instead of guessing.
 - The first-run journey as a new Muslim sister: `["click:Get started","fill:Amina","click:Next","clickx:Sister","wait:1500","click:new to Islam","wait:1500","click:Continue","wait:1200","click:learning","wait:1200","xy:308,493" ×6,"wait:1500","click:No thanks","wait:2500","click:Not now","wait:4000"]`.
 
@@ -73,11 +74,7 @@ Things learned about testing:
 
 ## Proposals for Saj (he decides; newest first)
 
-1. **Say the trust promise on the welcome screen and App Store listing**: one quiet line such as "Free · No tracking · No account needed to read". Evidence: ads, paywalls, login walls and privacy are the top complaints about competitors. (Not done by the loop: the welcome screen is an approved design.)
-2. **"What am I saying in my prayer?"**: a short focus-in-prayer guide built from the meanings already in Learn to pray. Evidence: focus in prayer is among the top struggles in the GTAF survey. Needs a scholar's check.
-3. **Left-align the transliteration** on ayah cards (it is right-aligned like the Arabic, which is harder to read for the English readers who rely on it most), and consider Munib's plainer learner spelling there too ("Waitha saalaka" is hard for a beginner).
-4. **Together tab at night**: the four painted tiles all turn the same dark blue after Isha, so they are hard to tell apart; give each night scene its own accent.
-5. **Guests who tap "Not now, just let me read" meet the mood picker before any ayah.** Consider showing the first ayah first and the picker after two or three cards. (Saj chose the picker on first open on 10 Nov; raising it again only because it is the first thing a wary visitor sees.)
+None open. (The first five were all approved and built on 22 Nov 2026: see the run log.)
 
 ## Backlog the loop can do itself
 
@@ -88,6 +85,13 @@ Things learned about testing:
 - Check all tappable icons have accessibility labels.
 
 ## Run log (newest first; keep the last 14, summarise older ones)
+
+**22 Nov 2026 (second pass, same day). Saj approved all five proposals; built:**
+- Welcome screen trust line: "Free · No ad tracking · No account needed to read" ("No ad tracking" rather than "No tracking" because anonymous usage counts are on by default). Use the same line in the App Store listing when it is written.
+- "What am I saying in my prayer?" (`src/app/pray/meaning.tsx`, first row of the list in Learn to pray): only reuses the words and meanings already in Learn to pray and al-Fatihah from Surahs for your prayer. Needs the same scholar's check.
+- Transliteration on ayah cards is left-aligned, and uses Munib's plainer learner spelling where it exists (al-Fatihah and the 20 short surahs; `learnTl` in VerseCard). Other ayat still use the harder spelling: a plain spelling for the whole Quran would need a checked source.
+- Night tiles: each painted card scene now has its own night colour (`NIGHT_HUE` / `night_tint` in scripts/art/paint.py).
+- Guests who skip the questions see ayat first; the mood picker opens when they reach the third card.
 
 **22 Nov 2026 (first run, in chat with Saj). Persona: Amina.**
 - Tested: welcome → journey → feed → all five tabs at 393×852; guest path at 375×667.

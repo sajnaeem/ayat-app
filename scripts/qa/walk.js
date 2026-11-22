@@ -28,6 +28,7 @@ const srv = http.createServer((q, r) => { let p = path.join(root, decodeURICompo
       else if (k === 'scroll') await p.mouse.wheel(0, +v);
       else if (k === 'goto') await p.goto(`http://localhost:${port}${v}`);
       else if (k === 'xy') { const [x, y] = v.split(',').map(Number); await p.mouse.click(x, y); }
+      else if (k === 'move') { const [x, y] = v.split(',').map(Number); await p.mouse.move(x, y); }
       else if (k === 'key') await p.keyboard.press(v);
     } catch (e) { console.log('  !! failed', a, e.message.split('\n')[0].slice(0, 120)); }
     await p.waitForTimeout(k === 'wait' ? 100 : 1300); await snap(a);

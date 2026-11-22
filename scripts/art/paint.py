@@ -635,6 +635,23 @@ def night(phase):
     return c
 
 
+# After Isha every card scene used to turn the same dark blue, so the tiles were hard to tell apart (22 Nov 2026).
+# Each scene's night now leans its own way: the blues are turned by this much of the colour wheel; lamps and stars are left alone.
+NIGHT_HUE = dict(mist=-0.10, sea=-0.05, arch=0.09, dunes=0.13, garden=-0.17, olive=-0.09)
+
+
+def night_tint(path, name):
+    d = NIGHT_HUE.get(name)
+    if not d:
+        return
+    im = Image.open(path).convert('HSV')
+    a = np.asarray(im).astype(np.float32) / 255
+    h, sat = a[..., 0], a[..., 1]
+    blue = np.clip(1 - np.abs(h - 0.65) / 0.14, 0, 1) * np.clip(sat / 0.25, 0, 1)   # how blue a pixel is (0..1)
+    a[..., 0] = (h + d * blue) % 1
+    Image.fromarray((a * 255).astype(np.uint8), 'HSV').convert('RGB').save(path, quality=88)
+
+
 SCENES = dict(valley=valley, mist=mist, sea=sea, minaret=minaret, arch=arch, dunes=dunes, garden=garden, olive=olive, night=night)
 
 if __name__ == '__main__':
@@ -645,4 +662,6 @@ if __name__ == '__main__':
             c = SCENES[name](phase)
             size = (900, 1125) if name == 'valley' else (520, 520)
             c.finish(os.path.join(OUT, f'{name}-{phase}.jpg'), size)
+            if phase == 'isha':
+                night_tint(os.path.join(OUT, f'{name}-{phase}.jpg'), name)
             print(name, phase)

@@ -124,6 +124,7 @@ function Root() {
         <Stack.Screen name="learn/[s]" />
         <Stack.Screen name="pray/index" options={{ presentation: 'modal' }} />
         <Stack.Screen name="pray/[mode]" />
+        <Stack.Screen name="pray/meaning" />
         <Stack.Screen name="live" options={{ presentation: 'modal' }} />
         <Stack.Screen name="repeat" options={{ presentation: 'modal' }} />
         <Stack.Screen name="watch" options={{ presentation: 'fullScreenModal' }} />

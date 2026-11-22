@@ -92,7 +92,8 @@ export default function LearnToPray() {
           ))}
         </Group>
         <Group pal={pal}>
-          <Row pal={pal} icon="compass" title="Qibla" sub="Which way to face" onPress={() => router.push('/qibla')} onInfo={() => explain('qibla')} />
+          <Row pal={pal} icon="book" title="What am I saying in my prayer?" sub="Every phrase with its meaning, in order" onPress={() => router.push('/pray/meaning')} />
+          <Row pal={pal} icon="compass" title="Qibla" sub="Which way to face" onPress={() => router.push('/qibla')} onInfo={() => explain('qibla')} divider />
           <Row pal={pal} icon="bell" title="Prayer times" sub="When each prayer is, where you are" onPress={() => router.push('/prayertimes')} onInfo={() => explain('prayertimes')} divider />
           <Row pal={pal} icon="book" title="Surahs for your prayer" sub="Learn al-Fatihah and short surahs" onPress={() => router.push('/learn')} onInfo={() => explain('surahs')} divider />
         </Group>

@@ -191,6 +191,8 @@ function Welcome({ onStart, onLogin, onBrowse }: { onStart: () => void; onLogin:
         <Pressable onPress={onBrowse} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'center', paddingVertical: 6 }}>
           <Text style={styles.browse}>Not now, just let me read</Text>
         </Pressable>
+        {/* The promise people most want from an app like this (22 Nov 2026 research: ads, paywalls, login walls and privacy are the top complaints). */}
+        <Text style={styles.trust}>Free  ·  No ad tracking  ·  No account needed to read</Text>
       </View>
     </View>
   );
@@ -211,5 +213,6 @@ const styles = StyleSheet.create({
   primaryText: { fontFamily: fonts.uiBold, fontSize: 17, color: '#1A1408' },
   secondary: { backgroundColor: 'rgba(255,255,255,0.12)', borderColor: 'rgba(255,255,255,0.3)', borderWidth: 1, borderRadius: 20, paddingVertical: 17, alignItems: 'center' },
   secondaryText: { fontFamily: fonts.uiSemi, fontSize: 17, color: '#FFFFFF' },
+  trust: { fontFamily: fonts.ui, fontSize: 11.5, letterSpacing: 0.2, color: 'rgba(247,243,234,0.6)', textAlign: 'center', marginTop: 2 },
   browse: { fontFamily: fonts.ui, fontSize: 13.5, color: 'rgba(247,243,234,0.75)', textDecorationLine: 'underline' },
 });
