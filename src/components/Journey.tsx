@@ -97,12 +97,22 @@ const FEELS = (j: Journey | undefined): Statement[] =>
         { id: 'calm', text: 'I’m looking for some calm' },
         { id: 'close', text: 'I wonder about God, and where I fit' },
       ]
-    : [
+    : j === 'new'
+      ? [
+          // Someone who has just taken their shahadah shouldn't be met first with "I read the Quran most weeks".
+          { id: 'basics', text: 'I’m still learning the basics of Islam' },
+          { id: 'pray', text: 'I’d like to learn to pray, and keep to it' },
+          { id: 'understand', text: 'I want to understand what I’m reading' },
+          { id: 'surahs', text: 'I’d like to learn short surahs for my prayer' },
+          { id: 'read', text: 'I already read some Quran most weeks' },
+          { id: 'calm', text: 'I could do with more calm in my life' },
+        ]
+      : [
         { id: 'read', text: 'I read the Quran most weeks' },
         { id: 'understand', text: 'I want to understand what I’m reading' },
         { id: 'surahs', text: 'I’d like to learn more surahs for my prayer' },
         { id: 'pray', text: 'I’d like to pray on time, every time' },
-        j === 'new' ? { id: 'basics', text: 'I’m still learning the basics of Islam' } : { id: 'close', text: 'I sometimes feel far from Allah' },
+        { id: 'close', text: 'I sometimes feel far from Allah' },
         { id: 'calm', text: 'I could do with more calm in my life' },
       ];
 

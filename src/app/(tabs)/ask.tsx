@@ -242,7 +242,7 @@ export default function AskTab() {
         <TextInput
           value={text}
           onChangeText={setText}
-          placeholder={signedIn ? 'Ask anything about Islam…' : 'Ask anything about Islam (free account)'}
+          placeholder="Ask anything about Islam…"
           placeholderTextColor={pal.muted}
           multiline
           maxLength={500}

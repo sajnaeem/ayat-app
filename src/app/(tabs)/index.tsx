@@ -812,7 +812,8 @@ export default function Feed() {
   };
 
   // The feeling picked on "What's on your heart today?", or just "Mood" until one is chosen.
-  const moodLabel = MOODS.find((m) => m.id === prefs.mood)?.label ?? 'Mood';
+  // The pill is narrow, so it shows a short word for the mood rather than a label cut off with dots ("New t…").
+  const moodLabel = (prefs.mood && MOOD_PILL[prefs.mood]) || MOODS.find((m) => m.id === prefs.mood)?.label || 'Mood';
   const today = prog.progress.days[dayKey()] ?? 0;
 
   // Videos and photo/video posts sit on a dark ground: switch the top bar to light text so it stays readable.
@@ -1271,7 +1272,13 @@ const TIPS: Record<TipId, { title: string; text: string; arrow: number }> = {
 };
 const TIP_ORDER: Record<'foryou' | 'order', TipId[]> = { order: ['pages', 'search', 'aa'], foryou: ['mood', 'aa', 'ask', 'search'] };
 /** How long the feed stays quiet before the first tip, and between one tip and the next. */
-const TIP_FIRST_MS = 2500, TIP_GAP_MS = 40000;
+// The first tip waits 20s so the first ayah a new reader ever sees isn't covered by a bubble (was 2.5s).
+const TIP_FIRST_MS = 20000, TIP_GAP_MS = 40000;
+const MOOD_PILL: Record<string, string> = {
+  anxious: 'Anxious', grateful: 'Grateful', grieving: 'Grieving', lonely: 'Lonely', money: 'Money', angry: 'Angry', temptation: 'Tempted',
+  unwell: 'Unwell', forgiveness: 'Forgive', strength: 'Strength', guidance: 'Guidance', newmuslim: 'New here', marriage: 'Marriage',
+  divorce: 'Divorce', family: 'Family', conflict: 'Conflict', parenting: 'Parenting',
+};
 
 function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palette; onDark?: boolean; top: number; moodLabel: string; mode: 'foryou' | 'order'; onMode: (m: 'foryou' | 'order') => void; showTl: boolean; onMood: () => void; onTl: () => void; tip?: { title: string; text: string; arrow: number } | null; onTip?: () => void; onTipClose?: () => void; onRead: () => void; onPages: () => void }) {
   // On a dark card (a video, a photo post) switch to light text and dark see-through buttons, with a shadow under the tab names.
@@ -1297,7 +1304,7 @@ function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palett
       </View>
       <View style={styles.topRight}>
         {p.mode === 'foryou' && (
-          <TopBtn pal={pal} onDark={p.onDark} onPress={p.onMood} style={{ maxWidth: 88, flexShrink: 1, overflow: 'hidden' }} label="Change what's on your heart">
+          <TopBtn pal={pal} onDark={p.onDark} onPress={p.onMood} style={{ maxWidth: 100, flexShrink: 1, overflow: 'hidden' }} label="Change what's on your heart">
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1, maxWidth: '100%' }}>
               <View style={{ flexShrink: 0 }}>
                 <Icon name="heart" size={13} color={pal.accent} strokeWidth={2} />
