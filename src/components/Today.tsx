@@ -24,6 +24,9 @@ import { fonts, mix, type Palette } from '@/lib/theme';
  * on Monday and Thursday, a small sunnah from the feed's sourced "Try this today" cards otherwise.
  * Sources quoted here need a scholar's check like the rest of Munib.
  */
+/** Outline of an empty tick or prayer pill: the hairline colour is too faint to see on the dark look. */
+const edgeOf = (pal: Palette) => (pal.dark ? mix(pal.surface, pal.text, 0.42) : pal.line);
+
 const PRAYERS = [
   { id: 'fajr', name: 'Fajr' },
   { id: 'dhuhr', name: 'Dhuhr' },
@@ -119,7 +122,7 @@ export function Today({ pal }: { pal: Palette }) {
             {PRAYERS.map((p) => {
               const on = has(p.id);
               return (
-                <Pressable key={p.id} onPress={() => toggle(p.id)} hitSlop={4} style={[styles.prayer, { borderColor: on ? pal.accent : pal.line, backgroundColor: on ? pal.accent : 'transparent' }]} accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={`${p.name} prayed`}>
+                <Pressable key={p.id} onPress={() => toggle(p.id)} hitSlop={4} style={[styles.prayer, { borderColor: on ? pal.accent : edgeOf(pal), backgroundColor: on ? pal.accent : 'transparent' }]} accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={`${p.name} prayed`}>
                   <Text style={[styles.prayerText, { color: on ? pal.onAccent : pal.muted }]}>{p.name}</Text>
                 </Pressable>
               );
@@ -140,7 +143,7 @@ export function Today({ pal }: { pal: Palette }) {
             </Pressable>
             <Info pal={pal} label={`About: ${it.title}`} onPress={() => explain(it.info)} />
             {!!it.open && (
-              <Pressable onPress={it.open} hitSlop={10} accessibilityRole="button" accessibilityLabel={`Open: ${it.title}`} style={[styles.go, { backgroundColor: mix(pal.surface, pal.accent, 0.1) }]}>
+              <Pressable onPress={it.open} hitSlop={10} accessibilityRole="button" accessibilityLabel={`Open: ${it.title}`} style={[styles.go, { backgroundColor: mix(pal.surface, pal.accent, pal.dark ? 0.22 : 0.1) }]}>
                 <Icon name="chevron" size={14} color={pal.accent} />
               </Pressable>
             )}
@@ -201,7 +204,7 @@ function FastRemind({ pal }: { pal: Palette }) {
 
 function Tick({ pal, on }: { pal: Palette; on: boolean }) {
   return (
-    <View style={[styles.tick, { borderColor: on ? pal.accent : pal.line, backgroundColor: on ? pal.accent : 'transparent' }]}>
+    <View style={[styles.tick, { borderColor: on ? pal.accent : edgeOf(pal), backgroundColor: on ? pal.accent : 'transparent' }]}>
       {on && <Icon name="check" size={13} color={pal.onAccent} strokeWidth={2.6} />}
     </View>
   );
