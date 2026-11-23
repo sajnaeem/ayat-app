@@ -40,6 +40,8 @@ export default function You() {
   const plus = usePlus();
   const hp = onColour(pal, pal.pop.sky);
   const acct = useAccount();
+  // Guests have nothing to sign out of, block or delete, so those rows only show with an account.
+  const signedIn = acct.status === 'signedIn';
   const toast = useToast();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showRules, setShowRules] = useState(false);
@@ -267,8 +269,8 @@ export default function You() {
             <Group pal={pal}>
               <Row pal={pal} icon="chat" title="Send feedback" sub="Report a problem or share an idea" onPress={() => router.push('/feedback')} />
               <Row pal={pal} icon="info" title="Community guidelines" onPress={() => setShowRules(true)} divider />
-              <Row pal={pal} icon="user" title="Blocked people" onPress={openBlocked} divider />
-              <Row
+              {signedIn && <Row pal={pal} icon="user" title="Blocked people" onPress={openBlocked} divider />}
+              {signedIn && <Row
                 pal={pal}
                 icon="out"
                 title="Sign out"
@@ -280,7 +282,7 @@ export default function You() {
                   // Back to Home, which works without an account.
                   router.navigate('/');
                 }}
-              />
+              />}
             </Group>
             <GuidelinesSheet visible={showRules} onClose={() => setShowRules(false)} pal={pal} />
             <Sheet visible={blocked !== null} onClose={() => setBlocked(null)} title="Blocked people" pal={pal}>
@@ -309,7 +311,7 @@ export default function You() {
                 </View>
               ))}
             </Sheet>
-            {!confirmDelete ? (
+            {!signedIn ? null : !confirmDelete ? (
               <Pressable onPress={() => setConfirmDelete(true)} style={styles.dangerLink} accessibilityRole="button">
                 <Text style={[styles.sub, { color: pal.muted, textDecorationLine: 'underline' }]}>Delete my account</Text>
               </Pressable>
