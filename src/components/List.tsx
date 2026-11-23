@@ -12,7 +12,7 @@ export function Section({ pal, title, note }: { pal: Palette; title: string; not
   return (
     <View style={styles.section}>
       <Text style={[styles.sectionTitle, { color: pal.text }]}>{title}</Text>
-      {!!note && <Text style={[styles.sub, { color: pal.muted }]}>{note}</Text>}
+      {!!note && <Text style={[styles.sub, styles.sectionNote, { color: pal.muted }]}>{note}</Text>}
     </View>
   );
 }
@@ -156,7 +156,9 @@ const styles = StyleSheet.create({
   infoText: { fontFamily: fonts.uiBold, fontSize: 13, lineHeight: 16 },
   card: { borderRadius: 16, overflow: 'hidden' },
   section: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 14, paddingHorizontal: 4 },
-  sectionTitle: { fontFamily: fonts.read, fontSize: 21, letterSpacing: -0.4 },
+  // The title never wraps; a long note wraps beside it instead.
+  sectionTitle: { fontFamily: fonts.read, fontSize: 21, letterSpacing: -0.4, flexShrink: 0 },
+  sectionNote: { flexShrink: 1, marginLeft: 14 },
   sub: { fontFamily: fonts.ui, fontSize: 13.5, lineHeight: 19 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 13 },
   icon: { width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
