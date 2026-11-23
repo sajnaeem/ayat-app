@@ -99,15 +99,19 @@ export function Today({ pal }: { pal: Palette }) {
     }, [all, cheered, key, firstName]),
   );
 
+  // Someone coming back to Allah (their journey answer) shouldn't open on a "0/6" scoreboard:
+  // until the day's first tick, a kinder line and no count (Saj, 23 Nov 2026).
+  const gentle = prefs.journey?.journey === 'returning' && count === 0;
+
   return (
     <View style={[styles.card, { backgroundColor: pal.surface, borderColor: all ? gold : pal.line }]}>
       <View style={styles.head}>
         <View style={{ flex: 1 }}>
           <Text style={[styles.eyebrow, { color: pal.accent }]}>TODAY</Text>
           <Text style={[styles.title, { color: pal.text }]}>Daily deeds</Text>
-          <Text style={[styles.sub, { color: all ? pal.accent : pal.muted }]}>{all ? 'MashaAllah, all done for today' : 'A simple way to connect with Allah'}</Text>
+          <Text style={[styles.sub, { color: all ? pal.accent : pal.muted }]}>{all ? 'MashaAllah, all done for today' : gentle ? 'Start with one. Whatever you do today counts.' : 'A simple way to connect with Allah'}</Text>
         </View>
-        {all ? <GoldStar size={26} color={gold} /> : <Text style={[styles.count, { color: pal.accent }]}>{count}/{total}</Text>}
+        {all ? <GoldStar size={26} color={gold} /> : gentle ? null : <Text style={[styles.count, { color: pal.accent }]}>{count}/{total}</Text>}
       </View>
 
       {/* The five prayers, tapped one by one */}

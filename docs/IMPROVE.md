@@ -81,9 +81,7 @@ Things learned about testing:
 
 ## Proposals for Saj (he decides; newest first)
 
-**6. A softer Daily deeds for someone coming back (23 Nov 2026).** As Bilal (hasn't prayed in years), the first thing on the Prayer tab is "Daily deeds 0/6" with five empty prayer pills, which reads like a scoreboard he is already failing. The streak research above says feeling at fault is what makes people stop. Idea: for readers who chose "I want to come back to Allah", show a line under the title for the first week such as "Start with one. Whatever you do today counts." and/or hide the "0/6" until the first tick. It changes an approved card and its wording touches worship, so it is Saj's call (and the wording needs his or a scholar's eye). Reply "do proposal 6" or "drop 6".
-
-(Proposals 1–5 were approved and built on 22 Nov 2026: see the run log.)
+None open. (Proposals 1–5 were approved and built on 22 Nov 2026, proposal 6 on 23 Nov: see the run log.)
 
 ## Backlog the loop can do itself
 
@@ -102,6 +100,7 @@ Things learned about testing:
 - Changed: (1) Daily deeds' empty tick circles and prayer pills were almost invisible in Bold dark (hairline colour on a dark card): they now have a clear outline, and the arrow buttons a slightly stronger fill (`edgeOf` in Today.tsx; light look untouched); (2) section headings with a long note no longer break in two ("Pray / along" in Learn to pray): the heading stays on one line and the note wraps beside it (`Section` in List.tsx, used on four screens); (3) guests on the You screen no longer see Sign out, Blocked people or Delete my account (there was nothing to sign out of).
 - As Bilal: "The hadith about Allah running towards me after I said I'd been away got me. Nobody told me off. Ask already had my exact question, 'I haven't prayed in years. How do I start again?', which I'd never type to a person. But the Prayer tab opening on 0/6 with five empty prayer boxes felt like my mum's look across the room."
 - Research: streaks (JCR 2023 / INSEAD) and who returns (IIIT interviews), above. New proposal 6.
+- **Proposal 6 approved by Saj the same day and built:** for readers whose journey answer is "come back to Allah", Daily deeds shows "Start with one. Whatever you do today counts." and no "0/6" until the first deed of the day is complete (`gentle` in Today.tsx; every day, not only the first week, because no install date is kept in prefs). The wording should go on the scholar's review list.
 - Could not test: sound, real recitation, signed-in features, Ask's answers, the phone's own dark mode ("Match phone").
 
 **22 Nov 2026 (second pass, same day). Saj approved all five proposals; built:**
