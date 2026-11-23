@@ -1,7 +1,7 @@
 // node walk.js <name> <startPath> '<json actions>' [prefsJson]
 const { chromium } = require('playwright');
 const http = require('http'), fs = require('fs'), path = require('path');
-const root = '/tmp/webx', out = __dirname + '/shots'; fs.mkdirSync(out, { recursive: true });
+const root = process.env.ROOT || '/tmp/webx', out = __dirname + '/shots'; fs.mkdirSync(out, { recursive: true });
 const srv = http.createServer((q, r) => { let p = path.join(root, decodeURIComponent(q.url.split('?')[0])); if (!fs.existsSync(p) || fs.statSync(p).isDirectory()) p = path.join(root, 'index.html');
   const ext = path.extname(p); r.setHeader('Content-Type', {'.js':'application/javascript','.html':'text/html','.css':'text/css','.ttf':'font/ttf','.png':'image/png','.jpg':'image/jpeg','.json':'application/json','.mp3':'audio/mpeg'}[ext] || 'application/octet-stream'); fs.createReadStream(p).pipe(r); }).listen(0);
 (async () => {
