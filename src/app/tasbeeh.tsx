@@ -1,12 +1,13 @@
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Defs, G, Path, RadialGradient, Stop } from 'react-native-svg';
 import { ExplainIntro } from '@/components/Explain';
 import { Icon } from '@/components/Icon';
 import { EMERALD, GOLD, GOLD_DEEP, GOLD_LIGHT, jewel, JewelGround, jewelPalette, star8 } from '@/components/Jewel';
+import { TasbeehShare } from '@/components/TasbeehShare';
 import { usePrefs } from '@/lib/store';
 import { fonts, usePalette } from '@/lib/theme';
 
@@ -47,6 +48,7 @@ export default function Tasbeeh() {
   const todayCount = t.day === today() ? t.today : 0;
   const ripple = useRef(new Animated.Value(1)).current;
   const pop = useRef(new Animated.Value(1)).current;
+  const [sharing, setSharing] = useState(false);
 
   const save = (x: Partial<typeof t>) => prefs.set({ tasbeeh: { ...t, ...x } });
 
@@ -237,10 +239,17 @@ export default function Tasbeeh() {
             <Text style={styles.statL}>ALL TIME</Text>
           </View>
         </View>
+        {(todayCount > 0 || t.total > 0) && (
+          <Pressable onPress={() => setSharing(true)} style={({ pressed }) => [styles.share, jewel.glass, { opacity: pressed ? 0.8 : 1 }]} accessibilityRole="button" accessibilityLabel="Share your count and invite someone">
+            <Icon name="share" size={17} color={GOLD_LIGHT} />
+            <Text style={styles.shareText}>Share, and invite someone</Text>
+          </Pressable>
+        )}
         <Text style={styles.note}>
-          {t.set ? 'After each prayer: 33 SubhanAllah, 33 Alhamdulillah, 34 Allahu Akbar (Sahih Muslim 596). ' : ''}Your counts stay on your phone.
+          {t.set ? 'After each prayer: 33 SubhanAllah, 33 Alhamdulillah, 34 Allahu Akbar (Sahih Muslim 596). ' : ''}Your counts stay on your phone unless you share them.
         </Text>
       </ScrollView>
+      <TasbeehShare data={sharing ? { phrase, today: todayCount, total: t.total } : null} onClose={() => setSharing(false)} />
     </View>
   );
 }
@@ -280,5 +289,7 @@ const styles = StyleSheet.create({
   stat: { flex: 1, borderRadius: 18, paddingVertical: 12, alignItems: 'center' },
   statN: { fontFamily: fonts.read, fontSize: 26, color: '#FFFFFF', fontVariant: ['tabular-nums'] },
   statL: { fontFamily: fonts.uiBold, fontSize: 10.5, letterSpacing: 1.3, color: GOLD, marginTop: 2 },
+  share: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, alignSelf: 'center', borderRadius: 999, paddingHorizontal: 20, minHeight: 46, marginTop: 14 },
+  shareText: { fontFamily: fonts.uiSemi, fontSize: 14.5, color: '#FFFFFF' },
   note: { fontFamily: fonts.ui, fontSize: 12.5, lineHeight: 18, color: 'rgba(255,255,255,0.62)', textAlign: 'center', marginTop: 12, paddingHorizontal: 32 },
 });
