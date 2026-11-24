@@ -66,7 +66,7 @@ Things learned about testing:
 
 1. **Amina, 24, took her shahadah last month.** Can't read Arabic, nervous about praying wrong, has no Muslim family. (Used 22 Nov.)
 2. **Bilal, 31, born Muslim, hasn't prayed regularly in years.** Scrolls TikTok two hours a night, feels guilty, hates being lectured. (Used 23 Nov.)
-3. **Khadija, 45, practising mother of three.** Reads daily, wants tafsir, family khatm, bedtime stories, larger text.
+3. **Khadija, 45, practising mother of three.** Reads daily, wants tafsir, family khatm, bedtime stories, larger text. (Used 24 Nov.)
 4. **Tom, 28, not Muslim, curious after a friend's Ramadan.** Guest, won't sign up, knows no terms.
 5. **Yusuf, 67, recently bereaved.** Wants to read for his late wife; small-screen phone, large text, not confident with apps.
 6. **Sara, 19, student on an iPhone SE.** Uses Bold dark, short sessions between lectures, shares to WhatsApp.
@@ -78,22 +78,36 @@ Things learned about testing:
 - **Converts** (Haute Hijab's "11 challenges"): isolation, no community, family disapproval, learning salah and wudu, learning Arabic, feeling they never fit in. → Learn to pray, Surahs for your prayer and the gentle tone matter most; isolation is the gap Munib doesn't yet answer.
 - **Streaks** (Silverman & Barasch, "On or Off Track", Journal of Consumer Research 2023; INSEAD Knowledge, 22 Jun 2022; Psychology Today, 12 Jun 2023): across seven experiments with 4,000+ people, an intact streak kept people going (66% chose to continue) and a broken one put them off (58%); the drop is worse when people feel the break was their own fault; the authors advise not notifying people of a broken streak. → Evidence for Munib's no-streak, "starts fresh every day, nothing said about a missed day" design. Never add streak counters or "you missed" messages.
 - **Who drifts and who returns** (Eman Abdelhadi, IIIT blog, 80 life-history interviews with US-raised Muslims born 1971–85; small sample, one region): 62% had drifted from their community at some point, mostly ties "simply fading away in adolescence"; 79% of those men later returned but only 35% of the women; "the more monitoring and surveillance women experienced, the more likely they were to leave and the less likely they were to come back." → Being watched or judged is what keeps people away. Munib's private-by-default choices (circles show how many, never who; phone-only checklist) fit this; keep any social feature free of visible "who did / didn't".
+- **Children's Islamic story apps** (justuseapp.com's page of 22 user reviews for one such app, read 24 Nov 2026; reviews undated, store average shown 4.6/5): parents praise the content for Muslim children, bedtime stories and audiobooks ("My kids are obsessed"); the complaints are about stories locked behind payment and access problems after paying ("everything showed as locked", "why can't you add some free games or videos"). → Every bedtime story being free is a real point of difference for parents; say so wherever stories are described.
+- **Text size for older readers** (Hou, Anicetus & He, "How to design font size for older adults: a systematic literature review with a mobile device", Frontiers in Psychology, 1 Aug 2022; 12 studies; read through a summary, not the full text): "older adults preferred larger font sizes", but "there exists a critical size at which readability declines"; the studies it reviews land between about 13 and 18 pt for sustained reading, and it gives no single minimum. → Munib's Extra large (about 21 on the tafsir, 16 × 1.3) is in a sensible range; the gap is that the setting only reaches some screens (proposal 7).
 
 ## Proposals for Saj (he decides; newest first)
 
-None open. (Proposals 1–5 were approved and built on 22 Nov 2026, proposal 6 on 23 Nov: see the run log.)
+**7. Text size everywhere you read (24 Nov 2026).** You → Reading → Text size changes the ayah cards, Find a dua, Surahs for your prayer, pray-along and (since 24 Nov) the tafsir, but not Ask's answers, Ask about this ayah, the "New to this?" explainers or bedtime stories. A reader who picks Extra large expects all the long reading to follow. Evidence: older readers prefer larger text (Frontiers in Psychology 2022, above); half of over-51s in the GTAF survey say reading the Quran is a struggle. Work: the same one-line scale on four more screens, no new settings. Stories are already set large (about 20), so they could be left out.
+
+(Proposals 1–5 were approved and built on 22 Nov 2026, proposal 6 on 23 Nov: see the run log.)
 
 ## Backlog the loop can do itself
 
-- Check every screen at 375×667 (iPhone SE) and with Extra large text for cut-off or overlapping text.
+- Check every screen at 375×667 (iPhone SE) for cut-off or overlapping text. (Extra large text at 393×852 checked 24 Nov on the feed, tafsir sheet, You, Find a dua, Prayer and Together: nothing cut off.)
 - Bold dark: tabs, You, Learn to pray, Ask for dua, Prayer times checked 23 Nov. Still to check in Bold dark: the feed's sheets (Aa, mood, tafsir, Ask), search, Read together, circles, stories, page view.
-- Light look: Daily deeds' empty ticks and prayer pills are very faint on white (hairline colour). Strengthen slightly (accessibility) and compare before/after; only the dark look was fixed on 23 Nov.
+- Prayer tab header at night: the date line and the end of a long name ("Salaam, Khadija") run over the painted crescent moon. Approved art, so only a glitch fix is allowed (e.g. a soft shadow behind the text); look at all four times of day first.
+- You → "Juz' ʿAmma": the ʿ shows with a gap on the web (font fallback). Check whether it is the web only.
+- Prayer pills in Daily deeds: `clickx:Fajr` did not tick the pill in the test (it may have hit another "Fajr" on the page). Confirm by position that tapping a pill ticks it.
 - You → Juz' ʿAmma bar in Bold dark: the empty track is a strong green, so 0 of 564 looks part-filled. Check `Bar` in List.tsx.
 - Walk each persona's first five minutes.
 - Check every empty state (no saved ayat, no posts, no khatms, offline) reads kindly and offers a next step.
 - Check all tappable icons have accessibility labels.
 
 ## Run log (newest first; keep the last 14, summarise older ones)
+
+**24 Nov 2026. Persona: Khadija.**
+- Tested: saved settings as a returning reader with **Extra large text in the light (Bold) look**, 393×852: feed and the Tafsir sheet, Bedtime stories and one story, You (all sections), Surahs for your prayer, Find a dua, Learn to pray, the Prayer and Together tabs.
+- Changed: (1) Daily deeds' empty ticks and prayer pills were nearly invisible on the white card in the light look; they now have a clear grey outline (`edgeOf` in Today.tsx, same fix as the dark look got on 23 Nov); (2) the tafsir, Munib's longest reading, now follows the reader's text size (`TafsirSheet` in Study.tsx; checked with the "couldn't load" line, which uses the same style, since the tafsir itself can't load here).
+- As Khadija: "The stories are exactly what I want at bedtime: big calm text, a sleep timer, and nothing asking me to pay. Family things are easy to find under Together. But I set the text to Extra large and only the ayah grew; I shouldn't have to hunt for my glasses for the commentary."
+- Research: children's story app reviews and the font-size review, above. New proposal 7.
+- Could not test: the tafsir's real text, narration sound, Read together and circles (signed-in), page view fonts.
+- Testing notes: the first journey can be skipped for a persona with saved settings plus `"textSize":"xl"` (small / medium / large / xl) and `"mood":"grateful"` (which also stops the mood picker opening). `?sky=` is lost after a `goto:`, so add it to each address.
 
 **23 Nov 2026 (first scheduled run). Persona: Bilal.**
 - Tested: welcome → journey as a returning brother → feed → mood picker; then every tab, You, Learn to pray, Ask for dua, Prayer times and Words explained in **Bold dark** at night (`?sky=isha`), 393×852.
