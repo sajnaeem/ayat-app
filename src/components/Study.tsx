@@ -4,7 +4,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 
 import { useAccount } from '@/lib/account';
 import { askAiConsent } from '@/lib/aiConsent';
 import { usePlus } from '@/lib/plus';
-import { usePrefs } from '@/lib/store';
+import { textScale, usePrefs } from '@/lib/store';
 import { ASK_STARTERS, askAyah, reportAnswer } from '@/lib/ask';
 import { LangId, loadTafsir, loadWords, Tafsir } from '@/lib/quran';
 import { fonts, mix, Palette } from '@/lib/theme';
@@ -57,6 +57,9 @@ export function WordSheet({ pick, lang, pal, onClose }: { pick: WordPick; lang: 
 /** Tafsir Ibn Kathir for an ayah (English abridged, Urdu or Bengali), from the Quran Foundation. */
 export function TafsirSheet({ verseKey, lang, pal, onClose }: { verseKey: string | null; lang: LangId; pal: Palette; onClose: () => void }) {
   const [t, setT] = useState<Tafsir | 'loading' | 'failed'>('loading');
+  // The tafsir is the longest reading in Munib, so it follows the reader's text size (You → Reading).
+  const scale = textScale(usePrefs().textSize);
+  const body = [styles.body, { fontSize: Math.round(16 * scale), lineHeight: Math.round(25 * scale) }];
   useEffect(() => {
     if (!verseKey) return;
     setT('loading');
@@ -67,11 +70,11 @@ export function TafsirSheet({ verseKey, lang, pal, onClose }: { verseKey: string
   return (
     <Sheet visible={!!verseKey} onClose={onClose} title={`Tafsir · ${covers ?? ''}`} pal={pal}>
       {t === 'loading' && <ActivityIndicator color={pal.accent} style={{ padding: 24 }} />}
-      {t === 'failed' && <Text style={[styles.body, { color: pal.muted }]}>Couldn't load the tafsir. Check your connection and try again.</Text>}
+      {t === 'failed' && <Text style={[body, { color: pal.muted }]}>Couldn't load the tafsir. Check your connection and try again.</Text>}
       {typeof t === 'object' && (
         <>
           {t.paragraphs.map((para, i) => (
-            <Text key={i} style={[styles.body, { color: pal.text }]}>
+            <Text key={i} style={[body, { color: pal.text }]}>
               {para}
             </Text>
           ))}
