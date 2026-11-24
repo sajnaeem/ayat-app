@@ -17,7 +17,7 @@ import { askIslam, IslamAnswer, IslamSource, ISLAM_STARTERS } from '@/lib/islam'
 import { showFeed } from '@/lib/nav';
 import { usePlus } from '@/lib/plus';
 import { askAiConsent } from '@/lib/aiConsent';
-import { usePrefs } from '@/lib/store';
+import { textScale, usePrefs } from '@/lib/store';
 import { fonts, mix, usePalette } from '@/lib/theme';
 
 type Turn = { q: string; res?: IslamAnswer; note?: string };
@@ -33,6 +33,8 @@ export default function AskTab() {
   const router = useRouter();
   const acct = useAccount();
   const prefs = usePrefs();
+  // Answers follow the reader's text size (You → Reading).
+  const answerSize = { fontSize: Math.round(16 * textScale(prefs.textSize)), lineHeight: Math.round(25 * textScale(prefs.textSize)) };
   const plus = usePlus();
   const toast = useToast();
   const [explain, sheet] = useExplain(pal);
@@ -178,7 +180,7 @@ export default function AskTab() {
             )}
             {t.note && (
               <View style={[styles.answer, { backgroundColor: pal.surface, gap: 10 }]}>
-                <Text style={[styles.answerText, { color: pal.text }]}>{t.note}</Text>
+                <Text style={[styles.answerText, answerSize, { color: pal.text }]}>{t.note}</Text>
                 {t.note.includes('Munib Plus') && (
                   <Pressable onPress={() => router.push('/plus')} accessibilityRole="button">
                     <Text style={[styles.link, { color: pal.accent }]}>See Munib Plus</Text>
@@ -193,7 +195,7 @@ export default function AskTab() {
                     <Text style={[styles.crisisText, { color: pal.text }]}>You’re not alone. Samaritans are there day and night, free: 116 123. Tap to call.</Text>
                   </Pressable>
                 )}
-                <Text style={[styles.answerText, { color: pal.text }]}>
+                <Text style={[styles.answerText, answerSize, { color: pal.text }]}>
                   {t.res.answer.split(/(\[\d+\])/g).map((part, k) =>
                     /^\[\d+\]$/.test(part) ? (
                       <Text key={k} style={[styles.cite, { color: pal.accent }]}>

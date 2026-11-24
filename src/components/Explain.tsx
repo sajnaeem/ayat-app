@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from './Icon';
 import { Sheet } from './Sheet';
 import { explainer } from '@/data/explainers';
-import { usePrefs } from '@/lib/store';
+import { textScale, usePrefs } from '@/lib/store';
 import { fonts, mix, Palette } from '@/lib/theme';
 
 /** The full explanation: what it is, why Muslims do it, how to start, with sources and related words. */
@@ -44,10 +44,12 @@ export function ExplainSheet({ id, onClose, onOpen, pal }: { id: string | null; 
 }
 
 function Part({ pal, label, text }: { pal: Palette; label: string; text: string }) {
+  // Follows the reader's text size (You → Reading), like the ayah cards and the tafsir.
+  const scale = textScale(usePrefs().textSize);
   return (
     <View style={{ gap: 6 }}>
       <Text style={[styles.label, { color: pal.text }]}>{label}</Text>
-      <Text style={[styles.body, { color: pal.text }]}>{text}</Text>
+      <Text style={[styles.body, { color: pal.text, fontSize: Math.round(15.5 * scale), lineHeight: Math.round(23 * scale) }]}>{text}</Text>
     </View>
   );
 }

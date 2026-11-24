@@ -195,7 +195,7 @@ export function AskSheet({ verseKey, pal, onClose }: { verseKey: string | null; 
           {typeof state === 'object' && 'answer' in state && (
             <>
               {state.answer.split(/\n\s*\n/).map((para, i) => (
-                <Text key={i} style={[styles.body, { color: pal.text }]}>
+                <Text key={i} style={[styles.body, { color: pal.text, fontSize: Math.round(16 * textScale(prefs.textSize)), lineHeight: Math.round(25 * textScale(prefs.textSize)) }]}>
                   {para.trim()}
                 </Text>
               ))}
