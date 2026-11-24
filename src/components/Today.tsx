@@ -24,8 +24,8 @@ import { fonts, mix, type Palette } from '@/lib/theme';
  * on Monday and Thursday, a small sunnah from the feed's sourced "Try this today" cards otherwise.
  * Sources quoted here need a scholar's check like the rest of Munib.
  */
-/** Outline of an empty tick or prayer pill: the hairline colour is too faint to see on the dark look. */
-const edgeOf = (pal: Palette) => (pal.dark ? mix(pal.surface, pal.text, 0.42) : pal.line);
+/** Outline of an empty tick or prayer pill: the hairline colour is too faint to see as something to tap. */
+const edgeOf = (pal: Palette) => mix(pal.surface, pal.text, pal.dark ? 0.42 : 0.3);
 
 const PRAYERS = [
   { id: 'fajr', name: 'Fajr' },
