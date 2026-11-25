@@ -119,7 +119,7 @@ export function Choice({ pal, on, title, sub, onPress, box }: { pal: Palette; on
 
 export function Bar({ pal, pct }: { pal: Palette; pct: number }) {
   return (
-    <View style={[styles.bar, { backgroundColor: mix(pal.surface, pal.accent, pal.dark ? 0.25 : 0.14) }]}>
+    <View style={[styles.bar, { backgroundColor: mix(pal.surface, pal.accent, pal.dark ? 0.1 : 0.14) }]}>
       <View style={{ width: `${Math.round(Math.max(0, Math.min(1, pct)) * 100)}%`, height: '100%', backgroundColor: pal.accent, borderRadius: 4 }} />
     </View>
   );
