@@ -50,7 +50,7 @@ export default function TogetherTab() {
           {stats && stats.week > 0 ? (
             <>
               <Text style={[styles.ummahBig, { color: '#FFFFFF' }]}>{stats.week.toLocaleString('en-GB')}</Text>
-              <Text style={[styles.ummahSub, { color: '#FFFFFF' }]}>ayat read on Munib this week{stats.today ? ` · ${stats.today.toLocaleString('en-GB')} today` : ''}</Text>
+              <Text style={[styles.ummahSub, { color: '#FFFFFF' }]}>{stats.week === 1 ? 'ayah' : 'ayat'} read on Munib this week{stats.today ? ` · ${stats.today.toLocaleString('en-GB')} today` : ''}</Text>
             </>
           ) : (
             <Text style={[styles.ummahSub, { color: '#FFFFFF' }]}>Every ayah you read adds to everyone’s total.</Text>
