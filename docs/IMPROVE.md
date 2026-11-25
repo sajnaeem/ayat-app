@@ -84,11 +84,7 @@ Things learned about testing:
 
 ## Proposals for Saj (he decides; newest first)
 
-**9. A plain way in at the top of the Tafsir sheet (wording and a link, no religious text changed).** As a curious guest the first Tafsir opened (4:1) began with chains of narrators ("Al-`Awfi reported that Ibn `Abbas said…") and Arabic quotations: correct, but a wall for a newcomer, and the research above says the first-time reader is lost without plain context. Idea: one quiet line above the commentary, "This is a detailed classical commentary. For a short answer in plain English, tap Ask about this ayah", with the Ask button beside it. Needs Saj's yes because it changes how the tafsir is introduced. Also noticed: some For you ayat have no Context button (e.g. 4:1), so Tafsir is the only explanation offered there; writing notes for those is religious content for Saj and a scholar.
-
-**8. Hide the Munib Plus card while Plus isn't on sale.** The You screen shows a violet "MUNIB PLUS: Unlimited Ask, listen offline, every story" card to everyone, including guests, although the 15 Nov decision is "launch completely free… the Plus code stays in the app but hidden", the welcome screen and website say free, and Apple's 2.1 rule in CLAUDE.md says to hide "Plus without products". Idea: show the card only when Plus can actually be bought or the reader is already a member (`plus.available || plus.active` in `src/app/you.tsx`); same check for the "See Munib Plus" link on Ask's daily-limit message. Not done by the loop because it touches pricing.
-
-(Proposals 1–5 were approved and built on 22 Nov 2026, proposal 6 on 23 Nov, proposal 7 on 24 Nov: see the run log.)
+None open. (Proposals 1–5 were approved and built on 22 Nov 2026, proposal 6 on 23 Nov, proposal 7 on 24 Nov, proposals 8 and 9 on 25 Nov: see the run log.)
 
 ## Backlog the loop can do itself
 
@@ -110,7 +106,9 @@ Things learned about testing:
 - Backlog closed: tapping a prayer pill by position ticks it (`xy:91,613` Fajr, `xy:150,613` Dhuhr on the Prayer tab at 393×852).
 - As Tom: "I liked that it let me straight in and the first thing I read was about hardship and ease; the 'What is salah?' cards talk to me like an adult. But when I tapped Tafsir to understand a verse I got a page of names and Arabic and backed out, and the screen called You offered me a 'Plus' plan a minute after the front page said free."
 - Research: first-time readers' accounts, above. New proposals 8 and 9.
+- **Proposals 8 and 9 approved by Saj the same day and built:** the Munib Plus card on You shows only when Plus can be bought or the reader is a member (`plus.available || plus.active` in you.tsx; Ask's limit messages already had that check); the Tafsir sheet on feed cards opens with "This is a detailed classical commentary. For a short answer in plain English, ask about this ayah." and an Ask button that closes the tafsir and opens Ask about this ayah (`onAsk` on `TafsirSheet`; page view has no Ask sheet, so no line there). Still open for Saj and a scholar: context notes for For you ayat that have none (e.g. 4:1).
 - Could not test: sound and recitation, Ask's answers (signed-in), Apple sign-in (the web shows email only).
+- In the test, the Ask button inside the tafsir sheet is at `xy:337,276` (`clickx:Ask` hits the card's own Ask behind the sheet).
 - Testing notes: `?sky=` did not change the Prayer header in this run when the tab was reached by clicking from `/?sky=…` (all four came out as night); check the phase on a first screenshot before trusting a comparison. For a guest with no journey use `"mood":"newmuslim"` in saved settings to get the newcomer feed without the picker. Sheets close with a tap on the dimmed area above them (`xy:200,60`), not Escape.
 
 **24 Nov 2026. Persona: Khadija.**
