@@ -444,7 +444,7 @@ export const VerseCard = memo(function VerseCard(props: Props) {
       {first && <Text style={[styles.hint, { color: muted, bottom: bottomInset + 6 }]}>Swipe up · tap to pause · hold a word for its meaning</Text>}
       <WordSheet pick={wordPick} lang={lang} pal={pal} onClose={() => setWordPick(null)} />
       <AskSheet verseKey={askOpen ? `${v.s}:${playingAyah && v.ar.some(([, n]) => n === playingAyah) ? playingAyah : v.a}` : null} pal={pal} onClose={() => setAskOpen(false)} />
-      <TafsirSheet verseKey={tafsirOpen ? `${v.s}:${playingAyah && v.ar.some(([, n]) => n === playingAyah) ? playingAyah : v.a}` : null} lang={lang} pal={pal} onClose={() => setTafsirOpen(false)} />
+      <TafsirSheet verseKey={tafsirOpen ? `${v.s}:${playingAyah && v.ar.some(([, n]) => n === playingAyah) ? playingAyah : v.a}` : null} lang={lang} pal={pal} onClose={() => setTafsirOpen(false)} onAsk={() => { setTafsirOpen(false); setTimeout(() => setAskOpen(true), 350); }} />
     </View>
   );
 });

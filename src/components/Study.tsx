@@ -55,7 +55,7 @@ export function WordSheet({ pick, lang, pal, onClose }: { pick: WordPick; lang: 
 }
 
 /** Tafsir Ibn Kathir for an ayah (English abridged, Urdu or Bengali), from the Quran Foundation. */
-export function TafsirSheet({ verseKey, lang, pal, onClose }: { verseKey: string | null; lang: LangId; pal: Palette; onClose: () => void }) {
+export function TafsirSheet({ verseKey, lang, pal, onClose, onAsk }: { verseKey: string | null; lang: LangId; pal: Palette; onClose: () => void; onAsk?: () => void }) {
   const [t, setT] = useState<Tafsir | 'loading' | 'failed'>('loading');
   // The tafsir is the longest reading in Munib, so it follows the reader's text size (You → Reading).
   const scale = textScale(usePrefs().textSize);
@@ -69,6 +69,15 @@ export function TafsirSheet({ verseKey, lang, pal, onClose }: { verseKey: string
   const covers = typeof t === 'object' && t.keys.length > 1 ? `${t.keys[0]}–${t.keys[t.keys.length - 1].split(':')[1]}` : verseKey;
   return (
     <Sheet visible={!!verseKey} onClose={onClose} title={`Tafsir · ${covers ?? ''}`} pal={pal}>
+      {/* A plain way in for newcomers: the commentary is detailed, Ask gives a short answer. */}
+      {onAsk && (
+        <View style={[styles.plain, { borderColor: pal.line, backgroundColor: pal.surface }]}>
+          <Text style={[styles.plainText, { color: pal.muted }]}>This is a detailed classical commentary. For a short answer in plain English, ask about this ayah.</Text>
+          <Pressable onPress={onAsk} accessibilityRole="button" accessibilityLabel="Ask about this ayah" hitSlop={8} style={({ pressed }) => [styles.plainBtn, { backgroundColor: pal.accent, opacity: pressed ? 0.85 : 1 }]}>
+            <Text style={{ fontFamily: fonts.uiBold, fontSize: 14, color: pal.bg }}>Ask</Text>
+          </Pressable>
+        </View>
+      )}
       {t === 'loading' && <ActivityIndicator color={pal.accent} style={{ padding: 24 }} />}
       {t === 'failed' && <Text style={[body, { color: pal.muted }]}>Couldn't load the tafsir. Check your connection and try again.</Text>}
       {typeof t === 'object' && (
@@ -254,6 +263,9 @@ const styles = StyleSheet.create({
   mean: { fontFamily: fonts.read, fontSize: 20, lineHeight: 28, textAlign: 'center' },
   body: { fontFamily: fonts.read, fontSize: 16, lineHeight: 25 },
   small: { fontFamily: fonts.ui, fontSize: 12, textAlign: 'center' },
+  plain: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 12, marginBottom: 6 },
+  plainText: { flex: 1, fontFamily: fonts.ui, fontSize: 13.5, lineHeight: 19 },
+  plainBtn: { borderRadius: 999, paddingVertical: 8, paddingHorizontal: 16 },
   note: { fontFamily: fonts.ui, fontSize: 12, lineHeight: 17 },
   question: { fontFamily: fonts.uiBold, fontSize: 15, lineHeight: 21 },
   starters: { gap: 8 },
