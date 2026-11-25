@@ -67,7 +67,7 @@ Things learned about testing:
 1. **Amina, 24, took her shahadah last month.** Can't read Arabic, nervous about praying wrong, has no Muslim family. (Used 22 Nov.)
 2. **Bilal, 31, born Muslim, hasn't prayed regularly in years.** Scrolls TikTok two hours a night, feels guilty, hates being lectured. (Used 23 Nov.)
 3. **Khadija, 45, practising mother of three.** Reads daily, wants tafsir, family khatm, bedtime stories, larger text. (Used 24 Nov.)
-4. **Tom, 28, not Muslim, curious after a friend's Ramadan.** Guest, won't sign up, knows no terms.
+4. **Tom, 28, not Muslim, curious after a friend's Ramadan.** Guest, won't sign up, knows no terms. (Used 25 Nov.)
 5. **Yusuf, 67, recently bereaved.** Wants to read for his late wife; small-screen phone, large text, not confident with apps.
 6. **Sara, 19, student on an iPhone SE.** Uses Bold dark, short sessions between lectures, shares to WhatsApp.
 
@@ -80,24 +80,38 @@ Things learned about testing:
 - **Who drifts and who returns** (Eman Abdelhadi, IIIT blog, 80 life-history interviews with US-raised Muslims born 1971–85; small sample, one region): 62% had drifted from their community at some point, mostly ties "simply fading away in adolescence"; 79% of those men later returned but only 35% of the women; "the more monitoring and surveillance women experienced, the more likely they were to leave and the less likely they were to come back." → Being watched or judged is what keeps people away. Munib's private-by-default choices (circles show how many, never who; phone-only checklist) fit this; keep any social feature free of visible "who did / didn't".
 - **Children's Islamic story apps** (justuseapp.com's page of 22 user reviews for one such app, read 24 Nov 2026; reviews undated, store average shown 4.6/5): parents praise the content for Muslim children, bedtime stories and audiobooks ("My kids are obsessed"); the complaints are about stories locked behind payment and access problems after paying ("everything showed as locked", "why can't you add some free games or videos"). → Every bedtime story being free is a real point of difference for parents; say so wherever stories are described.
 - **Text size for older readers** (Hou, Anicetus & He, "How to design font size for older adults: a systematic literature review with a mobile device", Frontiers in Psychology, 1 Aug 2022; 12 studies; read through a summary, not the full text): "older adults preferred larger font sizes", but "there exists a critical size at which readability declines"; the studies it reviews land between about 13 and 18 pt for sustained reading, and it gives no single minimum. → Munib's Extra large (about 21 on the tafsir, 16 × 1.3) is in a sensible range; the setting now reaches all the long reading except bedtime stories (proposal 7, built).
+- **Reading the Quran cold, as an outsider or a brand-new Muslim** (four first-person or reported accounts, read 25 Nov 2026; anecdotes, not a survey). A Western reader who finished it in 30 days (Mike, Substack, 12 Jun 2025): "I was expecting something narrative, like much of the Bible. The Quran is different"; of his edition's footnotes, "Without them, I would've been completely lost." A Quaker reader (Michael Birkel, Friends Journal, 1 Oct 2023): "Reading it sequentially can leave one confused. Its organization is not immediately evident"; "One entry for the new guest is the door of beauty", then mercy and justice, with Muslim friends to guide him. A convert (Theresa Corbin, AboutIslam, 27 Mar 2020): "I found the Quran… indecipherable and it made me feel like a bad Muslim"; stories of the prophets, some tafsir and al-Fatihah as "the lens" brought it into focus. TikTok readers in late 2023 (Jessica Roy, New Lines Magazine, 1 Dec 2023; the piece is sceptical of the trend): "the Quran was entirely a mystery to me"; "it was describing what I already felt". → Munib's For you (short ayat chosen for mercy and comfort, with context notes) is the right front door for a newcomer; reading in order with no help is where people get lost. A plain explanation one tap away matters more for this reader than the classical commentary (proposal 9).
 
 ## Proposals for Saj (he decides; newest first)
 
-None open. (Proposals 1–5 were approved and built on 22 Nov 2026, proposal 6 on 23 Nov, proposal 7 on 24 Nov: see the run log.)
+**9. A plain way in at the top of the Tafsir sheet (wording and a link, no religious text changed).** As a curious guest the first Tafsir opened (4:1) began with chains of narrators ("Al-`Awfi reported that Ibn `Abbas said…") and Arabic quotations: correct, but a wall for a newcomer, and the research above says the first-time reader is lost without plain context. Idea: one quiet line above the commentary, "This is a detailed classical commentary. For a short answer in plain English, tap Ask about this ayah", with the Ask button beside it. Needs Saj's yes because it changes how the tafsir is introduced. Also noticed: some For you ayat have no Context button (e.g. 4:1), so Tafsir is the only explanation offered there; writing notes for those is religious content for Saj and a scholar.
+
+**8. Hide the Munib Plus card while Plus isn't on sale.** The You screen shows a violet "MUNIB PLUS: Unlimited Ask, listen offline, every story" card to everyone, including guests, although the 15 Nov decision is "launch completely free… the Plus code stays in the app but hidden", the welcome screen and website say free, and Apple's 2.1 rule in CLAUDE.md says to hide "Plus without products". Idea: show the card only when Plus can actually be bought or the reader is already a member (`plus.available || plus.active` in `src/app/you.tsx`); same check for the "See Munib Plus" link on Ask's daily-limit message. Not done by the loop because it touches pricing.
+
+(Proposals 1–5 were approved and built on 22 Nov 2026, proposal 6 on 23 Nov, proposal 7 on 24 Nov: see the run log.)
 
 ## Backlog the loop can do itself
 
 - Check every screen at 375×667 (iPhone SE) for cut-off or overlapping text. (Extra large text at 393×852 checked 24 Nov on the feed, tafsir sheet, You, Find a dua, Prayer and Together: nothing cut off.)
 - Bold dark: tabs, You, Learn to pray, Ask for dua, Prayer times checked 23 Nov. Still to check in Bold dark: the feed's sheets (Aa, mood, tafsir, Ask), search, Read together, circles, stories, page view.
-- Prayer tab header at night: the date line and the end of a long name ("Salaam, Khadija") run over the painted crescent moon. Approved art, so only a glitch fix is allowed (e.g. a soft shadow behind the text); look at all four times of day first.
+- Prayer tab header at night: the date line and the end of a long name ("Salaam, Khadija") run over the painted crescent moon. Approved art, so only a glitch fix is allowed. Tried 25 Nov: a soft shadow behind the date made no visible difference, so it was dropped. Next idea: a slightly darker veil behind the text only at night, or ask Saj whether the moon can sit further right in `paint.py`.
 - You → "Juz' ʿAmma": the ʿ shows with a gap on the web (font fallback). Check whether it is the web only.
-- Prayer pills in Daily deeds: `clickx:Fajr` did not tick the pill in the test (it may have hit another "Fajr" on the page). Confirm by position that tapping a pill ticks it.
-- You → Juz' ʿAmma bar in Bold dark: the empty track is a strong green, so 0 of 564 looks part-filled. Check `Bar` in List.tsx.
+- Tom's path still to walk: a shared ayah link (`/2/255`) as a guest, search for a plain word ("mercy"), and what happens on tapping Reflect, Save and Memorise without an account.
 - Walk each persona's first five minutes.
 - Check every empty state (no saved ayat, no posts, no khatms, offline) reads kindly and offers a next step.
 - Check all tappable icons have accessibility labels.
 
 ## Run log (newest first; keep the last 14, summarise older ones)
+
+**25 Nov 2026. Persona: Tom (guest, not Muslim).**
+- Tested: welcome → "Not now, just let me read" → first ayat → mood picker at the third card → Tafsir on the first "New here" ayah → all five tabs as a guest → Ask starter (goes to the sign-up screen with a clear "Not now, keep reading the Quran") → Words and practices explained → Learn to pray; You in Bold dark. 393×852, light look.
+- Changed: (1) in Bold dark an empty progress bar (Juz' ʿAmma, 0 of 564) had a strong green track and looked part-filled; the track is now faint (`Bar` in List.tsx); (2) the ummah card said "1 ayat read on Munib this week"; it now says "1 ayah" when the total is one.
+- Tried and dropped: a shadow behind the Prayer header's date (no visible gain over the moon).
+- Backlog closed: tapping a prayer pill by position ticks it (`xy:91,613` Fajr, `xy:150,613` Dhuhr on the Prayer tab at 393×852).
+- As Tom: "I liked that it let me straight in and the first thing I read was about hardship and ease; the 'What is salah?' cards talk to me like an adult. But when I tapped Tafsir to understand a verse I got a page of names and Arabic and backed out, and the screen called You offered me a 'Plus' plan a minute after the front page said free."
+- Research: first-time readers' accounts, above. New proposals 8 and 9.
+- Could not test: sound and recitation, Ask's answers (signed-in), Apple sign-in (the web shows email only).
+- Testing notes: `?sky=` did not change the Prayer header in this run when the tab was reached by clicking from `/?sky=…` (all four came out as night); check the phase on a first screenshot before trusting a comparison. For a guest with no journey use `"mood":"newmuslim"` in saved settings to get the newcomer feed without the picker. Sheets close with a tap on the dimmed area above them (`xy:200,60`), not Escape.
 
 **24 Nov 2026. Persona: Khadija.**
 - Tested: saved settings as a returning reader with **Extra large text in the light (Bold) look**, 393×852: feed and the Tafsir sheet, Bedtime stories and one story, You (all sections), Surahs for your prayer, Find a dua, Learn to pray, the Prayer and Together tabs.
