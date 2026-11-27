@@ -170,7 +170,7 @@ export default function Gathering() {
                 <Text style={styles.rowTitle}>Begin with al-Fatihah</Text>
                 <Text style={styles.small}>Recited by Mahmoud Khalil al-Husary</Text>
               </View>
-              <Switch value={g.fatihah} onValueChange={(v) => save({ fatihah: v })} trackColor={{ true: N.gold }} />
+              <Switch value={g.fatihah} onValueChange={(v) => save({ fatihah: v })} trackColor={{ true: N.gold, false: 'rgba(255,255,255,0.24)' }} ios_backgroundColor="rgba(255,255,255,0.24)" />
             </View>
             <Text style={[styles.rowTitle, { marginTop: 6 }]}>Then a surah</Text>
             <View style={styles.chips}>
@@ -191,7 +191,7 @@ export default function Gathering() {
                   An AI voice (ElevenLabs) reads the English; to make it, their name is sent to ElevenLabs and nothing is kept by Munib. The Arabic is always a human reciter.{acct.status !== 'signedIn' ? ' Needs you to be signed in.' : ''}
                 </Text>
               </View>
-              <Switch value={g.voice} onValueChange={(v) => save({ voice: v })} trackColor={{ true: N.gold }} />
+              <Switch value={g.voice} onValueChange={(v) => save({ voice: v })} trackColor={{ true: N.gold, false: 'rgba(255,255,255,0.24)' }} ios_backgroundColor="rgba(255,255,255,0.24)" />
             </View>
           </View>
 
@@ -243,7 +243,7 @@ function Editor({ person, onSave, onCancel, onDelete }: { person: GatherPerson |
           <Text style={styles.rowTitle}>My mother or father</Text>
           <Text style={styles.small}>Adds the Quran’s duas for parents (17:24 and 14:41)</Text>
         </View>
-        <Switch value={parent} onValueChange={setParent} trackColor={{ true: N.gold }} />
+        <Switch value={parent} onValueChange={setParent} trackColor={{ true: N.gold, false: 'rgba(255,255,255,0.24)' }} ios_backgroundColor="rgba(255,255,255,0.24)" />
       </View>
       <Pressable
         onPress={() => clean.length >= 2 && onSave({ id: person?.id ?? String(Date.now()), name: clean, she, parent })}
