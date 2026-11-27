@@ -89,6 +89,9 @@ export default function Together() {
         <Pressable onPress={() => router.replace({ pathname: '/signin', params: { why: 'together' } })} style={[styles.btn, { backgroundColor: pal.text }]}>
           <Text style={[styles.btnText, { color: pal.bg }]}>Create an account</Text>
         </Pressable>
+        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} style={{ minHeight: 44, alignItems: 'center', justifyContent: 'center' }} accessibilityRole="button">
+          <Text style={[styles.body, { color: pal.muted, textDecorationLine: 'underline' }]}>Not now</Text>
+        </Pressable>
       </View>
     );
   }
