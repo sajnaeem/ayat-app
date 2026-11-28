@@ -16,12 +16,24 @@ Backup of the app before the loop began: branch `backup/2026-11-22` on GitHub (c
 
 Small, safe, reversible things: bugs, layout glitches, cut-off or unclear wording (not religious wording), friction in a flow, accessibility (labels, contrast, touch sizes), performance, dead ends. At most **3 changes a run**, each a small diff.
 
+## Small proposals: build them straight away (Saj, 28 Nov 2026: "yes build small proposals like this immediately")
+
+Saj no longer wants to be asked about small changes of the kind proposals 10 and 11 were. The loop builds one itself, the same run, when **all** of these are true:
+
+- it is a small diff (roughly one screen or one component) that is easy to undo;
+- **no words are added, changed or removed** in religious content (it may change the size, order, spacing, colour or visibility of what is already there, e.g. text following the text-size setting, the order of the greeting chips);
+- it may touch a screen whose look Saj approved, but only to adjust it (size, order, spacing, contrast, where a button sits), never to redesign it;
+- it is not a new feature, screen or tab, and removes nothing;
+- it touches nothing in privacy, data, consent, pricing, ads, accounts or any other product decision, and nothing in Supabase, Vercel, Expo builds or native code.
+
+These count towards the 3 changes a run. Each one is checked like any other change and **named in the phone report** ("Built without asking: …") so Saj can reply "undo that". If there is any doubt whether something is small, it is not: write a proposal.
+
 ## What it must NOT change (write a proposal for Saj instead)
 
 - Anything under "Product decisions" in `CLAUDE.md`, pricing, ads, accounts policy, the mission wording.
 - **Religious content of any kind**: Quran text or translations, hadith, duas, explainers, stories, surah notes, transliterations, rulings, virtue claims. Never add, reword or remove them. Typos in religious text are reported, not fixed.
 - New features, new screens, new tabs, removing a feature.
-- The look Saj approved (welcome screen, sky headers, painted scenes, jewel screens, page view, App Store screenshots) beyond fixing a glitch.
+- The look Saj approved (welcome screen, sky headers, painted scenes, jewel screens, page view, App Store screenshots) beyond fixing a glitch or a small adjustment allowed by the section above.
 - Privacy, data collection, consent wording, the privacy policy or terms.
 - Supabase (tables, functions, secrets, data), Vercel settings, Expo builds, anything native (`app.json`, new packages), `ios/` or `android/`.
 - Anything that names or imitates another app, its text or its art.
