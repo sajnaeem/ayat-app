@@ -12,7 +12,7 @@ import * as Notifications from 'expo-notifications';
 import { useFocusEffect, useRouter } from 'expo-router';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, ActivityIndicator, Alert, AppState, FlatList, Linking, Modal, Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, ActivityIndicator, Alert, AppState, FlatList, Linking, Modal, Platform, Pressable, Share, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, { SharedValue, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
@@ -1287,6 +1287,7 @@ const MOOD_PILL: Record<string, string> = {
 function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palette; onDark?: boolean; top: number; moodLabel: string; mode: 'foryou' | 'order'; onMode: (m: 'foryou' | 'order') => void; showTl: boolean; onMood: () => void; onTl: () => void; tip?: { title: string; text: string; arrow: number } | null; onTip?: () => void; onTipClose?: () => void; onRead: () => void; onPages: () => void }) {
   // On a dark card (a video, a photo post) switch to light text and dark see-through buttons, with a shadow under the tab names.
   const pal: Palette = p.onDark ? { ...p.pal, text: '#FFFFFF', muted: 'rgba(255,255,255,0.72)', surface: 'rgba(20,24,22,0.55)', line: 'rgba(255,255,255,0.28)', bg: '#121A16', accent: '#7FE0B5' } : p.pal;
+  const narrow = useWindowDimensions().width < 390;
   const fade = useAnimatedStyle(() => ({ opacity: p.chrome.value }));
   return (
     <Animated.View style={[styles.top, { paddingTop: p.top + 10 }, fade]} pointerEvents={p.chromeOn ? 'box-none' : 'none'}>
@@ -1310,9 +1311,12 @@ function TopBar(p: { chrome: SharedValue<number>; chromeOn: boolean; pal: Palett
         {p.mode === 'foryou' && (
           <TopBtn pal={pal} onDark={p.onDark} onPress={p.onMood} style={{ maxWidth: 100, flexShrink: 1, overflow: 'hidden' }} label="Change what's on your heart">
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1, maxWidth: '100%' }}>
-              <View style={{ flexShrink: 0 }}>
-                <Icon name="heart" size={13} color={pal.accent} strokeWidth={2} />
-              </View>
+              {/* On the narrowest phones (iPhone SE) the heart is left out so the word isn't cut off ("Grate…"). */}
+              {!narrow && (
+                <View style={{ flexShrink: 0 }}>
+                  <Icon name="heart" size={13} color={pal.accent} strokeWidth={2} />
+                </View>
+              )}
               <Text style={[styles.pillText, { color: pal.text, flexShrink: 1 }]} numberOfLines={1}>
                 {p.moodLabel}
               </Text>
