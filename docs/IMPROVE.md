@@ -87,11 +87,9 @@ Things learned about testing:
 
 ## Proposals for Saj (he decides; newest first)
 
-**11. On Fridays, put "Jumuʿah Mubarak" first in the share sheet's greetings (and "Ramadan Mubarak" first during Ramadan).** Today the order is always No greeting, Good morning, Jumuʿah Mubarak, Ramadan Mubarak, Eid Mubarak, and on a small phone they sit below the picture. Evidence is thin and said so: one interviewee in the Holy Tweets paper shares "on the beginning of holidays, such as Ramadan, Haji, and Friday"; Sara's walk, 28 Nov. Change: only the order of the chips on those days; "No greeting" stays chosen by default, nothing is reworded. Waits for Saj because the greetings are religious wording.
+None waiting.
 
-**10. Let the text-size setting reach the bereavement screens.** A gathering of dua's "Good to know" notes and the small lines under each choice are 12–13 px grey on navy and ignore You → Reading → Text size; the same is true of the small print on Read together. The person most likely to open these (an older, bereaved reader) is the one who needs larger text. Evidence: NN/g and the Monash recommendations above; Yusuf's walk, 27 Nov. Change: those texts follow `textScale(prefs.textSize)`, as the tafsir and explainers already do; nothing reworded. Small, but it touches an approved screen, so it waits for Saj's yes.
-
-(Proposals 1–5 were approved and built on 22 Nov 2026, proposal 6 on 23 Nov, proposal 7 on 24 Nov, proposals 8 and 9 on 25 Nov: see the run log.)
+(Proposals 1–5 were approved and built on 22 Nov 2026, proposal 6 on 23 Nov, proposal 7 on 24 Nov, proposals 8 and 9 on 25 Nov, proposals 10 and 11 on 28 Nov: see the run log.)
 
 ## Backlog the loop can do itself
 
@@ -113,6 +111,7 @@ Things learned about testing:
 - Changed: (1) the mood word in the feed's top bar was cut off on the smallest phones ("Grate…"); under 390 px wide the little heart is left out so the whole word fits (`narrow` in `TopBar`, checked with Grateful, Guidance, Parenting; wider phones unchanged); (2) the hint in the search box was cut off ("…people, po"); under 390 px it reads "Search Quran, people, posts".
 - As Sara: "It looks good in dark and I got to an ayah in two taps, which is all the time I have between lectures. The share picture is lovely and has the link on it. But I nearly gave up looking for the actual share button, it was hiding under the picture, and I didn't know the Jumuʿah greeting was there until I scrolled."
 - Research: what people share and why, and the Gen Z survey essay, above. New proposal 11. Two backlog items added (share button, long ayah on a small screen).
+- **Proposals 10 and 11 approved by Saj the same day and built.** 10: the small print on A gathering of dua, Read together's start screen and a khatm's screen now follows the reader's text size (`Scaled` in `src/components/Scaled.tsx`, a Text that grows its font and line height with `textScale`, never shrinks; use it for small print on any screen an older reader is likely to open). Checked on the gathering at Extra large, 375×667; the khatm screen needs a signed-in phone, so Saj should glance at it with Extra large text. 11: `greetingOrder` in ShareCard.tsx puts "Ramadan Mubarak" first in Ramadan and "Jumuʿah Mubarak" first on Fridays, "No greeting" still chosen. Ramadan checked with `/?ramadan=12`; the Friday order could not be seen (the run was on a Saturday): look on a Friday.
 - Could not test: the real share sheet and WhatsApp preview (the web shares text only), sound, signed-in features, page view's fonts.
 - Testing notes: `clickx:Share` opens the share sheet; scroll it with `move:200,400` then `scroll:500`. Buttons under an open sheet can't be clicked: close it first (`xy:200,60`). `/search` and `/mushaf` open by address. A detached checkout at the start of a run: `git checkout -B main origin/main` before anything else.
 
