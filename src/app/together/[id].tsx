@@ -1,4 +1,5 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { Scaled } from '@/components/Scaled';
 import { celebrate, juzMoment } from '@/lib/moments';
 import { showFeed } from '@/lib/nav';
 import { useCallback, useEffect, useState } from 'react';
@@ -190,10 +191,10 @@ export default function KhatmScreen() {
           <View style={[styles.note, { backgroundColor: pal.surface, borderColor: pal.line, gap: 8 }]}>
             <Text style={[styles.eyebrow, { color: pal.accent }]}>IN LOVING MEMORY OF {k.in_memory.toUpperCase()}</Text>
             <Text style={[styles.memAr, { color: pal.text }]}>{memoryDua.ar}</Text>
-            <Text style={[styles.small, { color: pal.text }]}>{memoryDua.en}</Text>
-            <Text style={[styles.small, { color: pal.muted }]}>{memoryDua.src} · a dua for all who have passed</Text>
+            <Scaled style={[styles.small, { color: pal.text }]}>{memoryDua.en}</Scaled>
+            <Scaled style={[styles.small, { color: pal.muted }]}>{memoryDua.src} · a dua for all who have passed</Scaled>
             <Pressable onPress={() => router.push('/gathering')} accessibilityRole="button" hitSlop={6}>
-              <Text style={[styles.small, { color: pal.accent, fontFamily: fonts.uiSemi }]}>Make dua together for {k.in_memory} →</Text>
+              <Scaled style={[styles.small, { color: pal.accent, fontFamily: fonts.uiSemi }]}>Make dua together for {k.in_memory} →</Scaled>
             </Pressable>
           </View>
         )}
@@ -201,7 +202,7 @@ export default function KhatmScreen() {
         {welcome && (
           <View style={[styles.note, { backgroundColor: mix(pal.bg, pal.accent, 0.1), borderColor: mix(pal.bg, pal.accent, 0.3) }]}>
             <Text style={[styles.noteTitle, { color: pal.text }]}>Your khatm is ready</Text>
-            <Text style={[styles.small, { color: pal.text }]}>Invite your family, then pick a juz for yourself below. You can also put a name on a juz for someone reading from their own mushaf.</Text>
+            <Scaled style={[styles.small, { color: pal.text }]}>Invite your family, then pick a juz for yourself below. You can also put a name on a juz for someone reading from their own mushaf.</Scaled>
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
               <Pressable onPress={invite} style={[styles.smallBtn, { backgroundColor: pal.text }]}>
                 <Text style={[styles.smallBtnText, { color: pal.bg }]}>Invite</Text>
@@ -217,9 +218,9 @@ export default function KhatmScreen() {
           <View style={[styles.done, { backgroundColor: pal.accent }]}>
             <Text style={[styles.doneAr, { color: pal.onAccent }]}>ٱلْحَمْدُ لِلَّٰهِ</Text>
             <Text style={[styles.doneTitle, { color: pal.onAccent }]}>The whole Quran, read together</Text>
-            <Text style={[styles.small, { color: pal.onAccent }]}>
+            <Scaled style={[styles.small, { color: pal.onAccent }]}>
               {k.members.length} {k.members.length === 1 ? 'person' : 'people'} finished all 30 juz{k.rounds_done > 1 ? `. That’s ${k.rounds_done} khatms together` : ''}.
-            </Text>
+            </Scaled>
             {creator && (
               <Pressable onPress={() => act(() => newRound(k.id), 'A new khatm has started')} style={[styles.smallBtn, { backgroundColor: pal.onAccent, alignSelf: 'flex-start', marginTop: 6 }]}>
                 <Text style={[styles.smallBtnText, { color: pal.accent }]}>Start another khatm with this group</Text>
@@ -234,15 +235,15 @@ export default function KhatmScreen() {
                 <Text style={[styles.bigOf, { color: pal.muted }]}> of 30 juz read</Text>
               </Text>
               {daysLeft !== null && (
-                <Text style={[styles.small, { color: daysLeft < 0 ? '#B4432F' : pal.muted }]}>
+                <Scaled style={[styles.small, { color: daysLeft < 0 ? '#B4432F' : pal.muted }]}>
                   {daysLeft < 0 ? 'Past the aim, keep going' : daysLeft === 0 ? 'Aim: today' : `${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left`}
-                </Text>
+                </Scaled>
               )}
             </View>
             <KhatmBar done={done} pal={pal} parts={parts.map((p) => p.status)} />
-            <Text style={[styles.small, { color: pal.muted }]}>
+            <Scaled style={[styles.small, { color: pal.muted }]}>
               {reading} being read · {30 - done - reading} still open
-            </Text>
+            </Scaled>
           </View>
         )}
 
@@ -255,12 +256,12 @@ export default function KhatmScreen() {
                 <View key={p.juz} style={[styles.card, { backgroundColor: pal.surface, borderColor: pal.accent }]}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Text style={[styles.cardTitle, { color: pal.text }]}>Juz {p.juz}</Text>
-                    <Text style={[styles.small, { color: pal.accent, fontFamily: fonts.uiBold }]}>{pct}%</Text>
+                    <Scaled style={[styles.small, { color: pal.accent, fontFamily: fonts.uiBold }]}>{pct}%</Scaled>
                   </View>
                   <View style={[styles.track, { backgroundColor: mix(pal.surface, pal.text, 0.08) }]}>
                     <View style={{ width: `${pct}%`, height: '100%', backgroundColor: pal.accent, borderRadius: 3 }} />
                   </View>
-                  <Text style={[styles.small, { color: pal.muted }]}>{p.upto ? `Read up to ${placeLabel(p.upto)}` : juzSpan(p.juz)}</Text>
+                  <Scaled style={[styles.small, { color: pal.muted }]}>{p.upto ? `Read up to ${placeLabel(p.upto)}` : juzSpan(p.juz)}</Scaled>
                   <View style={{ flexDirection: 'row', gap: 8 }}>
                     <Pressable onPress={() => read(p, 'cards')} style={[styles.smallBtn, { backgroundColor: pal.text, flex: 1 }]}>
                       <Text style={[styles.smallBtnText, { color: pal.bg }]}>{p.upto ? 'Continue' : 'Start reading'}</Text>
@@ -289,7 +290,7 @@ export default function KhatmScreen() {
           ].map(([l, c]) => (
             <View key={l} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
               <View style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: c, borderWidth: 1, borderColor: pal.line }} />
-              <Text style={[styles.small, { color: pal.muted }]}>{l}</Text>
+              <Scaled style={[styles.small, { color: pal.muted }]}>{l}</Scaled>
             </View>
           ))}
         </View>
@@ -308,29 +309,29 @@ export default function KhatmScreen() {
                     {m.id === me ? 'You' : m.handle ?? 'Someone'}
                     {m.id === k.creator ? <Text style={{ color: pal.muted, fontFamily: fonts.ui }}>  · started it</Text> : null}
                   </Text>
-                  <Text style={[styles.small, { color: pal.muted }]}>
+                  <Scaled style={[styles.small, { color: pal.muted }]}>
                     {theirs.length ? theirs.map((p) => `juz ${p.juz}${p.status === 'done' ? ' ✓' : ''}`).join(', ') : 'Hasn’t picked a juz yet'}
-                  </Text>
+                  </Scaled>
                 </View>
               </View>
             );
           })}
         </View>
-        <Text style={[styles.small, { color: pal.muted }]}>
+        <Scaled style={[styles.small, { color: pal.muted }]}>
           Only people with the invite can see this khatm. Progress fills in as each person reads their juz in Munib. Reading from a mushaf at home? Open your juz and tap “I’ve finished it”.
-        </Text>
+        </Scaled>
       </ScrollView>
 
       <Sheet visible={!!open} onClose={() => { setOpen(null); setNaming(false); }} title={open ? `Juz ${open.juz}` : ''} pal={pal}>
         {open && (
           <>
-            <Text style={[styles.small, { color: pal.muted }]}>
+            <Scaled style={[styles.small, { color: pal.muted }]}>
               {juzSpan(open.juz)} · {juzSize(open.juz)} ayat
-            </Text>
+            </Scaled>
             {open.status === 'open' ? (
               naming ? (
                 <>
-                  <Text style={[styles.small, { color: pal.text }]}>Who’s reading it? Use this for someone reading from their own mushaf without Munib.</Text>
+                  <Scaled style={[styles.small, { color: pal.text }]}>Who’s reading it? Use this for someone reading from their own mushaf without Munib.</Scaled>
                   <TextInput value={name} onChangeText={setName} placeholder="e.g. Mum, or Auntie Aisha" placeholderTextColor={pal.muted} maxLength={40} autoFocus style={[styles.input, { color: pal.text, borderColor: pal.line, backgroundColor: pal.bg }]} />
                   <Pressable disabled={!name.trim() || busy} onPress={() => act(() => claimJuz(k.id, open.juz, name.trim()), `Juz ${open.juz} is ${name.trim()}’s`)} style={[styles.btn, { backgroundColor: pal.text, opacity: name.trim() ? 1 : 0.5 }]}>
                     <Text style={[styles.btnText, { color: pal.bg }]}>Save</Text>
@@ -361,7 +362,7 @@ export default function KhatmScreen() {
                   <Text style={[styles.cardTitle, { color: pal.text }]}>
                     {open.status === 'done' ? `Finished by ${who(open) === 'You' ? 'you' : who(open)}` : `${who(open)} ${who(open) === 'You' ? 'are' : 'is'} reading it`}
                   </Text>
-                  <Text style={[styles.small, { color: pal.muted }]}>
+                  <Scaled style={[styles.small, { color: pal.muted }]}>
                     {open.status === 'done'
                       ? open.done_at
                         ? `Finished ${ago(open.done_at)}`
@@ -371,7 +372,7 @@ export default function KhatmScreen() {
                         : open.upto
                           ? `Read up to ${placeLabel(open.upto)} · ${open.pct}% · ${ago(open.updated_at)}`
                           : 'Hasn’t started yet'}
-                  </Text>
+                  </Scaled>
                 </View>
                 {open.reader === me && open.status === 'reading' && (
                   <>
@@ -412,7 +413,7 @@ export default function KhatmScreen() {
                     }
                     style={styles.linkBtn}
                   >
-                    <Text style={[styles.small, { color: pal.muted, textDecorationLine: 'underline' }]}>{open.reader === me ? 'Give it back to the group' : 'Make it open again'}</Text>
+                    <Scaled style={[styles.small, { color: pal.muted, textDecorationLine: 'underline' }]}>{open.reader === me ? 'Give it back to the group' : 'Make it open again'}</Scaled>
                   </Pressable>
                 )}
               </>
@@ -423,7 +424,7 @@ export default function KhatmScreen() {
 
       <Sheet visible={menu} onClose={() => setMenu(false)} title={k.title} pal={pal}>
         <View style={[styles.card, { backgroundColor: pal.bg, borderColor: pal.line, alignItems: 'center' }]}>
-          <Text style={[styles.small, { color: pal.muted }]}>Invite code</Text>
+          <Scaled style={[styles.small, { color: pal.muted }]}>Invite code</Scaled>
           <Text style={[styles.code, { color: pal.text }]}>{k.code}</Text>
         </View>
         <Pressable onPress={() => { setMenu(false); invite(); }} style={[styles.btn, { backgroundColor: pal.text }]}>
@@ -450,7 +451,7 @@ export default function KhatmScreen() {
             }
             style={styles.linkBtn}
           >
-            <Text style={[styles.small, { color: '#B4432F', textDecorationLine: 'underline' }]}>Delete for everyone</Text>
+            <Scaled style={[styles.small, { color: '#B4432F', textDecorationLine: 'underline' }]}>Delete for everyone</Scaled>
           </Pressable>
         )}
       </Sheet>

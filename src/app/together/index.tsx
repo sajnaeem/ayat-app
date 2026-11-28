@@ -1,4 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
+import { Scaled } from '@/components/Scaled';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -130,7 +131,7 @@ export default function Together() {
                       <View style={[styles.num, { backgroundColor: mix(pal.surface, pal.accent, 0.14) }]}>
                         <Text style={[styles.numText, { color: pal.accent }]}>{n}</Text>
                       </View>
-                      <Text style={[styles.small, { color: pal.text, flex: 1 }]}>{t}</Text>
+                      <Scaled style={[styles.small, { color: pal.text, flex: 1 }]}>{t}</Scaled>
                     </View>
                   ))}
                 </View>
@@ -158,7 +159,7 @@ export default function Together() {
           <View style={[styles.memBox, { borderColor: inMemory ? pal.accent : pal.line, backgroundColor: inMemory ? pal.accent : 'transparent' }]}>
             {inMemory && <Icon name="check" size={13} color={pal.onAccent} strokeWidth={2.4} />}
           </View>
-          <Text style={[styles.small, { color: pal.text, flex: 1 }]}>Read in memory of someone who has passed away</Text>
+          <Scaled style={[styles.small, { color: pal.text, flex: 1 }]}>Read in memory of someone who has passed away</Scaled>
         </Pressable>
         {inMemory && (
           <>
@@ -174,7 +175,7 @@ export default function Together() {
               maxLength={60}
               style={[styles.input, { color: pal.text, borderColor: pal.line, backgroundColor: pal.bg }]}
             />
-            <Text style={[styles.small, { color: pal.muted }]}>Everyone in the khatm sees their name with a dua for them. The invite says who you’re reading for.</Text>
+            <Scaled style={[styles.small, { color: pal.muted }]}>Everyone in the khatm sees their name with a dua for them. The invite says who you’re reading for.</Scaled>
           </>
         )}
         <Text style={[styles.label, { color: pal.muted }]}>A NOTE FOR THE GROUP (OPTIONAL)</Text>
@@ -204,7 +205,7 @@ export default function Together() {
       </Sheet>
 
       <Sheet visible={sheet === 'join'} onClose={() => setSheet(null)} title="Join a khatm" pal={pal}>
-        <Text style={[styles.small, { color: pal.muted }]}>Enter the 6-character code from your invite.</Text>
+        <Scaled style={[styles.small, { color: pal.muted }]}>Enter the 6-character code from your invite.</Scaled>
         <TextInput
           value={code}
           onChangeText={(t) => setCode(t.toUpperCase())}
@@ -233,19 +234,19 @@ function KhatmRow({ k, pal, onPress }: { k: KhatmSummary; pal: Palette; onPress:
           <Text style={[styles.cardTitle, { color: pal.text }]} numberOfLines={1}>
             {k.title}
           </Text>
-          <Text style={[styles.small, { color: pal.muted }]}>
+          <Scaled style={[styles.small, { color: pal.muted }]}>
             {k.in_memory ? `In memory of ${k.in_memory} · ` : ''}
             {k.completed_at ? 'Finished, alhamdulillah' : `${k.done} of 30 juz read`} · {k.members} {k.members === 1 ? 'person' : 'people'}
             {k.round > 1 ? ` · khatm ${k.round}` : ''}
-          </Text>
+          </Scaled>
         </View>
         <Icon name="chevron" size={18} color={pal.muted} />
       </View>
       <Bar done={k.done} pal={pal} />
       {mine.length > 0 && (
-        <Text style={[styles.small, { color: pal.accent, fontFamily: fonts.uiSemi }]}>
+        <Scaled style={[styles.small, { color: pal.accent, fontFamily: fonts.uiSemi }]}>
           You’re reading {mine.map((p) => `juz ${p.juz}${p.pct ? ` (${p.pct}%)` : ''}`).join(', ')}
-        </Text>
+        </Scaled>
       )}
     </Pressable>
   );

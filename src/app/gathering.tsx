@@ -1,4 +1,5 @@
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
+import { Scaled } from '@/components/Scaled';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -97,7 +98,7 @@ export default function Gathering() {
         <View style={styles.centre}>
           <ActivityIndicator color={N.gold} size="large" />
           <Text style={styles.prepText}>Getting ready{prep.of ? ` · ${prep.at} of ${prep.of}` : ''}</Text>
-          <Text style={styles.small}>The first time takes a moment. After that it starts straight away.</Text>
+          <Scaled style={styles.small}>The first time takes a moment. After that it starts straight away.</Scaled>
         </View>
       )}
 
@@ -168,7 +169,7 @@ export default function Gathering() {
             <View style={styles.switchRow}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle}>Begin with al-Fatihah</Text>
-                <Text style={styles.small}>Recited by Mahmoud Khalil al-Husary</Text>
+                <Scaled style={styles.small}>Recited by Mahmoud Khalil al-Husary</Scaled>
               </View>
               <Switch value={g.fatihah} onValueChange={(v) => save({ fatihah: v })} trackColor={{ true: N.gold, false: 'rgba(255,255,255,0.24)' }} ios_backgroundColor="rgba(255,255,255,0.24)" />
             </View>
@@ -183,13 +184,13 @@ export default function Gathering() {
                 );
               })}
             </View>
-            <Text style={styles.small}>{GATHER_SURAHS.find((s) => s.s === g.surah)?.note}</Text>
+            <Scaled style={styles.small}>{GATHER_SURAHS.find((s) => s.s === g.surah)?.note}</Scaled>
             <View style={[styles.switchRow, { marginTop: 8 }]}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle}>Read the English aloud, with their name</Text>
-                <Text style={styles.small}>
+                <Scaled style={styles.small}>
                   An AI voice (ElevenLabs) reads the English; to make it, their name is sent to ElevenLabs and nothing is kept by Munib. The Arabic is always a human reciter.{acct.status !== 'signedIn' ? ' Needs you to be signed in.' : ''}
-                </Text>
+                </Scaled>
               </View>
               <Switch value={g.voice} onValueChange={(v) => save({ voice: v })} trackColor={{ true: N.gold, false: 'rgba(255,255,255,0.24)' }} ios_backgroundColor="rgba(255,255,255,0.24)" />
             </View>
@@ -197,13 +198,13 @@ export default function Gathering() {
 
           <Text style={styles.section}>GOOD TO KNOW</Text>
           <View style={styles.card}>
-            <Text style={styles.small}>
+            <Scaled style={styles.small}>
               The duas are the ones the Prophet ﷺ taught for those who have passed, from Hisn al-Muslim, and duas from the Quran. Making dua for them is something all scholars agree on. Scholars differ on whether the reward of reciting the Quran reaches the one who has passed; ask your imam if you’re unsure.
-            </Text>
-            <Text style={styles.small}>
+            </Scaled>
+            <Scaled style={styles.small}>
               This doesn’t replace a scholar or imam leading the dua. It is here for the days you’d like to do it together at home. There are no special days: any day is a good day to make dua for them.
-            </Text>
-            <Text style={styles.small}>The Arabic of these duas is said for a man; for a woman the words change, and Munib shows those words (there’s no recording of them yet, so the English is read aloud).</Text>
+            </Scaled>
+            <Scaled style={styles.small}>The Arabic of these duas is said for a man; for a woman the words change, and Munib shows those words (there’s no recording of them yet, so the English is read aloud).</Scaled>
           </View>
         </ScrollView>
       )}
@@ -237,11 +238,11 @@ function Editor({ person, onSave, onCancel, onDelete }: { person: GatherPerson |
           </Pressable>
         ))}
       </View>
-      <Text style={styles.small}>The Arabic of the duas changes for a man or a woman.</Text>
+      <Scaled style={styles.small}>The Arabic of the duas changes for a man or a woman.</Scaled>
       <View style={[styles.card, styles.switchRow]}>
         <View style={{ flex: 1 }}>
           <Text style={styles.rowTitle}>My mother or father</Text>
-          <Text style={styles.small}>Adds the Quran’s duas for parents (17:24 and 14:41)</Text>
+          <Scaled style={styles.small}>Adds the Quran’s duas for parents (17:24 and 14:41)</Scaled>
         </View>
         <Switch value={parent} onValueChange={setParent} trackColor={{ true: N.gold, false: 'rgba(255,255,255,0.24)' }} ios_backgroundColor="rgba(255,255,255,0.24)" />
       </View>
@@ -260,10 +261,10 @@ function Editor({ person, onSave, onCancel, onDelete }: { person: GatherPerson |
       )}
       {onDelete && (
         <Pressable onPress={onDelete} style={{ alignSelf: 'center', padding: 10 }} accessibilityRole="button">
-          <Text style={[styles.small, { textDecorationLine: 'underline' }]}>Remove {person?.name}</Text>
+          <Scaled style={[styles.small, { textDecorationLine: 'underline' }]}>Remove {person?.name}</Scaled>
         </Pressable>
       )}
-      <Text style={[styles.small, { textAlign: 'center' }]}>Kept only on this phone.</Text>
+      <Scaled style={[styles.small, { textAlign: 'center' }]}>Kept only on this phone.</Scaled>
     </ScrollView>
   );
 }
@@ -430,7 +431,7 @@ function Player({ who, beats, voices, onEnd, onClose }: { who: GatherPerson; bea
                 <Text style={styles.ayahAr}>{surahAyah.ar}</Text>
                 {showTl && !!surahAyah.tl && <Text style={styles.tl}>{surahAyah.tl}</Text>}
                 <Text style={styles.ayahEn}>{surahAyah.tr}</Text>
-                <Text style={styles.small}>Ayah {ayah} of {SURAHS[beat.s - 1][3]}</Text>
+                <Scaled style={styles.small}>Ayah {ayah} of {SURAHS[beat.s - 1][3]}</Scaled>
               </>
             ) : (
               <ActivityIndicator color={N.gold} style={{ marginTop: 20 }} />
@@ -443,7 +444,7 @@ function Player({ who, beats, voices, onEnd, onClose }: { who: GatherPerson; bea
             <Text style={[styles.duaAr, beat.ar.length > 300 && { fontSize: 23, lineHeight: 46 }]}>{beat.ar}</Text>
             {showTl && <Text style={styles.tl}>{beat.tl}</Text>}
             <Text style={[styles.duaEn, beat.en.length > 380 && { fontSize: 17, lineHeight: 26 }]}>{beat.en}</Text>
-            <Text style={[styles.small, { textAlign: 'center' }]}>{beat.dua.src}</Text>
+            <Scaled style={[styles.small, { textAlign: 'center' }]}>{beat.dua.src}</Scaled>
           </View>
         )}
         {beat.kind === 'close' && (
@@ -468,7 +469,7 @@ function Player({ who, beats, voices, onEnd, onClose }: { who: GatherPerson; bea
         </Pressable>
         {phase === 'you' ? (
           <View style={{ flex: 1, alignItems: 'center' }}>
-            <Text style={[styles.small, { textAlign: 'center' }]}>One of you reads this aloud, then everyone says Ameen</Text>
+            <Scaled style={[styles.small, { textAlign: 'center' }]}>One of you reads this aloud, then everyone says Ameen</Scaled>
           </View>
         ) : (
           <Pressable onPress={togglePause} style={styles.playBtn} accessibilityRole="button" accessibilityLabel={paused ? 'Carry on' : 'Pause'}>
