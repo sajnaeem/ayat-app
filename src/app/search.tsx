@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { showFeed } from '@/lib/nav';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Hit, isArabic, searchQuran, warmSearch } from '@/lib/quranSearch';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar } from '@/components/Avatar';
 import { Icon } from '@/components/Icon';
@@ -26,6 +26,7 @@ const POPULAR = [18, 36, 67, 55, 56, 1, 112];
 export default function Search() {
   const pal = usePalette();
   const insets = useSafeAreaInsets();
+  const narrow = useWindowDimensions().width < 390; // iPhone SE: the long hint was cut off
   const router = useRouter();
   const prefs = usePrefs();
   const acct = useAccount();
@@ -132,7 +133,7 @@ export default function Search() {
           <TextInput
             value={q}
             onChangeText={setQ}
-            placeholder="Search surahs, ayat, people, posts"
+            placeholder={narrow ? 'Search Quran, people, posts' : 'Search surahs, ayat, people, posts'}
             placeholderTextColor={pal.muted}
             autoFocus
             autoCorrect={false}
