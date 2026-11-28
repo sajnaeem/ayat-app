@@ -1,5 +1,5 @@
 import * as Sharing from "expo-sharing";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Platform,
   Pressable,
@@ -17,7 +17,9 @@ import {
   translationFor,
   Verse,
 } from "@/lib/quran";
+import { ramadanNow } from "@/lib/ramadan";
 import { ayahLink, shortLink } from "@/lib/site";
+import { usePrefs } from "@/lib/store";
 import { fonts, mix, Palette, Tone } from "@/lib/theme";
 import { Pattern } from "./Pattern";
 import { Sheet } from "./Sheet";
@@ -40,6 +42,17 @@ const GREETINGS = [
   "Eid Mubarak",
 ] as const;
 type Greeting = (typeof GREETINGS)[number];
+
+/**
+ * On Fridays "Jumuʿah Mubarak" comes first, and during Ramadan "Ramadan Mubarak" does
+ * (Saj, 28 Nov 2026, improve-loop proposal 11). Only the order changes: "No greeting" stays the one chosen.
+ */
+function greetingOrder(ramadan: boolean, now = new Date()): Greeting[] {
+  const first: Greeting[] = [];
+  if (ramadan) first.push("Ramadan Mubarak");
+  if (now.getDay() === 5) first.push("Jumuʿah Mubarak");
+  return [...first, ...GREETINGS.filter((g) => !first.includes(g))];
+}
 
 const W = 300; // on-screen preview width; saved at 1080 × 1350 (4:5, right for WhatsApp, Instagram and Facebook)
 
@@ -165,6 +178,13 @@ export function ShareSheet({
   const shot = useRef<React.ComponentRef<typeof View>>(null);
   const [toneIx, setToneIx] = useState(0);
   const [greeting, setGreeting] = useState<Greeting>("None");
+  const prefs = usePrefs();
+  const greetings = useMemo(
+    () => greetingOrder(ramadanNow(prefs.ramadan?.shift ?? 0, prefs.prayer).phase === "during"),
+    // Worked out again each time the sheet opens for an ayah.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [verse?.k, prefs.ramadan?.shift],
+  );
   const [busy, setBusy] = useState(false);
   const v = verse ? liveVerse(verse, lang) : null;
 
@@ -240,7 +260,7 @@ export function ShareSheet({
           <View
             style={[styles.row, { flexWrap: "wrap", justifyContent: "center" }]}
           >
-            {GREETINGS.map((g) => (
+            {greetings.map((g) => (
               <Pressable
                 key={g}
                 onPress={() => setGreeting(g)}
